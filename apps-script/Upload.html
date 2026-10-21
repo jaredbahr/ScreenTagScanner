@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Screen Tag Scanner</title>
+  <style>
+    /* One-screen normal flow; expandable details / small heights may scroll safely. */
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body { margin: 0; background: #f3f5f4; color: #18312b; font: 17px/1.4 system-ui, sans-serif; overflow-y: auto; }
+    main { height: 100vh; height: 100dvh; min-height: 100dvh; max-width: 520px; margin: 0 auto; display: flex; flex-direction: column;
+      gap: 10px; padding: 12px 14px calc(12px + env(safe-area-inset-bottom)); }
+    header { display: flex; align-items: center; justify-content: space-between; }
+    h1 { font-size: 20px; margin: 0; }
+    .link { background: none; border: 0; color: #17654e; font: inherit; font-size: 15px; text-decoration: underline;
+      padding: 6px 2px; min-height: 0; width: auto; }
+    #frame { flex: 1; min-height: 100px; position: relative; display: flex; align-items: center; justify-content: center;
+      background: #fff; border: 1px solid #d5dfda; border-radius: 14px; overflow: hidden; }
+    #preview { width: 100%; height: 100%; object-fit: contain; display: block; }
+    #take-photo { width: 78%; min-height: 96px; font-size: 22px; border-radius: 14px; }
+    #status { margin: 0; min-height: 2.8em; font-size: 16px; overflow-wrap: anywhere; white-space: pre-wrap;
+      display: block; overflow: visible; flex-shrink: 0; }
+    #review { margin: 0; padding: 10px; border: 2px solid #a56b00; border-radius: 8px;
+      background: #fff3c4; color: #563800; font-weight: 700; flex-shrink: 0; }
+    details { font-size: 14px; flex-shrink: 0; }
+    summary { cursor: pointer; padding: 2px 0; }
+    #result-details p { margin: 6px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+    #password-row, .remember, .actions, .links { flex-shrink: 0; }
+    #password-row { display: flex; flex-direction: column; gap: 6px; }
+    #password-row label { font-weight: 650; font-size: 15px; }
+    #password { font: inherit; width: 100%; min-height: 46px; border: 1px solid #9aaba3; border-radius: 8px; padding: 8px 10px; }
+    .remember { display: flex; align-items: center; gap: 8px; font-size: 15px; }
+    .remember input { width: 22px; height: 22px; margin: 0; }
+    .actions { display: flex; gap: 10px; }
+    button { font: inherit; border: 0; border-radius: 10px; min-height: 56px; padding: 10px; font-weight: 700;
+      color: #fff; background: #17654e; }
+    .secondary { color: #17654e; background: #fff; border: 1px solid #9aaba3; }
+    #retake { flex: 1; } #submit { flex: 2; font-size: 20px; }
+    .links { display: flex; justify-content: center; gap: 22px; }
+    button:disabled { opacity: .5; } :focus-visible { outline: 3px solid #c8891c; outline-offset: 2px; }
+    [hidden] { display: none !important; }
+    #scanner-view { display: contents; }
+    #settings-view { display: flex; flex-direction: column; gap: 12px; }
+    #settings-view h2, #settings-view p { margin: 0; }
+    #settings-view input, #settings-view select { font: inherit; width: 100%; min-height: 46px; padding: 8px; border: 1px solid #9aaba3; border-radius: 8px; }
+    #settings-view label { display: block; font-weight: 650; margin-top: 10px; }
+    #month-confirmation { border: 2px solid #17654e; border-radius: 10px; padding: 12px; margin-top: 12px; }
+    #month-confirm { width: 100%; margin-top: 12px; }
+    #month-status { white-space: pre-wrap; overflow-wrap: anywhere; }
+    .header-links { display: flex; gap: 12px; }
+    @media (max-height: 560px) { main { height: auto; } #frame { min-height: 100px; flex-basis: 100px; } #take-photo { min-height: 64px; } h1 { font-size: 17px; } button { min-height: 48px; } }
+  </style>
+</head>
+<body>
+<main>
+<div id="scanner-view">
+  <header>
+    <h1>Scan Tag</h1>
+    <div class="header-links"><button id="reset-photo" type="button" class="link" hidden>Clear photo</button>
+    <button id="settings-open" type="button" class="link">Settings</button></div>
+  </header>
+
+  <form id="scan-form" hidden></form>
+  <div id="frame">
+    <button id="take-photo" type="button" aria-controls="camera">Take photo</button>
+    <img id="preview" alt="Tag photo preview" hidden>
+  </div>
+  <input id="camera" type="file" accept="image/*" capture="environment" hidden>
+  <input id="photo" type="file" accept="image/*" hidden>
+
+  <p id="status" role="status" aria-live="polite">Tap Take photo.</p>
+  <p id="review" role="status" aria-live="polite" hidden>Needs review — check the workbook.</p>
+  <details id="result-details" hidden><summary>Details</summary><p id="result-text"></p></details>
+
+  <div id="password-row">
+    <label for="password">Scanner password</label>
+    <input id="password" type="password" maxlength="512" autocomplete="off" autocapitalize="none" spellcheck="false">
+  </div>
+  <label class="remember" id="remember-row"><input id="remember" type="checkbox" checked> Remember on this phone</label>
+
+  <div class="actions">
+    <button id="retake" type="button" class="secondary" hidden>Retake</button>
+    <button id="submit" type="button" disabled>Scan tag</button>
+  </div>
+  <div class="links">
+    <button id="choose-photo" type="button" class="link" aria-controls="photo">Choose existing photo</button>
+    <button id="forget" type="button" class="link" hidden>Forget password</button>
+  </div>
+</div>
+<section id="settings-view" hidden aria-labelledby="settings-title">
+  <header><h2 id="settings-title">Settings</h2><button id="settings-back" type="button" class="link">Back</button></header>
+  <p id="month-current" role="status" aria-live="polite">Load the current workbook before changing month.</p>
+  <a id="month-workbook-link" target="_blank" rel="noopener noreferrer" hidden>Open current workbook</a>
+  <p id="backup-status" role="status" aria-live="polite"></p>
+  <form id="month-form">
+    <label for="month-select">New month</label>
+    <select id="month-select">
+      <option value="1">January</option><option value="2">February</option><option value="3">March</option>
+      <option value="4">April</option><option value="5">May</option><option value="6">June</option>
+      <option value="7">July</option><option value="8">August</option><option value="9">September</option>
+      <option value="10">October</option><option value="11">November</option><option value="12">December</option>
+    </select>
+    <label for="month-year">Year</label><input id="month-year" type="number" min="2000" max="2100" step="1" required>
+    <label for="month-password">Re-enter scanner password for this change</label>
+    <input id="month-password" type="password" maxlength="512" autocomplete="off" autocapitalize="none" spellcheck="false" required>
+    <button id="month-review" type="submit" class="secondary">Review month</button>
+    <div id="month-confirmation" hidden>
+      <p id="month-proposal"></p><button id="month-confirm" type="button">Start new month</button>
+    </div>
+  </form>
+  <p id="month-status" role="status" aria-live="polite"></p>
+  <p id="month-access">Previous workbooks are kept.</p>
+</section>
+</main>
+<script>
+'use strict';
+// Password: kept in memory, and remembered on this phone only if "Remember" is ticked (so a
+// 40-character token isn't typed for every scan). Photos are never stored.
+const TOKEN_KEY = 'scanner-token';
+const $ = id => document.getElementById(id);
+const form = $('scan-form'), photo = $('photo'), camera = $('camera'), takePhoto = $('take-photo');
+const choosePhoto = $('choose-photo'), resetPhoto = $('reset-photo'), retake = $('retake');
+const password = $('password'), remember = $('remember'), passwordRow = $('password-row'), forget = $('forget');
+const rememberRow = $('remember-row');
+const preview = $('preview'), submit = $('submit'), status = $('status'), review = $('review');
+const resultDetails = $('result-details'), resultText = $('result-text');
+const scannerView=$('scanner-view'),settingsView=$('settings-view'),settingsOpen=$('settings-open'),settingsBack=$('settings-back');
+const monthAccess=$('month-access');
+const monthCurrent=$('month-current'),monthLink=$('month-workbook-link'),monthForm=$('month-form'),monthSelect=$('month-select'),monthYear=$('month-year');
+const monthPassword=$('month-password'),monthReview=$('month-review'),monthConfirmation=$('month-confirmation'),monthProposal=$('month-proposal'),monthConfirm=$('month-confirm'),monthStatus=$('month-status');
+let settingsVisible=false,monthLoading=false,monthBusy=false,monthInfo=null,monthIntent=null,settingsGeneration=0;
+let prepared = '', busy = false, preparing = false, selection = 0, saved = '';
+
+function store() { try { return window.localStorage; } catch (e) { return null; } }
+function loadToken() { try { const s = store(), t = s && s.getItem(TOKEN_KEY); return typeof t === 'string' && t.length <= 512 ? t : ''; } catch (e) { return ''; } }
+function saveToken(t) { try { const s = store(); if (!s) return false; s.setItem(TOKEN_KEY, t); return s.getItem(TOKEN_KEY) === t; } catch (e) { return false; } }
+function dropToken() { try { const s = store(); if (!s) return false; s.removeItem(TOKEN_KEY); return !s.getItem(TOKEN_KEY); } catch (e) { return false; } }
+saved = loadToken();
+
+function say(message) {
+  status.textContent = message; review.hidden = true;
+  resultDetails.hidden = true; resultDetails.open = false; resultText.textContent = '';
+}
+function showResult(result, storageNotice) {
+  const needsReview = result.needsReview === true || /Flagged for a double check|Saved, but/.test(result.message);
+  let summary;
+  if (result.status === 'ok') {
+    summary = /Already scanned/.test(result.message) ? 'Already scanned. Nothing new added.' :
+      /^Saved, but/.test(result.message) ? 'Saved to the log. Check the workbook.' : 'Saved.';
+  } else {
+    summary = /could not be confirmed|may have been saved/.test(result.message) ? 'Save unconfirmed. Check the workbook before retrying.' :
+      result.message.length <= 140 && !result.message.includes('\n') ? result.message : 'Scan needs attention. Read Details before retrying.';
+  }
+  const waiting = /(\d+) earlier scans? still needs? (?:placing|reconciliation)/.exec(result.message);
+  if (waiting) summary += '\n' + (waiting[1] === '1' ? '1 earlier scan needs' : waiting[1] + ' earlier scans need') + ' reconciliation (Scans). Check existing store rows before adding.';
+  if (/Earlier scan review status could not be checked/.test(result.message)) summary += '\nEarlier review status unavailable. Check Scans and store rows before adding.';
+  if (storageNotice) summary += '\nPhone password storage needs attention. Open Details.';
+  say(summary);
+  review.hidden = !needsReview;
+  resultText.textContent = result.message + (storageNotice ? '\n' + storageNotice : '');
+  resultDetails.hidden = false;
+}
+function token() { return saved || password.value; }
+function refresh() {
+  submit.disabled = busy || preparing || !prepared || !token();
+  for (const control of [photo, camera, takePhoto, choosePhoto, resetPhoto, retake]) control.disabled = busy || preparing;
+  password.disabled = busy;
+  remember.disabled = busy; forget.disabled = busy;
+  settingsOpen.disabled = busy || preparing || monthBusy;
+  takePhoto.textContent = prepared ? 'Retake photo' : 'Take photo';
+  takePhoto.hidden = !!prepared;              // the big button lives in the photo area until a photo exists
+  retake.hidden = !prepared;
+  resetPhoto.hidden = !prepared;
+  passwordRow.hidden = !!saved;
+  rememberRow.hidden = !!saved;               // once saved, Forget password is the only control needed
+  forget.hidden = !saved;
+}
+function clearPhoto() {
+  prepared = ''; preview.removeAttribute('src'); preview.hidden = true; photo.value = ''; camera.value = '';
+}
+function openPhotoInput(input) {
+  if (busy || preparing) return;
+  input.value = ''; // Same photo can be selected again after cancellation or a retake.
+  input.click(); // Keep camera/picker activation in the direct button gesture.
+}
+takePhoto.addEventListener('click', () => openPhotoInput(camera));
+retake.addEventListener('click', () => openPhotoInput(camera));
+choosePhoto.addEventListener('click', () => openPhotoInput(photo));
+resetPhoto.addEventListener('click', () => {
+  if (busy || preparing) return;
+  selection++; clearPhoto(); refresh(); say('Photo cleared. Tap Take photo.');
+});
+forget.addEventListener('click', () => {
+  if (busy) return;
+  const removed = dropToken(); saved = ''; password.value = ''; refresh();
+  say(removed ? 'Password forgotten on this phone.' : 'Password cleared for this session. Browser storage could not be cleared; clear site data before sharing this phone.');
+});
+remember.addEventListener('change', () => {
+  if (busy || remember.checked) return;
+  const removed = dropToken();
+  if (saved) { saved = ''; password.value = ''; }
+  refresh(); say(removed ? 'Remember is off. Enter the password for this scan; it will not be saved.' :
+    'Remember is off for this session. Browser storage could not be cleared; clear site data before sharing this phone.');
+});
+function cancelledPhoto() {
+  if (busy || preparing) return;
+  say(prepared ? 'No new photo taken. The previous photo is still ready.' : 'No photo selected. Tap Take photo when ready.');
+  refresh();
+}
+function fitPhoto(width, height) {
+  const scale = Math.min(1, 2000 / Math.max(width, height));
+  return { width: Math.max(1, Math.round(width * scale)), height: Math.max(1, Math.round(height * scale)) };
+}
+function preparePhoto(file) {
+  return new Promise((resolve, reject) => {
+    if (!file || !file.type.startsWith('image/') || file.size > 20 * 1024 * 1024) {
+      reject(new Error('Choose an image under 20 MB.')); return;
+    }
+    const image = new Image(), url = URL.createObjectURL(file);
+    image.onerror = () => { URL.revokeObjectURL(url); reject(new Error('This photo could not be opened. Try a JPEG or take a new photo.')); };
+    image.onload = () => {
+      URL.revokeObjectURL(url);
+      try {
+        const w = image.naturalWidth, h = image.naturalHeight;
+        if (!w || !h || w * h > 48000000) throw new Error('Photo dimensions are too large. Choose a smaller photo.');
+        const size = fitPhoto(w, h), canvas = document.createElement('canvas');
+        canvas.width = size.width; canvas.height = size.height;
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('This browser could not prepare the photo.');
+        context.fillStyle = '#fff'; context.fillRect(0, 0, size.width, size.height);
+        context.drawImage(image, 0, 0, size.width, size.height);
+        const data = canvas.toDataURL('image/jpeg', 0.82);
+        canvas.width = canvas.height = 1;
+        if (!data.startsWith('data:image/jpeg;base64,')) throw new Error('JPEG conversion failed. Try another photo.');
+        const b64 = data.split(',')[1];
+        if (!b64 || b64.length > 5 * 1024 * 1024) throw new Error('Prepared photo is too large. Choose a smaller photo.');
+        resolve({ image: b64, preview: data });
+      } catch (err) { reject(err); }
+    };
+    image.src = url;
+  });
+}
+async function photoChanged(input) {
+  if (busy) return;
+  const file = input.files[0];
+  if (!file) { cancelledPhoto(); return; }
+  const id = ++selection;
+  clearPhoto(); preparing = true; refresh(); say('Preparing photo…');
+  try {
+    const result = await preparePhoto(file);
+    if (id !== selection) return;
+    prepared = result.image; preview.src = result.preview; preview.hidden = false;
+    say(token() ? 'Photo ready. Tap Scan tag.' : 'Photo ready. Enter the password, then tap Scan tag.');
+  } catch (err) { if (id === selection) say(err.message || 'Photo could not be prepared. Choose another photo.'); }
+  finally { if (id === selection) { preparing = false; refresh(); } }
+}
+for (const input of [camera, photo]) {
+  input.addEventListener('change', () => photoChanged(input));
+  input.addEventListener('cancel', cancelledPhoto);
+}
+password.addEventListener('input', refresh);
+
+function send() {
+  if (busy || preparing || settingsVisible || monthBusy || !prepared || !token()) return;
+  if (typeof google === 'undefined' || !google.script || !google.script.run) {
+    say('Open the deployed Google scanner page to submit.'); return;
+  }
+  busy = true;
+  const typed = !saved ? password.value : '';
+  const shouldRemember = remember.checked;
+  const request = { token: token(), user: 'Phone upload', image: prepared };
+  password.value = ''; refresh(); say('Reading and saving… Keep this page open. Do not tap again.');
+  const slow = setTimeout(() => say('Still working. Do not tap again. If you leave, check the workbook before retrying.'), 60000);
+  function finish() { clearTimeout(slow); busy = false; clearPhoto(); refresh(); }
+  function interrupted() {
+    finish(); say('Interrupted. The tag may have been saved. Check the workbook before trying again.');
+  }
+  try {
+    google.script.run.withSuccessHandler(result => {
+      if (!result || !['ok', 'error'].includes(result.status) || typeof result.message !== 'string') {
+        finish(); say('Save could not be confirmed. Check the workbook before trying again.'); return;
+      }
+      // Never infer authentication from a missing rejection flag (old/pre-auth responses).
+      const rejected = result.badToken === true;
+      let storageNotice = '';
+      if (typed && shouldRemember && remember.checked && result.authenticated === true && !rejected) {
+        if (saveToken(typed)) saved = typed;
+        else storageNotice = 'Password could not be remembered in this browser. Enter it again for the next scan.';
+      }
+      if (saved && rejected) {
+        if (!dropToken()) storageNotice = 'The rejected password was cleared for this session, but browser storage could not be cleared. Clear site data before sharing this phone.';
+        saved = '';
+      }
+      finish(); showResult(result, storageNotice);
+    }).withFailureHandler(interrupted).scanTag(request);
+  } catch (err) { interrupted(); }
+}
+submit.addEventListener('click', send);
+form.addEventListener('submit', event => { event.preventDefault(); send(); });
+function monthRefresh() {
+  for(const c of [monthSelect,monthYear,monthPassword,monthReview,monthConfirm])c.disabled=monthLoading||monthBusy;
+  settingsBack.disabled=monthBusy;
+}
+function monthClearIntent() { monthIntent=null;monthConfirmation.hidden=true;monthProposal.textContent=''; }
+function monthLoad(loadPassword,afterLoad) {
+  if(monthLoading||monthBusy)return;
+  if(!loadPassword){monthCurrent.textContent='Enter the password and use Review month to load the current workbook.';return;}
+  if(typeof google==='undefined'||!google.script||!google.script.run){monthStatus.textContent='Open the deployed scanner to use Settings.';return;}
+  monthLoading=true;monthRefresh();const generation=settingsGeneration;
+  const done=()=>{monthLoading=false;monthRefresh();};
+  try {
+    google.script.run.withSuccessHandler(result=>{
+      if(generation!==settingsGeneration||!settingsVisible)return;
+      done();
+      if(!result||result.status!=='ok'||result.authenticated!==true||typeof result.currentId!=='string'||typeof result.currentName!=='string'){
+        monthPassword.value='';monthStatus.textContent=result&&typeof result.message==='string'?result.message:'Settings could not be confirmed. Try loading them again.';return;
+      }
+      monthInfo=result;monthCurrent.textContent='Current: '+result.currentName+'\nMonth: '+(result.currentMonth||'not labeled (TEST/legacy workbook)');
+      $('backup-status').textContent=typeof result.backupStatus==='string'?result.backupStatus:'Backup status is unavailable.';
+      if(typeof result.access==='string')monthAccess.textContent=result.access;
+      monthLink.hidden=!/^https:\/\/(docs|drive)\.google\.com\//.test(result.currentUrl||'');if(!monthLink.hidden)monthLink.href=result.currentUrl;
+      if(!afterLoad){
+        const pending=/^(\d{4})-(\d{2})$/.exec(result.pendingTarget||'');
+        monthYear.value=pending?pending[1]:String(result.defaultYear);monthSelect.value=pending?String(Number(pending[2])):String(result.defaultMonth);
+      }
+      monthStatus.textContent=result.paused?'Worksheet migration is paused. Finish it before starting a month.':result.pendingTarget?'Pending '+result.pendingTarget+'. Review that same month to recover; no automatic retry.':'';
+      if(afterLoad)afterLoad();
+    }).withFailureHandler(()=>{if(generation!==settingsGeneration||!settingsVisible)return;done();monthPassword.value='';monthStatus.textContent='Settings could not be loaded. Try again or contact Jared.';}).getMonthSettings({token:loadPassword});
+  }catch(err){done();monthPassword.value='';monthStatus.textContent='Settings could not be loaded. Try again or contact Jared.';}
+}
+settingsOpen.addEventListener('click',()=>{
+  if(busy||preparing||monthBusy)return;
+  settingsVisible=true;settingsGeneration++;monthLoading=false;monthInfo=null;monthPassword.value='';monthClearIntent();
+  scannerView.hidden=true;settingsView.hidden=false;monthLink.hidden=true;monthStatus.textContent='';
+  monthCurrent.textContent='Loading current workbook…';monthRefresh();monthLoad(token());settingsBack.focus();
+});
+settingsBack.addEventListener('click',()=>{
+  if(monthBusy)return;
+  settingsGeneration++;settingsVisible=false;monthLoading=false;monthPassword.value='';monthClearIntent();
+  settingsView.hidden=true;scannerView.hidden=false;refresh();settingsOpen.focus();
+});
+function monthShowProposal() {
+  const year=Number(monthYear.value),month=Number(monthSelect.value);
+  if(!monthInfo){monthStatus.textContent='Load current Settings before reviewing a month.';return;}
+  if(monthInfo.paused){monthStatus.textContent='Finish and resume the worksheet migration first.';return;}
+  if(!Number.isInteger(year)||year<2000||year>2100||!Number.isInteger(month)||month<1||month>12){monthStatus.textContent='Choose a month and a year from 2000 to 2100.';return;}
+  if(!monthPassword.value){monthStatus.textContent='Re-enter the scanner password for this change.';monthPassword.focus();return;}
+  monthIntent={year,month,expectedSheetId:monthInfo.currentId};
+  const monthName=['January','February','March','April','May','June','July','August','September','October','November','December'][month-1];
+  monthProposal.textContent='Start '+monthName+' '+year+' and make it active?\nCurrent workbook: '+monthInfo.currentName+'. Previous files will be kept.';
+  monthConfirmation.hidden=false;monthStatus.textContent='Review the month and year, then confirm once.';
+}
+monthForm.addEventListener('submit',event=>{
+  event.preventDefault();if(monthBusy||monthLoading||!settingsVisible)return;
+  if(!monthPassword.value){monthStatus.textContent='Re-enter the scanner password for this change.';monthPassword.focus();return;}
+  if(!monthInfo)monthLoad(monthPassword.value,monthShowProposal);else monthShowProposal();
+});
+for(const c of [monthSelect,monthYear])c.addEventListener('change',monthClearIntent);
+monthConfirm.addEventListener('click',()=>{
+  if(monthBusy||monthLoading||!monthIntent||!settingsVisible)return;
+  if(!monthPassword.value){monthStatus.textContent='Re-enter the scanner password before confirming.';monthPassword.focus();return;}
+  const req={...monthIntent,token:monthPassword.value}; // never use token()/saved/localStorage for this change
+  monthPassword.value='';monthBusy=true;monthRefresh();monthStatus.textContent='Starting month once… Keep Settings open. Do not tap again.';
+  const generation=settingsGeneration;
+  const finish=()=>{monthBusy=false;monthClearIntent();monthRefresh();};
+  const unknown=()=>{finish();monthInfo=null;clearPhoto();refresh();monthStatus.textContent='Month change could not be confirmed. It may have succeeded. Reload Settings and review the same month before retrying.';};
+  try{
+    google.script.run.withSuccessHandler(result=>{
+      if(generation!==settingsGeneration)return;
+      finish();
+      if(!result||!['ok','error'].includes(result.status)||typeof result.message!=='string'||result.authenticated!==true){unknown();return;}
+      monthStatus.textContent=result.message;
+      if(result.status==='ok'){
+        monthInfo=result;monthCurrent.textContent='Current: '+result.currentName+'\nMonth: '+result.month;
+        $('backup-status').textContent=typeof result.backupStatus==='string'?result.backupStatus:'Reload Settings to check backup status.';
+        monthLink.hidden=!/^https:\/\/(docs|drive)\.google\.com\//.test(result.currentUrl||'');if(!monthLink.hidden)monthLink.href=result.currentUrl;
+        clearPhoto();refresh();say('New month active. Take a new photo.');
+      }else{monthInfo=null;}
+    }).withFailureHandler(unknown).startMonth(req);
+  }catch(err){unknown();}
+});
+window.addEventListener('pagehide', () => { password.value = '';monthPassword.value='';settingsGeneration++;selection++;clearPhoto(); });
+refresh();
+</script>
+</body>
+</html>
