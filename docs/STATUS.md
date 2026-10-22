@@ -47,12 +47,14 @@ _Last updated: 2026-10-22 (lines joined in 0.13.19)._
   history: (1) the deployed version-11 runtime, (2) the full project at 0.13.19, so the release gate's ancestry
   check works. The earlier history (with personal details) is kept in a private archive repository that is
   never made public; SHAs and PR numbers in older docs refer to it.
+- **`main` is protected (2026-10-22):** changes only through PRs with a green `offline-tests` check; no force
+  pushes or deletion; 0 required approvals (Codex and Claude both act through Jared's account), with Claude's
+  review recorded on each PR. Claude reviews and merges.
 - Codex: clone this repo (or `git remote set-url origin` to it) and push work here as PRs. Deploy issue: see
   the open `deployment` issue.
 
 ## Waiting on Jared
-- Protect `main` (require PRs + green `tests`); then agents work on branches with pull requests.
-- Tag releases at deploy time (`v0.13.19`, …).
+- Nothing open. (Claude tags each deployed release, e.g. `v0.13.20`.)
 
 ## Decided and built (details in the linked docs)
 - Date in = written tag date, missing year = scan's current year (no prior-year rollover, per Jared);
