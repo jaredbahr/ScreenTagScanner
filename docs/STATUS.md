@@ -88,14 +88,3 @@ _Last updated: 2026-10-22 (version 12 receipt verified at 03:10 UTC)._
 - Store tabs may be named by number or store; always use `storeSheet_()`.
 - Apps Script functions ending in `_` are private: not callable from the page, and possibly hidden from the
   editor's Run menu (unverified). Prefer code paths that don't need editor runs or triggers.
-
-## Version 12 deployment receipt
-
-Source `c3c32f9a133a0868dd7345a9d9fe9909220360c8` / 0.13.20-draft was deployed as immutable Google version 12 at 2026-10-22 03:07 UTC, with final checks at 03:10 UTC (minute precision). The Google worker independently read back all twelve saved files against the pin after the six-file update. Existing deployment identity, URL, access, execution identity, properties and permissions were preserved. No private target identifiers are recorded here.
-
-- Browser health, scanner page, What's new 0.13.20 and opening Settings passed. Authenticated workbook loading was not invoked; this is browser evidence, not physical-phone QA.
-- The single existing `nightlyWorkbookBackup_` trigger remained unchanged; its observed dashboard reported 0% errors. Backups were not reinstalled.
-- `SAVE_IMAGES=false` remained unchanged; no photo purge trigger exists. Properties were unchanged. With no daily-limit override, the effective code cap is 300.
-- No paid scans, spreadsheet row changes, month creation or permission prompt occurred.
-
-This receipt PR changes only `release/manifest.json` and this status document. It does not change runtime source or perform another Google action.
