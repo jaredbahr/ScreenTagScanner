@@ -3,13 +3,13 @@
 Living notes so any session (Claude Code or Codex) can pick up where the last one stopped. Update this
 file whenever the state below changes. No customer data, emails, Google IDs or secrets here.
 
-_Last updated: 2026-10-22 (lines joined in 0.13.19)._
+_Last updated: 2026-10-22 (version 12 receipt verified at 03:10 UTC)._
 
 ## Where things stand
 | | |
 |---|---|
-| Live in Google | Immutable version 11 / 0.13.17-draft; this public history records its runtime at `5ebceb692142a7968f628b4cf841e0179e27b8cf`, per `release/manifest.json`. Backups are already installed. |
-| Ready to deploy | Held pending review and merge of the earnings-safety fix (`fix/pin-price-evidence`, 0.13.20-draft). The 0.13.19 runtime at `0c83363` infers earnings from negative/refund and ambiguous price evidence. Deploy only a validated `main` pin after the fix merges; see issue #1. |
+| Live in Google | Immutable version 12 / **0.13.20-draft**, source `c3c32f9a133a0868dd7345a9d9fe9909220360c8`. Deployed 2026-10-22 03:07 UTC; final verification 03:10 UTC (minute precision). All twelve saved files matched the pin. |
+| Ready to deploy | This pin is already deployed. PR #2 is merged. Future runtime changes require a new reviewed `main` pin and release validation; see issue #1 for this deployment receipt. |
 | Who deploys | Codex, per [DEPLOYMENT.md](DEPLOYMENT.md) and the release gate, recorded as a `deployment` issue |
 | Lesson (2026-10-22) | Google ran Codex's unmerged PR line for a week while the default branch moved on separately. Rule now: deploy only from the default branch; the release gate fails a candidate that lacks the deployed source's history |
 | Workbook in use | "October 2026" in the shared monthly folder; tabs named by store ("Downers Grove", …); a "Tag x of N" column after Name in both blocks |
@@ -88,3 +88,14 @@ _Last updated: 2026-10-22 (lines joined in 0.13.19)._
 - Store tabs may be named by number or store; always use `storeSheet_()`.
 - Apps Script functions ending in `_` are private: not callable from the page, and possibly hidden from the
   editor's Run menu (unverified). Prefer code paths that don't need editor runs or triggers.
+
+## Version 12 deployment receipt
+
+Source `c3c32f9a133a0868dd7345a9d9fe9909220360c8` / 0.13.20-draft was deployed as immutable Google version 12 at 2026-10-22 03:07 UTC, with final checks at 03:10 UTC (minute precision). The Google worker independently read back all twelve saved files against the pin after the six-file update. Existing deployment identity, URL, access, execution identity, properties and permissions were preserved. No private target identifiers are recorded here.
+
+- Browser health, scanner page, What's new 0.13.20 and opening Settings passed. Authenticated workbook loading was not invoked; this is browser evidence, not physical-phone QA.
+- The single existing `nightlyWorkbookBackup_` trigger remained unchanged; its observed dashboard reported 0% errors. Backups were not reinstalled.
+- `SAVE_IMAGES=false` remained unchanged; no photo purge trigger exists. Properties were unchanged. With no daily-limit override, the effective code cap is 300.
+- No paid scans, spreadsheet row changes, month creation or permission prompt occurred.
+
+This receipt PR changes only `release/manifest.json` and this status document. It does not change runtime source or perform another Google action.
