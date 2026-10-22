@@ -94,7 +94,8 @@
     "tests/workbook-backup.test.cjs": 26,
     "tests/review-tiers.test.cjs": 19,
     "tests/release-guards.test.cjs": 8,
-    "tests/pin-price-evidence.test.cjs": 14
+    "tests/pin-price-evidence.test.cjs": 14,
+    "tests/group-holds.test.cjs": 7
   },
   "allowWorkflowDefinitions": true
 }
