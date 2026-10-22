@@ -8,8 +8,8 @@ _Last updated: 2026-10-22 (lines joined in 0.13.19)._
 ## Where things stand
 | | |
 |---|---|
-| Live in Google | Version 11, `ac44e4e` / 0.13.17-draft from Codex's PR line (verified 2026-10-21), per `release/manifest.json`. Twelve files incl. backups (installed), monthly PDFs, additional labor |
-| Ready to deploy | The latest `main` commit with a green `tests` run, **0.13.19-draft**: both lines joined (merge of PR #6) plus Kirsten's 2026-10-22 answers. Six files change against version 11 (see RELEASE_PROCESS.md). Urgent: until it is live, the Downers Grove tab skips automatic parts earnings and window LB Earn stays blank |
+| Live in Google | Immutable version 11 / 0.13.17-draft; this public history records its runtime at `5ebceb692142a7968f628b4cf841e0179e27b8cf`, per `release/manifest.json`. Backups are already installed. |
+| Ready to deploy | Held pending review and merge of the earnings-safety fix (`fix/pin-price-evidence`, 0.13.20-draft). The 0.13.19 runtime at `0c83363` infers earnings from negative/refund and ambiguous price evidence. Deploy only a validated `main` pin after the fix merges; see issue #1. |
 | Who deploys | Codex, per [DEPLOYMENT.md](DEPLOYMENT.md) and the release gate, recorded as a `deployment` issue |
 | Lesson (2026-10-22) | Google ran Codex's unmerged PR line for a week while the default branch moved on separately. Rule now: deploy only from the default branch; the release gate fails a candidate that lacks the deployed source's history |
 | Workbook in use | "October 2026" in the shared monthly folder; tabs named by store ("Downers Grove", …); a "Tag x of N" column after Name in both blocks |

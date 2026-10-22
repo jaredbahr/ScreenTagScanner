@@ -1,5 +1,9 @@
 # Changelog
 
+## 0.13.20-draft — conservative pin-price evidence
+
+Missing pin quantities stay manual for refund/negative amounts, multiple prices, conflicting literal evidence, unit/PK prices or unresolved uncertainty. Only a consistent positive total tied to the exact pin SKU may use the existing price rule. Explicit quantities, rates, group deduplication and rescans remain intact. Fourteen synthetic regression cases cover this boundary. No Google deployment occurred.
+
 Notable changes, newest first. Versions are `EXTRACTION_VERSION` in `apps-script/Extraction.gs`
 (shown by `/exec?health=1`). The phone page's **What's new** view carries the plain-language version
 of the same notes. No customer data appears here.
