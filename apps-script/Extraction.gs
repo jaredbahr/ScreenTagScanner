@@ -16,7 +16,7 @@
  * Column mapping to the real spreadsheet is still pending. See TODO(fields).
  */
 
-var EXTRACTION_VERSION = '0.13.17-draft';
+var EXTRACTION_VERSION = '0.13.19-draft';
 
 var SYSTEM_PROMPT = [
   'You read Ace Hardware screen tags for a small screen repair shop. Each photo shows one paper form',
@@ -43,11 +43,13 @@ var SYSTEM_PROMPT = [
   '  filled quantity/description. Use "" if absent. Do NOT list generic preprinted, unfilled SKU/options.',
   '  Window labor SKUs: 580500 thermopane, 580501 putty wood, 580502 putty aluminum/steel, 580503 aluminum/vinyl insert.',
   '  Treat exact known material SKUs as classification only; never guess a near-match or reference price.',
-  '- panes: for window tags, the number of glass panes being repaired (null if not stated or not a window).',
+  '- panes: for window tags, the number of glass panes being repaired: the pane count if written, otherwise the',
+  '  quantity on the window labor line (580500-580503), e.g. "1 580503 Labor $24.99" = 1 (null if neither).',
   '- glass_price: for window tags, the glass price written on the tag in dollars (null if none).',
   '- thermopane: true if a window tag says thermopane / insulated / double-pane glass, else false.',
   '- window_spline: true if a window tag has a spline line filled in, else false.',
-  '- ticket_number: the Tag # or Ticket # as written, digits only. A staple,',
+  '- ticket_number: the Tag # or Ticket # as written, digits only. If the printed store tag shows the full number',
+  '  and a short number is also handwritten, use the full printed number. A staple,',
   '  hole or fold may cover a leading digit: preserve exactly the digits you can read, never guess or pad,',
   '  and list "ticket_number" in unclear when any digit is obscured or uncertain. Do not count digits or',
   '  judge ticket length; the script checks it separately.',
@@ -96,11 +98,13 @@ var SYSTEM_PROMPT = [
   '  they must not be charged twice as Other Earn. Copy additional parts SKU, description and quantity literally.',
   '  PK on the approved parts reference means shop EARNINGS, not a package count. Spring pins are EACH,',
   '  not a two-pack. Preserve literal quantities; never infer quantity from tag_index/tag_count or unclear text.',
-  '- parts: an array for actual FILLED additional-parts lines (not standard screening/glass/window labor).',
+  '- parts: an array for actual FILLED additional-parts lines (not standard screening/glass/window labor),',
+  '  including parts written on an attached Pay Cashier slip (e.g. "1 580605 frame spreader 6.95").',
   '  Return at most 30 parts lines; quantities must be explicit integers from 1 through 1000, or 0 if uncertain.',
   '  Each item has sku (literal part number, "" if missing), quantity (explicit integer QTY, 0 if uncertain),',
   '  unit (each, set4, side, job, inch or unknown), group_wide (true only for the whole group/form),',
-  '  and raw (the literal line). Do not invent a SKU from generic "pins" or printed unfilled catalog entries.',
+  '  and raw (the literal line, including any dollar amounts). Do not invent a SKU from generic "pins" or printed unfilled catalog entries.',
+  '  A spring pins line (580602) with no quantity written: quantity 0 and copy its dollar amount into raw.',
   '  580601 is a SET OF FOUR, not per corner; 580625 is per SIDE/PIECE. Use unknown for unclear units.',
   '  Service SKUs 580301 (extra labor for wood-frame screens) and 580408 (pet-grille installation)',
   '  use unit job, not each/side/inch. A clearly filled quantity 1 is one job; do not infer a missing',
@@ -119,7 +123,8 @@ var SYSTEM_PROMPT = [
   '  Standalone additional LB/labor charges remain literal extras (including the LB label and dollar amount),',
   '  not invented parts SKUs. Preserve total/base-vs-additional wording, each/per-door basis, and group scope.',
   '  Do not turn retail prices, existing base labor, or unclear amounts into additional labor earnings.',
-  '- group_extras: literal group-wide instructions such as "pins on all frames"; use "" if none.',
+  '- group_extras: literal group-wide instructions such as "pins on all frames"; use "" if none. A comment',
+  '  about this one screen (e.g. "missing frame spreader") is a note, not a group instruction.',
   '  Keep group-wide parts separate from this tag\'s extras. Never multiply them by tag_index/tag_count or',
   '  repeat them as per-frame quantities on sibling tags such as 3 of 11. Uncertain earnings remain manual.',
   '- notes: comments / notes / screen condition text. null if none.',
@@ -323,7 +328,9 @@ function reviewReasons_(x) {
   if (!x.is_tag) reasons.push('Photo may not be a tag');
   if (!x.ticket_number) reasons.push('No ticket number');
   else if (/^\d+$/.test(x.ticket_number) && x.ticket_number.length !== 7) {
-    reasons.push('Ticket # has ' + x.ticket_number.length + ' digits (Ace tickets have 7): a staple may hide a digit, check the tag');
+    // Every Ace ticket seen so far is 7 digits; a staple over the first digit is the usual cause.
+    reasons.push('Ticket # has ' + x.ticket_number.length + ' digits (Ace tickets have 7): ' +
+      (x.ticket_number.length <= 5 ? 'it may be only the handwritten last digits' : 'a staple may hide a digit') + ', check the tag');
   }
   if (!x.store && (!x.sticker_color || x.sticker_color === 'none')) reasons.push('No store');
   if (!x.last_name) reasons.push('No customer name');

@@ -109,6 +109,120 @@ var RATES = {
   pet:        { material: 0.25, labor: 0.22 }
 };
 var FLAG_COLOR = '#fff3c4';
+var HINT_COLOR = '#fdf6dd';
+
+/** Display severity only. Money/placement and unknown reasons fail closed to row review. */
+function reviewTier_(reason) {
+  var r = String(reason || '');
+  var sequence = /tag_count|tag_index|tag x of n|x of n|\bqty( box)?\b[^.]*\b\d+ of \d+|\bqty box\b/i;
+  var serious = /(?:^|[^a-z])(?:amount|cost|charge|fee)s?(?:[^a-z]|$)|inches|\$|price|earning|\bbill(?:ed|able|ing)\b|screening|lb earn|\bparts\b|part sku|unrecognized part|\blabor\b|\bextras?\b|group|receipt|reserved|unposted|unit needs|window|pane|thermopane|build|frame|screens|store|sticker|\bfull\b|duplicate|already scanned|material|glass|acrylic|routed|layout|type is unknown|not a tag|refund|credit|redo|warranty|cancel|no charge|no record|spline-reference|literal (?:qty|row)|pending|interrupted|not placed|unplaced|reconcil|\bpartial\b|original scan/i; // "partially uncertain" OCR is not a partial save
+  if (/^Correction\/refund:/i.test(r)) {
+    var what = r.replace(/^Correction\/refund:\s*/i, '');
+    if (serious.test(what) || /size|inch|quantity/i.test(what)) return {tier:'row'};
+    if (sequence.test(what)) return {tier:'cell',field:'SEQUENCE'};
+    if (/\bqty\b/i.test(what)) return {tier:'row'};
+    if (/ticket|tag (number|#)/i.test(what)) return {tier:'cell',field:'TICKET'};
+    if (/phone|name/i.test(what)) return {tier:'log'};
+    return {tier:'row'};
+  }
+  if (/^Ticket # /.test(r)) return {tier:'cell',field:'TICKET'}; // digit-count and ticket-book hints (may say "store")
+  if (/Ticket already on/i.test(r) || serious.test(r)) return {tier:'row'};
+  if (/in Scans only until the sequence-column migration/.test(r)) return {tier:'log'};
+  if (sequence.test(r)) return {tier:'cell',field:'SEQUENCE'};
+  if (/\bqty\b|quantity/i.test(r)) return {tier:'row'};
+  if (/phone|area code/i.test(r)) return {tier:'log'};
+  if (/ticket/i.test(r)) return {tier:'cell',field:'TICKET'};
+  if (/date|tag year|century/i.test(r)) return {tier:'cell',field:'DATE_IN'};
+  if (/no customer name|customer name|last name|\bname\b/i.test(r)) return {tier:'cell',field:'NAME'};
+  if (/width|height|size|spline total|total .*digit|sku .*(unclear|handwriting)/i.test(r)) return {tier:'log'};
+  return {tier:'row',unknown:true};
+}
+
+function appendReviewNote_(cell, note) {
+  var existing = cell.getNote() || '';
+  if (existing === note || existing.endsWith('\n\n' + note)) return;
+  cell.setNote(existing ? existing + '\n\n' + note : note);
+}
+
+/**
+ * Each store uses sequential ticket books (Homer 8169xxx, Downers Grove 8159xxx, ...). When the read
+ * ticket isn't near any 7-digit ticket already on that store's tab, suggest the one-digit fix that is
+ * (a staple hiding the first digit was the most common October correction). Never changes the value.
+ */
+function ticketBookHint_(sh, layout, ticket) {
+  var t = String(ticket || '');
+  if (!/^\d{4,7}$/.test(t)) return null;
+  var known = [];
+  ['screens', 'windows'].forEach(function (block) {
+    var end = block === 'screens' ? screenBlockEnd_(sh) : WINDOW_LAST_ROW;
+    sh.getRange(2, layout[block].TICKET, end - 1, 1).getValues().forEach(function (r) {
+      var v = String(r[0]).trim(); if (/^\d{7}$/.test(v)) known.push(Number(v));
+    });
+  });
+  if (known.length < 2) return null;
+  var near = function (s) { var n = Number(s); return known.some(function (k) { return Math.abs(k - n) <= 300; }); };
+  if (t.length === 7 && near(t)) return null;
+  if (t.length <= 5) return shortTicketHint_(t, known, near);
+  var cands = {};
+  for (var p = 0; p <= t.length; p++) for (var d = 0; d <= 9; d++) {
+    var c = t.length === 6 ? t.slice(0, p) + d + t.slice(p) : (p < 7 ? t.slice(0, p) + d + t.slice(p + 1) : null);
+    if (c && c.length === 7 && c !== t && near(c)) cands[c] = true;
+  }
+  // Rank by how many of the store's tickets each candidate sits near; a clear winner beats a stray misread.
+  var score = function (c) { var n = Number(c); return known.filter(function (k) { return Math.abs(k - n) <= 300; }).length; };
+  var list = Object.keys(cands).sort(function (a, b) { return score(b) - score(a); });
+  var prefixes = {}; known.forEach(function (k) { var p4 = String(k).slice(0, 4); prefixes[p4] = (prefixes[p4] || 0) + 1; });
+  var book = Object.keys(prefixes).sort(function (a, b) { return prefixes[b] - prefixes[a]; })[0] + 'xxx';
+  if (list.length > 1 && score(list[0]) >= 2 * score(list[1]) && t.length === 7) list = [list[0]];
+  if (list.length > 1 && t.length === 6 && score(list[0]) >= 2 * score(list[1]) && score(list[0]) >= 3) list = [list[0]];
+  if (list.length === 1) return 'Ticket # ' + t + (t.length === 6 ? ' is missing a digit' : ' looks off for this store') +
+    ' (' + book + '): likely ' + list[0] + ', check the tag';
+  if (list.length > 1 && list.length <= 10 && t.length === 6) {
+    var pattern = list[0].split('').map(function (ch, i) { return list.every(function (c) { return c[i] === ch; }) ? ch : '_'; }).join('');
+    if ((pattern.match(/_/g) || []).length === 1) return 'Ticket # ' + t + ' is missing a digit: likely ' + pattern + ' (this store: ' + book + '), check the tag';
+  }
+  if (list.length && t.length === 6) return 'Ticket # ' + t + ' is missing a digit; this store\'s tickets look like ' + book + ', check the tag';
+  return null;
+}
+
+/**
+ * A 4- or 5-digit ticket is usually just the handwritten last digits (Plainfield, 2026-10-22: tickets should
+ * be all 7). Suggest the full number from the store's ticket series; when two series share those last
+ * digits, name both. Never changes the value.
+ */
+function shortTicketHint_(t, known, near) {
+  var series = {};
+  known.forEach(function (k) { var c = String(k).slice(0, 7 - t.length) + t; if (near(c)) series[c] = true; });
+  var list = Object.keys(series).sort();
+  var what = 'Ticket # ' + t + ' looks like only the last ' + t.length + ' digits';
+  if (list.length === 1) return what + ': likely ' + list[0] + ', check the tag';
+  if (list.length > 1 && list.length <= 3) return what + ': could be ' + list.join(' or ') + ' (more than one ticket series), check the tag';
+  return null;
+}
+
+/** Row notes, one-cell hints or Scans-only details; never clear existing data or unrelated notes. */
+function showReview_(sh, row, c, flags) {
+  var rowFlags = [], cells = {};
+  flags.forEach(function(f) {
+    var t = reviewTier_(f);
+    if (t.tier === 'row') rowFlags.push(f);
+    else if (t.tier === 'cell') {
+      var col = c[t.field] || c.NAME;
+      (cells[col] = cells[col] || []).push(f);
+    }
+  });
+  if (rowFlags.length) sh.getRange(row,c.DATE_IN,1,c.LB_EARN-c.DATE_IN+1).setBackground(FLAG_COLOR);
+  Object.keys(cells).forEach(function(key) {
+    var col = Number(key);
+    if (col === c.NAME && rowFlags.length) return;
+    var cell = sh.getRange(row,col);
+    if (!rowFlags.length) cell.setBackground(HINT_COLOR);
+    appendReviewNote_(cell,'Glance at this value:\n- ' + cells[key].join('\n- '));
+  });
+  var nameNotes = rowFlags.concat(rowFlags.length ? cells[c.NAME] || [] : []);
+  if (nameNotes.length) appendReviewNote_(sh.getRange(row,c.NAME),'Check against the tag:\n- ' + nameNotes.join('\n- '));
+  return rowFlags.length > 0;
+}
 
 /**
  * New-build forms (per Kirsten): entered like a repair, but $9 is added to LB Earn and
@@ -120,12 +234,12 @@ var COUNTER_COL = 1; // A: row numbers 1..N mark the screens block's data rows
 
 /**
  * Windows block, 1-based columns (rows 2..250 on every tab; totals at row 254).
- * Per Kirsten: they earn $18.50 labor per pane ($27 for thermopane, unconfirmed); glass
+ * Per Kirsten (confirmed 2026-10-22): they earn $18.50 labor per pane, $27 for thermopane; glass
  * price is recorded but not earned; extras (corners, latches) and spline (only on some
  * windows) are entered by her.
  */
 var WINDOW_LAST_ROW = 250;
-var WINDOW_LABOR_PER_PANE = { standard: 18.50, thermopane: 27.00 }; // thermopane: Kirsten "I think $27?"
+var WINDOW_LABOR_PER_PANE = { standard: 18.50, thermopane: 27.00 };
 
 
 function normStoreKey_(s) {
@@ -233,7 +347,6 @@ function writeWindowRow_(sh, store, x, flags, layout) {
   flags.push('Window tag: new to the scanner, please check glass, panes and labor');
   var perPane = x.thermopane ? WINDOW_LABOR_PER_PANE.thermopane : WINDOW_LABOR_PER_PANE.standard;
   var labor = x.panes ? cents_(x.panes * perPane) : '';
-  if (x.thermopane) flags.push('Thermopane: labor at $' + perPane.toFixed(2) + '/pane (rate not confirmed)');
   if (!x.panes) flags.push('Window LB Earn not filled: panes unknown');
 
   var dates = storeDates_(x);
@@ -256,8 +369,7 @@ function writeWindowRow_(sh, store, x, flags, layout) {
   }
   applyPartsEarnings_(sh, row, c, x, true, 0);
   applyExtraLabor_(sh, row, c, x, true, labor, flags);
-  sh.getRange(row, c.DATE_IN, 1, c.LB_EARN - c.DATE_IN + 1).setBackground(FLAG_COLOR);
-  sh.getRange(row, c.NAME).setNote('Check against the tag:\n- ' + flags.join('\n- '));
+  showReview_(sh,row,c,flags);
   return { ok: true, store: store, tab: store.tab, row: row, block: 'windows', flags: flags };
 }
 
@@ -351,6 +463,8 @@ function writeToStoreTab_(ss, x, reasons) {
   // Some stores (Homer) use one ticket number for a whole group of tags, so a ticket
   // already on the tab is normal when the tag says "Qty x of N". Exact rescans are
   // caught earlier against the Scans log (Code.gs). Here we only flag the ambiguous case.
+  var bookHint = ticketBookHint_(sh, layout, x.ticket_number);
+  if (bookHint) flags.push(bookHint);
   if (ticketInStoreTab_(sh, x.ticket_number, layout) && !(x.tag_count > 1)) {
     flags.push('Ticket already on the ' + store.name + ' tab: another tag in the group, or a duplicate?');
   }
@@ -443,10 +557,7 @@ function writeToStoreTab_(ss, x, reasons) {
     }
     applyPartsEarnings_(sh, row, c, x, i === 0, isBuild ? NEW_BUILD.earningBase : 0);
     applyExtraLabor_(sh, row, c, x, i === 0, labor, flags);
-    if (flags.length) {
-      sh.getRange(row, c.DATE_IN, 1, c.LB_EARN - c.DATE_IN + 1).setBackground(FLAG_COLOR);
-      sh.getRange(row, c.NAME).setNote('Check against the tag:\n- ' + flags.join('\n- '));
-    }
+    showReview_(sh,row,c,flags);
   });
   return { ok: true, store: store, tab: store.tab, row: rows.join(', '), block: 'screens', flags: flags };
 }

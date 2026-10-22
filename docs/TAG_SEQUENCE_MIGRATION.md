@@ -1,0 +1,28 @@
+# Separate Tag x of N columns
+
+Adds tag sequence (e.g. `2 of 3`) immediately after Name in screens and windows on all eight stores in TEST and TEMPLATE. This is not Ticket #. No date, ticket/OCR, parts or pricing policy is bundled. Scans and Totals stay structurally unchanged.
+
+The adaptive writer resolves complete headers, distinguishing repeated Name/Ticket fields. Legacy and partial/migrated layouts are supported. Unknown/ambiguous headers refuse store writes and retain the scan as NOT PLACED. Formula columns are never written. Manual values in input/earning rows prevent reuse. After both native inserts, screens are Name C, Sequence D, Date out E, Ticket F; windows are Date in O, Name P, Sequence Q, Date out R, Ticket S. Counters A and former M (now N) are preserved.
+
+## Cloud execution order
+
+1. Retain recovery copies/exports and fresh inventories of TEST and TEMPLATE. Pause human edits as well as scans. Never use a stale Scans baseline.
+2. Sync **six** files: Code.gs, Extraction.gs, Workbook.gs, **Layout.gs** (new Script file named Layout), Upload.html (HTML type), appsscript.json. Deploy this adaptive revision to the existing deployment BEFORE changing columns. Preserve URL, private project, TEST target, secrets and sharing. Do not run older hardcoded code against shifted sheets.
+3. Run private **pauseTagSequenceScans_**. New admissions stop before paid calls; earlier requests can finish using the adaptive writer. Confirm in Apps Script Executions that **all prior server executions, especially older hardcoded versions, have finished**. Reload old clients as needed. A gate alone does not prove they drained.
+4. Run private **previewTagSequenceMigration_**. Its return/log provides approvalCode, per-target/store manifest and conservative backfill plan, with no names/phones/tickets. Review current headers, dimensions, formula counts, merges, frozen rows/columns and candidates. It requires distinct configured IDs, all eight stores plus Totals, recognized complete headers, numbered rows, <=100 columns, no formula errors/address-string formulas (INDIRECT/ADDRESS/OFFSET/QUERY), and no merges crossing insertion inside headers/data blocks. Footer titles can remain merged.
+5. Set nonsecret **TAG_SEQUENCE_APPROVED_PLAN** and **TAG_SEQUENCE_DRAIN_CONFIRMED** Script Properties to that exact approvalCode after review/drain. These are precondition receipts, not passwords. Do not inspect/change secret properties.
+6. Run private **applyTagSequenceMigration_**. It rechecks under the shared ScriptLock, inserts windows first then screens per store, and preserves existing data/reference positions through native insertColumnAfter. Only NEW sequence header/data format, text format, validation and 92px width are set. Existing notes, validations, widths and frozen boundaries shift with their original columns; frozen rows and native footer merge shapes are verified. No rows/columns/files are deleted or titles unmerged.
+7. Backfill rereads current Scans/destinations under lock. It fills only blank new cells with one placed record matching store/section/row/ticket/name and screen inches. NOT PLACED is skipped. Existing sequence/manual values/formulas stay untouched. Changed identities, duplicate candidates or indistinguishable group rows receive a note/highlight on the new sequence cell, not guessed values. Multi-frame rows can retain their shared tag sequence. No old ticket/OCR data is corrected or rescanned.
+8. Successful apply clears the active-migration marker but **keeps admission paused**. Compare actual calculated Totals, all formulas, both counters, old values/notes/validations/freezes, Joliet's shifted Other formula and the new sequence fields with recovery inventories. Then run private **resumeTagSequenceScans_**, which requires completed targets and no pending journal/errors before reopening admission.
+
+## Failure / retry
+
+The journal **TAG_SEQUENCE_JOURNAL** is saved before each native insert. **TAG_SEQUENCE_MIGRATION_ACTIVE** records approved targets and baseline formula counts. Failure retains pause/gate/journal. A previously admitted adaptive request reaching a failed upgrade is preserved in Scans without touching store cells.
+
+Inspect the error, then rerun with the SAME approved markers. Recovery recognizes exact original headers, the exact new blank column, or its expected header; it finishes without duplicate insertion. Unexpected headers/dimensions/new-column values, target changes or formula-count drift stop instead of overwriting. Completed reruns return already-migrated. There is no destructive automatic rollback: retain the recovery export/copy and prefer verified journaled completion. Never blindly clear gates/journals, delete inserted columns, deploy an older hardcoded writer, or rescan merely for backfill.
+
+ScriptLock coordinates script writers, not human edits. Cells are reread immediately before backfill writes, but Google Sheets offers no atomic compare-and-set against a simultaneous human edit; keep human edits paused. Execution timeouts are possible, so use the journal to resume.
+
+## Offline checks
+
+Run `node tests/offline.test.cjs`, `node tests/upload-ui.test.cjs`, and `node tests/sequence-migration.test.cjs`. Migration tests cover both targets/eight stores/both blocks, legacy/partial layouts, simulated native formula and Totals shifts, values/notes/validations/counters/frozen panes/footer titles, idempotence, interruption, fresh drained scans, identity changes, ambiguous/manual backfill and duplicates. No Google/customer/credential/API data is used. Real Google calculation/native-preservation behavior still requires cloud post-checks; the fake is not a calculation engine.

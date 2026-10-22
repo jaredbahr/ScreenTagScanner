@@ -29,6 +29,25 @@ function partsScope_(x, group) {
   }
   return JSON.stringify([st.tab,String(x.ticket_number),'tag',tagOf_(x),x.width_in,x.height_in,x.billable_inches,x.item_type]);
 }
+/**
+ * Spring pins are always $2.00 each to the customer (Kirsten, 2026-10-22), so a pins line with no
+ * quantity but a dollar amount ("580602 $2.00") tells us the count. Only used when no quantity is written.
+ */
+var PIN_CUSTOMER_PRICE = 2.00;
+function pinQuantityFromPrice_(raw, literalText) {
+  var lines=[String(raw||'')].concat(String(literalText||'').split('\n').filter(function(l){return /\b580602\b/.test(l);}));
+  // "3rd pin $2.00" means three pins in total, not one: ordinals stay manual (see ordinal-parts tests).
+  if(lines.some(function(l){return /\b\d+(?:st|nd|rd|th)\b|\b(?:first|second|third|fourth|another|extra|additional)\b/i.test(l);}))return null;
+  for(var i=0;i<lines.length;i++){
+    var amounts=(lines[i].replace(/\b580602\b/g,' ').match(/(?:^|[^\d.])\$?(\d{1,3}\.\d{2})(?![\d.])/g)||[])
+      .map(function(a){return Number(a.replace(/[^\d.]/g,''));});
+    if(!amounts.length)continue;
+    var q=amounts[amounts.length-1]/PIN_CUSTOMER_PRICE; // the last amount is the line total
+    if(Number.isInteger(Math.round(q*100)/100)&&q>=1&&q<=50)return {quantity:Math.round(q),amount:amounts[amounts.length-1]};
+    return null;
+  }
+  return null;
+}
 function calculateParts_(x) {
   var laborLines=x._extra_labor_plan ? x._extra_labor_plan.recognized : [];
   if(laborLines && laborLines.length) {
@@ -36,6 +55,12 @@ function calculateParts_(x) {
     ['extras','group_extras'].forEach(function(k){x[k]=String(x[k]||'').split('\n').filter(function(line){return laborLines.indexOf(line.trim())<0;}).join('\n');});
   }
   var plan={items:[],flags:[],posted:[],references:[]},parts=Array.isArray(x.parts)?x.parts:[];
+  var literalAll=[x.extras||'',x.group_extras||''].join('\n'),derivedPins=false;
+  parts=parts.map(function(p){
+    if(!p||String(p.sku||'').trim()!=='580602'||Number.isInteger(p.quantity)&&p.quantity>=1)return p;
+    var d=pinQuantityFromPrice_(p.raw,literalAll);if(!d)return p;
+    derivedPins=true;return Object.assign({},p,{quantity:d.quantity,derived:'$'+d.amount.toFixed(2)+' at $'+PIN_CUSTOMER_PRICE.toFixed(2)+' each'});
+  });
   if((String(x.extras||'').trim()||String(x.group_extras||'').trim())&&!parts.length){
     plan.flags.push('Literal extras have no structured parts evidence: verify quantity and earnings manually');
   }
@@ -44,7 +69,10 @@ function calculateParts_(x) {
     plan.flags.push('Literal extras include a parts SKU missing from structured evidence; reconcile remaining earnings manually');
   }
   if(parts.length>30){plan.flags.push('More than 30 parts lines: earnings need manual review');return plan;}
-  if(parts.length&&Array.isArray(x.unclear)&&x.unclear.some(function(f){return /part|extra|pin|sku|quantity/i.test(String(f));})){
+  // A missing pins quantity that the $2.00 price settled is no longer a doubt.
+  var unclearParts=(Array.isArray(x.unclear)?x.unclear:[]).filter(function(f){f=String(f);
+    return /part|extra|pin|sku|quantity/i.test(f)&&!(derivedPins&&/580602|\bpins?\b/i.test(f)&&/quantity|\bqty\b/i.test(f)&&!/digit|handwrit|misread|identity/i.test(f));});
+  if(parts.length&&unclearParts.length){
     plan.flags.push('Parts quantity/identity was flagged unclear: earnings need manual review');return plan;
   }
   var counts={};parts.forEach(function(p){if(p&&typeof p.sku==='string'){var s=p.sku.trim();counts[s]=(counts[s]||0)+1;}});
@@ -65,7 +93,11 @@ function calculateParts_(x) {
     var groupText=String(x.group_extras||'').trim(),groupSkus=groupText.match(/\b\d{5,7}\b/g)||[];
     // A group field is independent evidence: never let a contradictory per-tag boolean charge each sibling.
     // Explicit unrelated group SKUs can coexist with a genuinely separate per-tag part.
-    var literalGroup=groupPartsLine_(String(p.raw||''))||!!groupText&&(!groupSkus.length||groupSkus.indexOf(sku)>=0);
+    // Group text without SKUs only counts when it is a real whole-group instruction ("pins on all frames")
+    // about this part; a stray comment like "missing frame spreader" must not hold every part on the tag.
+    var words=function(t){return (String(t).toLowerCase().match(/[a-z]{4,}/g)||[]).map(function(w){return w.replace(/s$/,'');});};
+    var aboutThis=words(groupText).some(function(w){return w!=='frame'&&w!=='screen'&&words(ref.name+' '+raw).indexOf(w)>=0;});
+    var literalGroup=groupPartsLine_(raw)||!!groupText&&(groupSkus.length?groupSkus.indexOf(sku)>=0:groupPartsLine_(groupText)&&aboutThis);
     if(p.group_wide!==true&&literalGroup){
       plan.flags.push('SKU '+sku+' group/per-tag evidence disagrees: earnings held for manual allocation');return;
     }
@@ -81,7 +113,9 @@ function calculateParts_(x) {
     var group=p.group_wide===true||groupPartsLine_(String(p.raw||'')),scope=partsScope_(x,group);
     if(group&&Array.isArray(x.unclear)&&x.unclear.some(function(f){return /tag_count|tag_index|sequence/i.test(String(f));}))scope='';
     if(!scope){plan.flags.push('Group/part identity is uncertain: allocate earnings manually');return;}
-    plan.items.push({sku:sku,name:ref.name,quantity:p.quantity,rate:ref.rate,unit:ref.unit,group:group,scope:scope,amount:cents_(p.quantity*ref.rate)});
+    var item={sku:sku,name:ref.name,quantity:p.quantity,rate:ref.rate,unit:ref.unit,group:group,scope:scope,amount:cents_(p.quantity*ref.rate)};
+    if(p.derived)item.derived=p.derived;
+    plan.items.push(item);
   });
   return plan;
 }
@@ -94,7 +128,8 @@ function partsReceipts_(text) {
       parsed.forEach(function(r){
         var ref=r&&Object.prototype.hasOwnProperty.call(PART_EARNINGS,r.sku)?PART_EARNINGS[r.sku]:null;
         var scope,client;try{scope=JSON.parse(r&&r.scope);client=JSON.parse(r&&r.client);}catch(err){}
-        var valid=ref&&Array.isArray(scope)&&scope.length>=3&&scope[0]===r.tab&&sequenceIdentity_(scope[1])===r.ticket&&
+        var sameTab=Array.isArray(scope)&&(scope[0]===r.tab||STORES.some(function(st){return st.tab===scope[0]&&st.name===r.tab;}));
+        var valid=ref&&Array.isArray(scope)&&scope.length>=3&&sameTab&&sequenceIdentity_(scope[1])===r.ticket&&
           (r.group?['group','build-form'].indexOf(scope[2])>=0:scope[2]==='tag')&&
           Array.isArray(client)&&client.length===3&&client.every(function(v){return typeof v==='string';})&&
           !!(client[1]||client[0])&&r.customer===(client[1]||client[0])&&/^\d*$/.test(client[2])&&
@@ -112,22 +147,27 @@ function partsReceipts_(text) {
 }
 function preparePartsEarnings_(ss,x) {
   var plan=calculateParts_(x),st=resolveStore_(x).store;if(!st||!plan.items.length)return plan;
-  var sh=storeSheet_(ss, st),layout;try{layout=storeLayout_(sh);}catch(err){plan.flags.push('Layout must be reviewed before parts earnings');plan.items=[];return plan;}
-  var found=[];
+  var sh=storeSheet_(ss,st),layout;try{layout=storeLayout_(sh);}catch(err){plan.flags.push('Layout must be reviewed before parts earnings');plan.items=[];return plan;}
+  var found=[],held=[];
   ['screens','windows'].forEach(function(block){
     var c=layout[block],earning=block==='screens'?c.EARNING:c.OTHER_EARN,end=block==='screens'?screenBlockEnd_(sh):WINDOW_LAST_ROW;
-    var notes=sh.getRange(2,earning,end-1,1).getNotes();notes.forEach(function(r,i){
+    var notes=sh.getRange(2,earning,end-1,1).getNotes(),ticket=sequenceIdentity_(x.ticket_number);
+    notes.forEach(function(r,i){
+      var row=i+2;
       partsReceipts_(r[0]).forEach(function(receipt){
-        if(receipt.invalid){plan.flags.push('Existing earnings receipt needs review; no new automatic allocation');return;}
-        var row=i+2,current=sh.getRange(row,earning).getValues()[0][0];
-        if(receipt.tab!==st.tab||receipt.block!==block||receipt.row!==row||
-          receipt.customer!==sequenceIdentity_(sh.getRange(row,c.NAME).getValues()[0][0])||
-          receipt.ticket!==sequenceIdentity_(sh.getRange(row,c.TICKET).getValues()[0][0])||
-          receipt.status==='posted'&&current!==receipt.expectedTotal){
-          plan.flags.push('Existing earnings receipt does not match its store row; reconcile manually');return;
+        // A receipt only matters to this scan when it is about the same ticket. Kirsten correcting a
+        // name, ticket or amount on another row is her call and never blocks the rest of the tab
+        // (2026-10-21: one edited Downers Grove row had silently stopped every later parts earning).
+        var rowTicket=sequenceIdentity_(sh.getRange(row,c.TICKET).getValues()[0][0]);
+        if(receipt.invalid){
+          if(rowTicket===ticket)held.push('An earlier earnings note for this ticket was changed by hand; enter parts earnings manually');
+          return;
         }
-        found.push(Object.assign({},receipt,{tab:st.tab,block:block,row:i+2,
-          paid:current===receipt.expectedTotal}));
+        var current=sh.getRange(row,earning).getValues()[0][0];
+        var edited=(receipt.tab!==st.tab&&receipt.tab!==sh.getName())||receipt.block!==block||receipt.row!==row||
+          receipt.customer!==sequenceIdentity_(sh.getRange(row,c.NAME).getValues()[0][0])||
+          receipt.ticket!==rowTicket||receipt.status==='posted'&&current!==receipt.expectedTotal;
+        found.push(Object.assign({},receipt,{block:block,row:row,paid:!edited&&current===receipt.expectedTotal,edited:edited}));
       });
     });
   });
@@ -135,19 +175,20 @@ function preparePartsEarnings_(ss,x) {
   plan.items=plan.items.filter(function(item){
     var prior=found.filter(function(r){return r.scope===item.scope&&r.sku===item.sku;})[0];
     if(!prior)return true;
+    if(prior.edited){plan.flags.push('Earlier row for this part was edited by hand ('+prior.block+' row '+prior.row+'); add these earnings manually');return false;}
     var sameClient=prior.client===partsClient_(x);plan.references.push({item:item,prior:prior,sameClient:sameClient});
     if(!sameClient)plan.flags.push('Parts group customer identity differs from the earlier receipt; earnings held for manual review');
     if(!prior.paid)plan.flags.push('Parts allocation is pending on an earlier row; reconcile it before adding earnings');
     if(prior.quantity!==item.quantity||prior.amount!==item.amount)plan.flags.push('Parts quantity/rate differs from the earlier receipt; no additional earnings added');
     return false;
   });
-  if(plan.flags.some(function(f){return /Existing earnings receipt/.test(f);}))plan.items=[];
+  if(held.length){plan.flags.push(held[0]);plan.items=[];}
   return plan;
 }
 function applyPartsEarnings_(sh,row,c,x,firstRow,base) {
   var plan=x._parts_plan;if(!plan)return;
   var earning=x.item_type==='window'?c.OTHER_EARN:c.EARNING,range=sh.getRange(row,earning),note=range.getNote(),lines=[];
-  plan.items.forEach(function(item){lines.push('SKU '+item.sku+' '+item.name+': '+item.quantity+' '+item.unit+' × $'+item.rate.toFixed(2)+' = $'+item.amount.toFixed(2)+(item.group?' total for the whole group; credit once':' total for this tag/form; credit once'));});
+  plan.items.forEach(function(item){lines.push('SKU '+item.sku+' '+item.name+': '+item.quantity+' '+item.unit+(item.derived?' (from '+item.derived+')':'')+' × $'+item.rate.toFixed(2)+' = $'+item.amount.toFixed(2)+(item.group?' total for the whole group; credit once':' total for this tag/form; credit once'));});
   plan.references.forEach(function(ref){lines.push(ref.sameClient===false?'SKU '+ref.prior.sku+': customer identity conflicts with an earlier group receipt; earnings held for manual allocation.':
     'SKU '+ref.prior.sku+': $'+ref.prior.amount.toFixed(2)+' whole-group/tag total '+(ref.prior.paid?'already recorded':'PENDING review')+' on '+ref.prior.tab+' '+ref.prior.block+' row '+ref.prior.row+'. No duplicate amount added.');});
   if(!firstRow&&plan.posted.length)lines.push('Parts total is recorded on the first row of this form; no duplicate amount added.');

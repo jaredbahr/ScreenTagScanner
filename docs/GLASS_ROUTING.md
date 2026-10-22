@@ -1,0 +1,19 @@
+# Glass/acrylic routing and literal extras
+
+`Routing.gs` adds a classification-only exact reference: 74 supplied glass/acrylic/mirror/gas-light SKUs plus four window-labor SKUs (`580500` thermopane, `580501` putty wood, `580502` putty aluminum/steel, `580503` aluminum/vinyl insert). No reference prices, availability decisions, new parts rates or earnings are encoded. Historically cancelled annotations in the reference do not establish current availability.
+
+Sync all nine runtime files listed in [PHONE_UPLOAD.md](PHONE_UPLOAD.md). The schema includes literal structured parts alongside job/group evidence; nullable union count remains within 16. The sequence migration order still applies.
+
+An exact listed SKU, or glass/plexiglass/acrylic/mirror written as the job material (`job_evidence`), routes to windows. Free-text notes never do: "for sliding glass door" is a patio screen, and "glass door", "fiber-glass"/"fibre-glass" are not glass evidence (2026-10-13). Filled job evidence routes even on a generic Screen/Window Repair form. Fiberglass/fibre glass mesh and a generic printed form label are not glass evidence. Generic preprinted/unfilled SKU lists are excluded. Exact matching never treats `13234` as listed `13235`; independent written glass evidence can classify an unlisted SKU. Tempered and double-strength glass do not imply thermopane. Unknown item types without sufficient evidence stay NOT PLACED for review; they no longer fall through to screens. Routing corrections and all window placements are reviewed.
+
+Standard glass/acrylic material and window labor are separated from extras to avoid counting existing base amounts twice. Extras evidence stays literal. The user confirmed PK means earnings and spring pins earn $0.50 each: 35 explicit pins earn $17.50 total. [PARTS_EARNINGS.md](PARTS_EARNINGS.md) documents approved exact SKUs, unit checks, uncertain quantities and build overlaps. No glass-reference prices enter the calculations.
+
+Whole-group parts earnings are credited once per recognized group, with a total/reference note on each sibling. Tag sequence never supplies parts quantity. Receipt reservations prevent recredit after interrupted writes. Changed quantities, uncertain group identity and incompatible units need manual reconciliation; raw evidence remains in Scans.
+
+## Historical misroutes: review only
+
+Run private **previewMisroutedGlassRepairs_** after pausing admissions/draining executions if historical inspection is needed. It reports candidate store/screen-row/Scans-row coordinates, destination identity match and whether screening/labor billing is present. It never moves, clears or corrects cells and never recalculates historical prices or panes. No names/phones/tickets are printed.
+
+The cloud owner must reread the actual candidate immediately before any approved repair: confirm original ticket/name, notes/evidence, header-derived source/destination fields and existing manual values. Retain a recovery copy/export. Do not repair an identity-changed or billed row automatically. For an unbilled confirmed glass job, place the verified record in the current windows block with glass/panes/labor fields requiring human confirmation, preserve notes/sequence/date values, and explicitly reconcile the original screen row and Scans placement receipt. Do not invent OCR digits, glass prices, pane count, Date in/out semantics, or earnings. This code provides a dry run, not authority to erase an old row; the live correction is a separate reviewed cloud step.
+
+Offline checks: `node tests/glass-routing.test.cjs` plus the server, UI and sequence migration suites. Synthetic tests cover all exact SKUs, no near-matches, printed/unfilled evidence, fiberglass/tempered distinctions, unknown routing, literal PK parts, once-per-group instructions and read-only historical repair preview. They establish deterministic code behavior, not real-image OCR accuracy or a live Google deployment.

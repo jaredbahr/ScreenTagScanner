@@ -1,0 +1,175 @@
+# Changelog
+
+Notable changes, newest first. Versions are `EXTRACTION_VERSION` in `apps-script/Extraction.gs`
+(shown by `/exec?health=1`). The phone page's **What's new** view carries the plain-language version
+of the same notes. No customer data appears here.
+
+Google deployments are recorded as GitHub issues labelled `deployment` (see
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)). Versions 1–6 were recorded in the archived
+[docs/AUDIT_LEDGER.md](docs/AUDIT_LEDGER.md).
+
+From 2026-10-13 to 2026-10-22 there were two lines: this default branch (development) and Codex's stacked
+PRs #2–#6 (what was deployed to Google, versions 7–11). Both used version numbers 0.13.13–0.13.18 for
+different changes. They were joined in 0.13.19; both histories are listed below.
+
+## 0.13.19 — 2026-10-22
+- Joined the default branch with the deployed line (Codex PRs #2–#6, Google version 11). One source again:
+  twelve production files, including full-workbook backups, monthly Totals PDFs, additional labor,
+  scan leases and store-alias safeguards, plus everything below from the default branch (Kirsten's
+  2026-10-22 answers, ticket-book hints, scoped parts receipts, troubleshooting photos, What's new, CI).
+- Review levels: Codex's version kept (appends to existing notes, money wording wins), with ticket-book hints
+  checked first and "partially uncertain" OCR no longer mistaken for a partial save.
+- Codex's release gate kept (`npm run release:check`, `npm run release:validate`); it now allows the
+  `tests` workflow, which is free on this public repository.
+
+## Default-branch line
+
+### 0.13.18 — 2026-10-22
+Kirsten's answers of 2026-10-22, built:
+- Window LB Earn filled at $18.50 per pane ($27 thermopane, now confirmed): panes from the window labor line's quantity, or one pane for a single glass line. Previously blank on every real window tag.
+- Spring pins with no quantity written are counted from the $2.00-each customer price ("580602 $2.00" = 1 pin = $0.50 earned).
+- A 4–5 digit ticket (only the handwritten last digits) gets a note with the likely full 7-digit number from the store's series, or both candidates when two series match. The prompt prefers the full printed number.
+
+### 0.13.17 — 2026-10-22
+- Daily scan cap default raised from 100 to 300 (busy months average ~75/day); Console spend limit guidance $40/month.
+- Process: GitHub Actions runs every test suite and a customer-data guard on each push and pull request; issue, deployment and PR templates; CONTRIBUTING, deployment runbook, this changelog.
+
+### 0.13.16 — 2026-10-22
+- Troubleshooting photos (`SAVE_IMAGES=true`): private Drive folder, file names without customer names, a failed photo save never stops a scan, 30-day cleanup runs daily after a scan instead of depending on a trigger.
+- **What's new** view on the phone page.
+
+### 0.13.15 — 2026-10-22
+- Fixed: one hand-corrected parts earning blocked automatic parts earnings for the whole store tab. A mismatched earnings receipt now only holds items for the same ticket.
+- Fixed: earnings receipts on tabs named by store were treated as invalid.
+- Ticket-book hints: a ticket that doesn't fit the store's sequential ticket numbers gets a cell note with the likely one-digit fix (never changed automatically).
+- Possible-duplicate flag for a tag rescanned with its ticket read differently.
+
+### 0.13.14 — 2026-10-21
+- Parts on attached Pay Cashier slips are extracted and earned.
+- A one-screen comment in `group_extras` no longer holds the tag's parts or raises the group flag.
+
+### 0.13.13 — 2026-10-21
+- Three review levels: row yellow only for money/placement problems; one-value doubts tint a single cell; phone-number doubts stay in the Scans tab. On October's real scans: 56 of 78 rows yellow before, 11 after, with every corrected ticket still marked.
+- Store tabs found by template number ("18559-(500)") or store name ("Downers Grove").
+
+### 0.13.12 — 2026-10-21
+- Size/QTY disagreements settled from the tag: dollar totals that agree with width + height, or a clear majority of QTY rows. Contradictions still hold billing. New plain-string fields `qty_rows`, `line_totals`.
+
+### 0.13.10 – 0.13.11 — 2026-10-19/20
+- Tickets that aren't 7 digits are flagged; prompt reads handwritten parts lines in blank rows.
+- Start new month creates the workbook in `MONTH_FOLDER_ID` and inherits that folder's sharing.
+
+### 0.13.8 – 0.13.9 — 2026-10-14
+- Start new month shares the new workbook with `MONTH_EDITORS` before it becomes active.
+- The Scans log is kept as the last tab.
+
+### 0.13.6 – 0.13.7 — 2026-10-13
+- Glass routing uses written material and listed SKUs only, never free-text notes.
+- Interrupted saves are journaled (Scans row written first as PENDING), so a retry can't duplicate a store row.
+- Unplaced scans highlighted orange and counted on later phone replies.
+- Date in = written tag date (missing year = scan year); Date out = scan date. Deployed as Version 6.
+
+### 0.12.x – 0.13.5 — 2026-10-12/13
+- Separate **Tag x of N** column with a journaled, header-adaptive migration.
+- Glass/acrylic routing by exact SKU; approved parts earnings credited once with recoverable receipts.
+- Manual month rollover from Settings; failure emails removed. Deployed as Versions 4–5.
+
+### 0.11.x — 2026-10-12/13
+- Phone upload page (camera-first, one screen, remembered password) and shared scan admission limits.
+- Pay Cashier slips that add parts go to extras; red/orange sticker lookalikes. Deployed as Versions 1–3.
+
+### 0.10.x and earlier — 2026-10-11/12
+- Extraction prompt and schema fitted to real Ace tags; 2000 px photos; Sonnet at low effort.
+- Store-tab writer, store matching (keys, prefixes, initials, edit distance, sticker colors), rates for Screening/LB Earn, new builds, windows, group tickets.
+- Dates as serial numbers (no time-zone shift), conflicts hold billing, schema kept within 16 nullable fields, formula-injection guard on every write.
+
+## Deployed line (Codex PRs #2–#6)
+
+### 0.13.18-draft - 2026-10-21
+
+- Integrate three prospective review levels from `e1c4b68` onto deployed
+  `ac44e4e`: money/placement/unknown reasons remain row warnings, metadata hints
+  tint one cell, and phone/nonfinancial details remain in Scans.
+- Retain stronger store-name lookup and duplicate-tab rejection, all twelve
+  production modules, QTY evidence guards, labor, archives, leases and backups.
+  Do not repaint historical rows or reinterpret old review flags.
+- Prepare default-branch reconciliation with both histories and add a verified
+  release manifest, root source guidance, ancestry/module/security gates and a
+  sequential local regression runner. No paid CI or branch policy changes.
+
+### 0.13.17-draft - 2026-10-21
+
+- Integrate the new size/QTY evidence rule from `c7e7fdb` onto deployed source
+  `5ed9a8a`, retaining backups, monthly PDFs, additional labor, city-tab lookup,
+  group/rescan controls and all twelve production files.
+- On a numeric size/QTY disagreement, agreeing written totals may settle inches
+  if supported by size or a clear QTY-row majority. With no totals, a strict
+  majority of at least two QTY rows may settle. Every settlement remains flagged.
+- Preserve original readings and literal evidence in review notes; hold explicit
+  conflicts, corrections, malformed/implausible evidence and contradictory totals.
+  Rates, scopes, scan caps, workbook columns and installed triggers are unchanged.
+- Deployed version 10 remains the baseline until a separate deployment receipt.
+
+### 0.13.16-draft - 2026-10-20
+
+- Add full native workbook backups to a separate owner-only Drive folder,
+  nightly around 2 a.m. Chicago time and before month switches. Keep all copies.
+- Serialize copies with scans/rollover, recover uncertain creation without blind
+  duplication, and keep active/template pointers and live cells untouched.
+- Add owner-run idempotent setup, Settings completion/review status, and offline
+  backup/rollover regressions. Deployment and installation need separate receipts.
+
+### 0.13.15-draft - 2026-10-20
+
+- Reconcile handwritten highlighted parts and seven-digit ticket safeguards from
+  `07afdac` onto the newer 0.13.14 source, preserving pricing, review holds,
+  duplicate controls, additional labor and monthly archives.
+- Warn on non-seven-digit numeric ticket readings without guessing or padding
+  digits. Add synthetic offline regression fixtures and source provenance.
+- This source change does not itself change the recorded version 8 deployment.
+
+### 0.13.14-draft - 2026-10-19
+
+- Prevent duplicate base charges when the same tag is rescanned with a numeric, city-name or sticker-resolved store alias. Match the canonical placed store rather than raw OCR text, while retaining ticket, tag sequence and dimensions as identity constraints. Different known stores remain distinct.
+- Document the requested clean October beta reset with existing-ID reuse, coordinated test-cell/log/receipt cleanup, state reconciliation and recoverable duplicate-file cleanup. The checklist is not an executed reset.
+- Unknown-store interrupted saves remain held for review instead of risking a second placement. Correctable NOT PLACED rows remain eligible for placement. Retry guidance now directs users to the active workbook in Settings.
+
+### 0.13.13-draft — 2026-10-19
+
+- Route explicit standalone additional LB/labor amounts to the header-resolved LB Earn column, added to calculated base labor. SKU cost-sheet items continue to use approved PK rates in Earning, including labor-like service SKUs. Never substitute customer retail prices for PK rates.
+- Keep additional labor in separate canonical-store receipts with reserve/write/posted recovery and conservative group deduplication. Formula-backed, changed, ambiguous, negated, included/total, per-unit or conflicting charges remain manual. No historical rows are retroactively edited.
+- Preserve literal LB labels, amount and scope in extraction; do not invent SKU or labor amounts. Clarify that service SKUs 580301 and 580408 use the approved job unit only when quantity is clear. No fallback unit coercion or new SKU rates.
+- Add 32 synthetic labor regressions and seven service-unit tests. These exercise prompt and post-extraction behavior, not real-image model accuracy. Raw photos, customer data, personal IDs and private evidence remain outside the repository.
+- Deployment must include the new ExtraLabor.gs file alongside MonthArchive.gs and preserve existing scopes, properties and URL. Compatible code must be deployed and old executions drained before store-tab renaming; no deployment or live rename is performed by this source update.
+
+### 0.13.12-draft — 2026-10-19
+
+- Clarify extraction of an unambiguous same-SKU additive third pin: two spring pins plus one additional third pin means three total. Require clear quantity, SKU and shared scope; retain uncertainty otherwise. Keep retail charges separate from approved PK earnings (SKU 580602 earns $0.50 each, not its example $2 retail price). No new labor/service-price inference is introduced.
+
+- Accept either the historical numbered tab or its exact city name for Downers Grove, Lockport, Plainfield, and Joliet. Mixed old/new workbooks are supported. If both aliases exist, refuse to guess before store/parts writes or template acceptance.
+- Keep canonical store identities in parts receipts and group scopes, migration journals and backfill keys. Renaming must not credit an old group twice or invalidate a reserved receipt.
+- Apply aliases consistently to scan routing, parts allocation, historical routing review, sequence migration/backfill, and monthly template validation. Totals uses existing direct references; code does not rewrite formulas or rename tabs.
+- Rename the four tabs only after compatible code is deployed and scans have drained. Preserve sheet IDs and colors (yellow, red, green, orange respectively), then verify native direct-reference updates, Totals results, formulas, and layout in both workbooks. Do not rename during a pending rollover or sequence migration.
+- Regression coverage includes all four renamed stores, mixed templates, ambiguous aliases, old/new billing receipts, interrupted migration recovery and historical backfill. Live rename/formula adjustment is a separate verification step.
+
+### 0.13.11-draft — 2026-10-19
+
+- Before activating a new month, archive only the previous workbook’s Totals sheet as a single-page PDF in the configured monthly folder. Heading uses the archived month: `P & K Window & Screen Repair September 2026`. Keep the source workbook and formulas.
+- Name new workbooks with the full month and year, such as `October 2026`. Preserve internal YYYY-MM keys, ID-bound metadata, legacy `Screens YYYY-MM` recognition, and pending-operation identities.
+- Drain live scan leases before snapshotting. Expired orphans recover automatically; a lock-protected exact lease/workbook fence prevents late writes. Flush writes before releasing the lock. Admission failures clean their own lease.
+- Journal PDF/scratch creation and reuse verified artifacts on retry. Archive failure prevents activation; uncertain creation never blindly duplicates files. Completion receipts retain scratch cleanup references.
+- Validation: 195 offline tests across eight suites; actual Google synthetic and original-template-copy archive tests. Template proof produced one Letter page, the complete heading, eight stores, and all 73 expected amounts. Verified source/template invariance, retry identity, and named-folder access. The body is compact but visually readable. No customer data or paid OCR calls were used.
+- Limits: isolated archive tests are not a full live rollover transaction; later template-format changes need their own verification. PDF page-object validation fails closed on unfamiliar encoding. Keep raw evidence, private IDs, addresses, and temporary validation helpers out of the repository/deployment.
+
+#### Template appearance maintenance (separate from code deployment)
+
+- Apply requested tab colors to the verified blank TEMPLATE by store: Downers Grove yellow, Lockport red, Plainfield green, Joliet orange, Manhattan blue, Homer Glen purple, New Lenox black, Willowbrook pink. Do not rename tabs or change their IDs, formulas, data, dimensions, or protections.
+- For currency repairs, inspect the current approved amount/total ranges first. Apply USD currency number formatting only to confirmed monetary cells; do not format dates, quantities, sequence numbers, measurements, or whole sheets indiscriminately. Preserve numeric values and formulas, then compare before/after values, formulas, and displayed amounts. Recheck a disposable copied Totals PDF after any change that affects its display.
+- Verified format-only repair on the TEMPLATE and current October workbook: Manhattan `L102:M750`; Homer Glen and New Lenox `L102:M1000`; those three stores’ `U102:V250` and `Y102:Y250`; and `W3:W250` on those three plus Downers Grove and Willowbrook. All 7,475 targeted cells per workbook were checked; only number formats changed, with values, formulas, notes, validation, and other formatting preserved. Totals endpoints and row capacities were not expanded. These repairs followed the template archive proof, so that proof does not validate their revised rendering.
+- New months inherit template formatting. Existing workbooks require a separately scoped format-only repair; deploying code does not recolor or reformat them.
+
+#### Release checklist
+
+- Recheck the remote base for concurrent changes; review the exact release commit and run all `tests/*.test.cjs` after resolving any delta.
+- Confirm monthly folder and archived-month metadata, reconcile old pending operations, stop new scans and drain all old-version executions before upgrading (they have no leases).
+- Sync all production files including `MonthArchive.gs`, preserve existing properties/scopes/deployment URL, remove temporary test helpers, then verify the deployed version. Do not start a real new month merely to test deployment.

@@ -19,7 +19,7 @@
  *   SAVE_IMAGES        optional  "true" to keep photos in Drive (default false)
  *   RETENTION_DAYS     optional  days to keep saved photos (default 30)
  *   MAX_SCANS_PER_MINUTE optional authenticated attempts per rolling minute (default 10)
- *   MAX_SCANS_PER_DAY  optional authenticated attempts per Chicago day (default 100)
+ *   MAX_SCANS_PER_DAY  optional authenticated attempts per Chicago day (default 300; busy months average ~75)
  */
 
 var SCANS_TAB = 'Scans';
@@ -124,7 +124,12 @@ function processAuthenticatedScan_(req, props) {
     var x = normalizeJobInput_(extractTag_(req.image, props));
     x._scan_ymd = admitted.scannedYmd;
     var reasons = reviewReasons_(x).concat(x.routing_review);
-    var photoUrl = props.getProperty('SAVE_IMAGES') === 'true' ? savePhoto_(req.image, scanId, x) : '';
+    var photoUrl = '';
+    if (props.getProperty('SAVE_IMAGES') === 'true') {
+      // Troubleshooting copy only: a Drive hiccup must never cost the scan itself.
+      try { photoUrl = savePhoto_(req.image, scanId, x); purgeOldPhotosDaily_(props); }
+      catch (photoErr) { scannerDiagnostic_('photo-save-failed', scanId); }
+    }
     var placed = saveScan_(x, user, reasons, photoUrl, scanId, admitted.sheetId, admitted.leaseId);
 
     if (placed.rescan) {
@@ -139,9 +144,10 @@ function processAuthenticatedScan_(req, props) {
         'Saved to the scan log only. It needs manual review.', scanId, true);
     }
     var msg = confirmationText_(x) + ' → ' + placed.store.name;
-    if (reasons.length) msg += '\n⚠️ Flagged for a double check.';
+    var rowReasons = reasons.filter(function(r) { return reviewTier_(r).tier === 'row'; });
+    if (rowReasons.length) msg += '\n⚠️ Flagged for a double check.';
     msg += waitingText_(placed.waiting, placed.waitingUnavailable);
-    return scanResult_(true, msg, spokenText_(x, reasons.length > 0), scanId, reasons.length > 0);
+    return scanResult_(true, msg, spokenText_(x, rowReasons.length > 0), scanId, rowReasons.length > 0);
   } catch (err) {
     alert_(props, user, scanId, err, req.image);
     return scanResult_(false, err.userMessage || 'Save could not be confirmed. Check the active workbook in Settings before retrying.');
@@ -177,7 +183,7 @@ function admitScan_(props, admitted) {
       return n;
     }
     var minuteLimit = limit('MAX_SCANS_PER_MINUTE', 10, 100);
-    var dailyLimit = limit('MAX_SCANS_PER_DAY', 100, 10000);
+    var dailyLimit = limit('MAX_SCANS_PER_DAY', 300, 10000);
     var now = Date.now(), day = Utilities.formatDate(new Date(now), 'America/Chicago', 'yyyy-MM-dd');
     var raw = props.getProperty('SCAN_LIMIT_STATE');
     var state = raw ? JSON.parse(raw) : { day: day, daily: 0, recent: [] };
@@ -304,15 +310,17 @@ function saveScan_(x, user, reasons, photoUrl, scanId, admittedId, leaseId) {
         formatPhone_(x.phone), x.date || '', x.width_in, x.height_in, x.billable_inches,
         x.form_type, x.material, x.screen_color, tagOf_(x), x.screens_on_tag,
         x.extras || '', [escapePartsReceiptText_([x.notes || '', groupNote].filter(Boolean).join('\n')), x._parts_plan.posted.length ? PARTS_RECEIPT + JSON.stringify(x._parts_plan.posted) : ''].filter(Boolean).join('\n'), x.has_corrections ? (x.correction_details || 'YES') : '', writtenTo,
-        why.length ? 'YES' : '', why.concat(logOnly).join('; '), photoUrl, scanId
+        needsReview_(why,writtenTo) ? 'YES' : '', why.concat(logOnly).join('; '), photoUrl, scanId
       ]);
     }
     var placed, row = 0;
     if (PropertiesService.getScriptProperties().getProperty('TAG_SEQUENCE_MIGRATION_ACTIVE')) {
       placed = { ok: false, problem: 'workbook upgrade in progress; scan kept in Scans for manual placement' };
     } else if (isExactRescan_(log, x, reasons)) {
-      placed = { ok: false, rescan: true, needsReview: reasons.length > 0, problem: 'this exact tag was already scanned' };
+      placed = { ok: false, rescan: true, needsReview: needsReview_(reasons,'RESCAN'), problem: 'this exact tag was already scanned' };
     } else {
+      var dup = possibleDoubleScan_(log, x);
+      if (dup) reasons.push(dup);
       // Log first, marked PENDING: if the store write or the final log update is interrupted,
       // a retry matches this row as an exact rescan instead of writing a second store row.
       log.appendRow(logRow(reasons.concat(['Save started; if this stays PENDING, check the store tab before rescanning'])));
@@ -333,7 +341,8 @@ function saveScan_(x, user, reasons, photoUrl, scanId, admittedId, leaseId) {
       reasons.push('Exact rescan has new unposted parts earnings; reconcile the original row manually');
       placed.needsReview = true;
     }
-    if (!placed.ok) reasons.push(placed.problem);
+    if (placed.rescan) logOnly.push(placed.problem); // routine controlled duplicate receipt, not a new row problem
+    else if (!placed.ok) reasons.push(placed.problem);
     else placed.flags.slice(reasons.length).forEach(function (f) { reasons.push(f); }); // store-tab-only flags
     writtenTo = placed.ok ? placed.store.name + ' ' + placed.block + ' row ' + placed.row : (placed.rescan ? 'RESCAN' : 'NOT PLACED');
     groupNote = x.group_extras ? (placed.ok && x._store_group_extras ? 'Group extras recorded once: ' :
@@ -345,7 +354,7 @@ function saveScan_(x, user, reasons, photoUrl, scanId, admittedId, leaseId) {
     [COL.TICKET, COL.STORE, COL.PHONE, COL.DATE, COL.TAG_OF].forEach(function (c) {
       log.getRange(row, c).setNumberFormat('@');
     });
-    log.getRange(row, 1, 1, HEADERS.length).setBackground(reasons.length ? (placed.ok || placed.rescan ? '#fff3c4' : UNPLACED_COLOR) : null);
+    log.getRange(row, 1, 1, HEADERS.length).setBackground(needsReview_(reasons,writtenTo) ? (placed.ok || placed.rescan ? '#fff3c4' : UNPLACED_COLOR) : null);
     // Advisory only: store and completion log writes have already succeeded.
     try { placed.waiting = unplacedCount_(log, row); }
     catch (err) { placed.waiting = 0; placed.waitingUnavailable = true; }
@@ -354,6 +363,13 @@ function saveScan_(x, user, reasons, photoUrl, scanId, admittedId, leaseId) {
     // Complete buffered store/log writes before rollover can acquire this lock.
     try { SpreadsheetApp.flush(); } finally { lock.releaseLock(); }
   }
+}
+
+/** Only completed placement/controlled RESCAN may suppress row review; unresolved states always need it. */
+function needsReview_(reasons, writtenTo) {
+  if (!Array.isArray(reasons)) return true;
+  if (writtenTo !== 'RESCAN' && !/ (screens|windows) row \d+(?:,\s*\d+)*$/.test(String(writtenTo))) return true;
+  return reasons.some(function(r) { return reviewTier_(r).tier === 'row'; });
 }
 
 var UNPLACED_COLOR = '#f6c7a8'; // orange: reconcile existing/partial store rows before adding anything
@@ -381,6 +397,29 @@ function waitingText_(n, unavailable) {
   if (unavailable) return '\nEarlier scan review status could not be checked. Check Scans and store tabs before adding rows.';
   return n ? '\n⚠️ ' + n + ' earlier scan' + (n === 1 ? '' : 's') + ' still need' + (n === 1 ? 's' : '') +
     ' reconciliation. See orange rows in Scans. Existing or partial store rows may already be present; add a row only after confirming it is missing.' : '';
+}
+
+/**
+ * A tag rescanned with its ticket read differently slips past isExactRescan_ (New Lenox, Oct 21:
+ * 770761 then 770261, same tag 35 minutes apart). Same store, last name, size and "x of N" on the
+ * same day with a different ticket is flagged on the row; nothing is skipped or deleted.
+ */
+function possibleDoubleScan_(log, x) {
+  var last = log.getLastRow(), who = sequenceIdentity_(x.last_name || x.customer_name);
+  if (last < 2 || !who || !x.ticket_number) return null;
+  var today = Utilities.formatDate(new Date(), 'America/Chicago', 'yyyy-MM-dd'), hit = null;
+  log.getRange(2, 1, last - 1, HEADERS.length).getValues().forEach(function (r) {
+    var at = r[0] instanceof Date ? Utilities.formatDate(r[0], 'America/Chicago', 'yyyy-MM-dd') : String(r[0]).slice(0, 10);
+    if (at === today && / (screens|windows) row /.test(String(r[COL.WRITTEN_TO - 1])) &&
+        String(r[COL.STORE - 1]).toLowerCase() === String(x.store || '').toLowerCase() &&
+        sequenceIdentity_(r[HEADERS.indexOf('Last Name')] || r[HEADERS.indexOf('Customer')]) === who &&
+        Number(r[COL.WIDTH - 1]) === Number(x.width_in) && Number(r[COL.HEIGHT - 1]) === Number(x.height_in) &&
+        String(r[COL.TAG_OF - 1]) === tagOf_(x) && String(r[COL.TICKET - 1]) !== String(x.ticket_number)) {
+      hit = 'Possible duplicate: same name, size and Tag x of N as ' + r[COL.WRITTEN_TO - 1] + ' (ticket read as ' +
+        r[COL.TICKET - 1] + '). If it is the same tag, delete one row';
+    }
+  });
+  return hit;
 }
 
 function tagOf_(x) {
@@ -422,8 +461,8 @@ function isExactRescan_(log, x, reasons) {
 function savePhoto_(imageB64, scanId, x) {
   var folders = DriveApp.getFoldersByName(PHOTO_FOLDER);
   var folder = folders.hasNext() ? folders.next() : DriveApp.createFolder(PHOTO_FOLDER);
-  var name = Utilities.formatDate(new Date(), Session.getScriptTimeZone(), 'yyyy-MM-dd_HHmm') +
-    '_' + (x.last_name || 'unknown') + '_' + scanId + '.jpg';
+  // No customer name in the file name: the Scans tab's Photo link ties it to the scan.
+  var name = Utilities.formatDate(new Date(), 'America/Chicago', 'yyyy-MM-dd_HHmm') + '_' + scanId + '.jpg';
   var blob = Utilities.newBlob(Utilities.base64Decode(imageB64), 'image/jpeg', name);
   return folder.createFile(blob).getUrl();
 }
@@ -441,7 +480,18 @@ function purgeOldPhotos_() {
   }
 }
 
-/** Run once from the editor after enabling SAVE_IMAGES. */
+/**
+ * Runs purgeOldPhotos_ at most once a Chicago day, right after a scan, so the 30-day cleanup never
+ * depends on a time-based trigger (which may not be able to call a private function).
+ */
+function purgeOldPhotosDaily_(props) {
+  var today = Utilities.formatDate(new Date(), 'America/Chicago', 'yyyy-MM-dd');
+  if (props.getProperty('PHOTO_PURGE_DAY') === today) return;
+  props.setProperty('PHOTO_PURGE_DAY', today);
+  purgeOldPhotos_();
+}
+
+/** Optional: also run the cleanup daily even on days with no scans (editor, once). */
 function installTriggers_() {
   ScriptApp.getProjectTriggers().forEach(function (t) {
     if (t.getHandlerFunction() === 'purgeOldPhotos_') ScriptApp.deleteTrigger(t);

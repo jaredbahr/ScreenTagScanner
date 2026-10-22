@@ -38,11 +38,16 @@
       color: #fff; background: #17654e; }
     .secondary { color: #17654e; background: #fff; border: 1px solid #9aaba3; }
     #retake { flex: 1; } #submit { flex: 2; font-size: 20px; }
-    .links { display: flex; justify-content: center; gap: 22px; }
+    .links { display: flex; justify-content: center; flex-wrap: wrap; column-gap: 16px; row-gap: 0; }
+    .links .link { white-space: nowrap; font-size: 14px; }
     button:disabled { opacity: .5; } :focus-visible { outline: 3px solid #c8891c; outline-offset: 2px; }
     [hidden] { display: none !important; }
     #scanner-view { display: contents; }
     #settings-view { display: flex; flex-direction: column; gap: 12px; }
+    #notes-view { display: flex; flex-direction: column; gap: 8px; height: 100%; min-height: 0; }
+    #notes-view h2 { margin: 0; } #notes-view header { display: flex; justify-content: space-between; align-items: center; }
+    .notes { overflow-y: auto; min-height: 0; flex: 1; font-size: 15px; }
+    .notes h3 { font-size: 15px; margin: 12px 0 4px; } .notes ul { margin: 0; padding-left: 20px; } .notes li { margin: 3px 0; }
     #settings-view h2, #settings-view p { margin: 0; }
     #settings-view input, #settings-view select { font: inherit; width: 100%; min-height: 46px; padding: 8px; border: 1px solid #9aaba3; border-radius: 8px; }
     #settings-view label { display: block; font-weight: 650; margin-top: 10px; }
@@ -87,8 +92,70 @@
   <div class="links">
     <button id="choose-photo" type="button" class="link" aria-controls="photo">Choose existing photo</button>
     <button id="forget" type="button" class="link" hidden>Forget password</button>
+    <button id="notes-open" type="button" class="link">What's new</button>
   </div>
 </div>
+<section id="notes-view" hidden aria-labelledby="notes-title">
+  <header><h2 id="notes-title">What's new</h2><button id="notes-back" type="button" class="link">Back</button></header>
+  <!-- Release notes: plain language, no customer names, tickets, phones or photos. Newest first. -->
+  <div class="notes">
+    <h3>0.13.19 &middot; Oct 22</h3>
+    <ul>
+      <li>Everything on this page is now combined with the features already running: nightly workbook backups, a PDF of each month's Totals, and extra labor charges.</li>
+      <li>A pin slip that says "3rd pin" is left for you to check, since it means three pins in total.</li>
+    </ul>
+    <h3>0.13.18</h3>
+    <ul>
+      <li>Window labor is filled in: $18.50 a pane, $27 for thermopane. Panes come from the labor line, or one pane when the tag has one glass line.</li>
+      <li>Spring pins with no quantity written are counted from the price ($2.00 each), so their earning fills in.</li>
+      <li>A ticket with only the last 4 digits gets a note with the likely full 7-digit number.</li>
+    </ul>
+    <h3>0.13.17</h3>
+    <ul>
+      <li>The daily scan limit is now 300, so a big batch day won't be cut off.</li>
+    </ul>
+    <h3>0.13.16</h3>
+    <ul>
+      <li>Tag photos can be kept for 30 days in a private Drive folder, to help find patterns in misreads. A failed photo save never stops a scan.</li>
+      <li>This "What's new" page.</li>
+    </ul>
+    <h3>0.13.15</h3>
+    <ul>
+      <li>Fixed: correcting one parts earning by hand had stopped automatic parts earnings for the rest of that store's tab.</li>
+      <li>A ticket that doesn't fit the store's usual ticket numbers gets a note with the likely fix (never changed automatically).</li>
+      <li>A tag scanned twice with its ticket read differently is flagged as a possible duplicate.</li>
+    </ul>
+    <h3>0.13.14</h3>
+    <ul>
+      <li>Parts written on a Pay Cashier slip (like a frame spreader) are earned automatically.</li>
+      <li>A comment about one screen no longer holds back that tag's parts.</li>
+    </ul>
+    <h3>0.13.13</h3>
+    <ul>
+      <li>Far fewer yellow rows: only money or placement problems turn a row yellow. A doubt about one value (ticket, date, Tag x of N, name) tints just that cell. Phone-number doubts stay in the Scans tab.</li>
+      <li>Store tabs work whether they're named by store or by store number.</li>
+    </ul>
+    <h3>0.13.12</h3>
+    <ul>
+      <li>When the size and the QTY disagree, the $ totals or matching QTY rows can settle the inches, so prices fill in (still marked to check).</li>
+    </ul>
+    <h3>0.13.10 &ndash; 0.13.11</h3>
+    <ul>
+      <li>Tickets that aren't 7 digits are marked (a staple often hides a digit).</li>
+      <li>Handwritten parts lines under the printed list are read and earned.</li>
+      <li>Start new month creates the new file in the shared monthly folder.</li>
+    </ul>
+    <h3>0.13.8 &ndash; 0.13.9</h3>
+    <ul>
+      <li>Start new month can share the new file automatically.</li>
+      <li>The Scans tab stays at the end of the workbook.</li>
+    </ul>
+    <h3>Earlier</h3>
+    <ul>
+      <li>One-screen scanning page, remembered password, interrupted saves never duplicate a row, unplaced scans are counted on the phone, Date in from the tag and Date out from the scan.</li>
+    </ul>
+  </div>
+</section>
 <section id="settings-view" hidden aria-labelledby="settings-title">
   <header><h2 id="settings-title">Settings</h2><button id="settings-back" type="button" class="link">Back</button></header>
   <p id="month-current" role="status" aria-live="polite">Load the current workbook before changing month.</p>
@@ -330,6 +397,9 @@ function monthLoad(loadPassword,afterLoad) {
     }).withFailureHandler(()=>{if(generation!==settingsGeneration||!settingsVisible)return;done();monthPassword.value='';monthStatus.textContent='Settings could not be loaded. Try again or contact Jared.';}).getMonthSettings({token:loadPassword});
   }catch(err){done();monthPassword.value='';monthStatus.textContent='Settings could not be loaded. Try again or contact Jared.';}
 }
+const notesView=$('notes-view'),notesOpen=$('notes-open'),notesBack=$('notes-back');
+notesOpen.addEventListener('click',()=>{if(busy||preparing)return;scannerView.hidden=true;notesView.hidden=false;notesBack.focus();});
+notesBack.addEventListener('click',()=>{notesView.hidden=true;scannerView.hidden=false;notesOpen.focus();});
 settingsOpen.addEventListener('click',()=>{
   if(busy||preparing||monthBusy)return;
   settingsVisible=true;settingsGeneration++;monthLoading=false;monthInfo=null;monthPassword.value='';monthClearIntent();

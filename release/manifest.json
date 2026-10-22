@@ -1,0 +1,98 @@
+{
+  "schemaVersion": 1,
+  "developmentBranch": "main",
+  "reconciliationBranch": "main",
+  "requiredUpstreamCommit": "5ebceb692142a7968f628b4cf841e0179e27b8cf",
+  "lastVerifiedDeployment": {
+    "sourceCommit": "5ebceb692142a7968f628b4cf841e0179e27b8cf",
+    "version": "0.13.17-draft",
+    "appsScriptVersion": 11,
+    "verifiedAtUtc": "2026-10-21T19:42:00Z",
+    "evidence": "Google version 11 runtime; earlier history in the private archive repository"
+  },
+  "requiredProductionFiles": [
+    "apps-script/Backup.gs",
+    "apps-script/Code.gs",
+    "apps-script/ExtraLabor.gs",
+    "apps-script/Extraction.gs",
+    "apps-script/Layout.gs",
+    "apps-script/Month.gs",
+    "apps-script/MonthArchive.gs",
+    "apps-script/Parts.gs",
+    "apps-script/Routing.gs",
+    "apps-script/Upload.html",
+    "apps-script/Workbook.gs",
+    "apps-script/appsscript.json"
+  ],
+  "baselineRuntimeBlobs": {
+    "apps-script/Backup.gs": "ebb93e40165fdea0e509e40e8ca9e84edd7e85bf",
+    "apps-script/Code.gs": "4e6c8059e7d00d3a143d99c8aa14065c5df9f5e1",
+    "apps-script/ExtraLabor.gs": "e0489c27eeaa0783e075a5c2688aaf60bcb73f49",
+    "apps-script/Extraction.gs": "61d210b789afee9bdde93b02a5adfeef5940f82e",
+    "apps-script/Layout.gs": "c2b21344d81e934ea7b1dc7a5607f45e68232da2",
+    "apps-script/Month.gs": "313dbc09c372695495aaa36dadda07599ccff55b",
+    "apps-script/MonthArchive.gs": "eb3a398ff452cb7c4ef208fc97582cddf2509e16",
+    "apps-script/Parts.gs": "ad806d2f57569e9ff7835f0482378f8f88a23895",
+    "apps-script/Routing.gs": "a36d75421ee67513c9c5e8d2e264d193f8628fb7",
+    "apps-script/Upload.html": "2598552d22eb3b8adebdf113dd446a72d8f88947",
+    "apps-script/Workbook.gs": "99c6b01ee0f2d93290120fa84e6a2faceb2a21dc",
+    "apps-script/appsscript.json": "af507c4c66583975efc63b989fea75ceb033c1f8"
+  },
+  "allowedPublicFunctions": [
+    "doGet",
+    "doPost",
+    "getMonthSettings",
+    "scanTag",
+    "startMonth"
+  ],
+  "requiredFunctions": {
+    "apps-script/Backup.gs": [
+      "backupActiveWorkbook_",
+      "nightlyWorkbookBackup_",
+      "backupBeforeMonthSwitch_"
+    ],
+    "apps-script/ExtraLabor.gs": [
+      "prepareExtraLabor_",
+      "applyExtraLabor_"
+    ],
+    "apps-script/MonthArchive.gs": [
+      "archiveMonthTotals_",
+      "monthScanLeases_",
+      "releaseMonthScan_"
+    ],
+    "apps-script/Extraction.gs": [
+      "settleInches_",
+      "isSettlementInches_"
+    ],
+    "apps-script/Workbook.gs": [
+      "storeSheet_",
+      "reviewTier_",
+      "showReview_"
+    ],
+    "apps-script/Code.gs": [
+      "needsReview_",
+      "isExactRescan_"
+    ]
+  },
+  "minimumTestCounts": {
+    "tests/offline.test.cjs": 51,
+    "tests/date-rules.test.cjs": 14,
+    "tests/extra-labor.test.cjs": 32,
+    "tests/glass-routing.test.cjs": 11,
+    "tests/job-unit.test.cjs": 7,
+    "tests/month-archive.test.cjs": 20,
+    "tests/month-rollover.test.cjs": 25,
+    "tests/ordinal-parts.test.cjs": 9,
+    "tests/parts-earnings.test.cjs": 23,
+    "tests/qty-evidence.test.cjs": 24,
+    "tests/reconciled-safeguards.test.cjs": 8,
+    "tests/sequence-migration.test.cjs": 19,
+    "tests/store-alias.test.cjs": 8,
+    "tests/store-rescan.test.cjs": 6,
+    "tests/upload-ui.test.cjs": 33,
+    "tests/workbook-backup.test.cjs": 26,
+    "tests/review-tiers.test.cjs": 19,
+    "tests/release-guards.test.cjs": 8
+  },
+  "allowWorkflowDefinitions": true
+}

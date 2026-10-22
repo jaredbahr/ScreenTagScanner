@@ -1,0 +1,26 @@
+name: tests
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Offline test suites (no network, no customer data)
+        run: npm test
+      - name: Customer-data guard
+        # Photos, spreadsheets and the private/ folder must never be committed.
+        run: |
+          if git ls-files | grep -Ei '^private/|\.(jpe?g|png|heic|xlsx?|xlsm|csv)$' | grep -v '^tools/extract-test/truth.example.csv$'; then
+            echo "Customer data file tracked in git (see above)"; exit 1
+          fi

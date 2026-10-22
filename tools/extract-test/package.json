@@ -1,0 +1,12 @@
+{
+  "name": "screen-tag-extract-test",
+  "private": true,
+  "type": "module",
+  "description": "Accuracy and cost test for screen tag extraction",
+  "scripts": {
+    "test-tags": "node run.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.133.0"
+  }
+}

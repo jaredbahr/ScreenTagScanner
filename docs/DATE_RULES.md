@@ -1,0 +1,9 @@
+# Date in / Date out
+
+Approved by the user **2026-10-13 03:36 UTC** and explicitly reaffirmed after review of the newer candidate: Date in is the written tag date; Date out is the scan date. If the tag omits its year, always use the admitted scan's **America/Chicago calendar year**. Never infer a previous year because the month/day is later than the scan date: 12/28 scanned Jan 4 stays December of the current scan year. Explicit written years are retained. A date later than the scan date is kept and flagged for review, never shifted to another year.
+
+Both values are timezone-independent Google/Excel serial day numbers. Scan day and workbook ID are pinned under the admission lock before paid extraction, so a scan finishing after midnight or a month switch retains its original day/year and workbook. Both screen and window writers use this policy; multi-frame rows share the same values. Raw tag text remains in Scans.
+
+Supported input is numeric US month/day with `/`, `-` or `.`, written month names ("Oct 8", "Sept 21", "October 7, 2026"), optional year, and ISO YYYY-MM-DD. A two-digit year is 20YY; it is accepted silently when that is the scan year or the year before, otherwise flagged for a century check. Missing/unreadable/invalid/unsupported dates leave Date in blank with a review note; Date out stays the admitted scan day. Date validation rejects impossible leap dates and day/month overflow. These explicit-year rules do not authorize inferring a previous year from a yearless date.
+
+`tests/date-rules.test.cjs` covers screens/windows, raw text, explicit/missing years, New Year/Chicago boundaries, leap/invalid dates, timezone independence, midnight during extraction and multi-frame rows. These are synthetic tests; no paid image extraction or historical-row rewrite occurs. Existing TEST cleanup is a separate cloud action; this source change affects new scans.

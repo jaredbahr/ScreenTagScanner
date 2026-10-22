@@ -43,6 +43,26 @@ function resolveJobRouting_(x) {
   else if (/\btempered\b/i.test(text) && thermopane) { thermopane = false; flags.push('Tempered glass is not evidence of thermopane; verify glass/labor'); }
   return { type: type, thermopane: thermopane, flags: flags, skus: skus };
 }
+/**
+ * Window panes (Kirsten, 2026-10-22: $18.50 per pane, most windows are one pane). Real tags don't write a
+ * pane count; they list a glass line and a window labor line ("1 11562 Glass $37.99; 1 580503 Labor $24.99").
+ * Count from the labor line's quantity, else from a single glass line (one glass line = one pane).
+ */
+function windowPanes_(x) {
+  if (Number.isInteger(x.panes) && x.panes >= 1) return { panes: x.panes, how: '' };
+  var segs = String(x.job_evidence || '').split(/\n|;/).map(function (t) { return t.trim(); }).filter(Boolean);
+  var qtyOf = function (seg) {
+    var m = /^(\d{1,2})\s+(?=\d{5,7}\b)/.exec(seg) || /\b(?:qty|quantity)\s*[:=#]?\s*(\d{1,2})\b/i.exec(seg);
+    return m && Number(m[1]) >= 1 ? Number(m[1]) : null;
+  };
+  var labor = segs.filter(function (t) { return GLASS_JOB_SKUS.windowLabor.some(function (k) { return new RegExp('\\b' + k + '\\b').test(t); }); });
+  var glass = segs.filter(function (t) { return labor.indexOf(t) < 0 && (/\b\d{5,7}\b/.test(t) || glassWordEvidence_(t)); });
+  if (labor.length && labor.every(qtyOf)) {
+    return { panes: labor.reduce(function (n, t) { return n + qtyOf(t); }, 0), how: 'labor' };
+  }
+  if (glass.length === 1 && labor.length <= 1) return { panes: qtyOf(glass[0]) || 1, how: qtyOf(glass[0]) ? 'glass' : 'one-glass-line' };
+  return { panes: null, how: '' };
+}
 function groupPartsLine_(line) { return /\b(?:on|for) (?:all|every) (?:frames?|screens?|tags?)\b/i.test(line); }
 function normalizeJobInput_(original) {
   var x = Object.assign({}, original), evidence = typeof x.job_evidence === 'string' ? x.job_evidence : '';
@@ -56,8 +76,15 @@ function normalizeJobInput_(original) {
   var routing = resolveJobRouting_(x);
   x.item_type = routing.type || 'unknown'; x.thermopane = routing.thermopane;
   x.routing_review = Array.isArray(original.routing_review) ? original.routing_review.slice() : [];
+  if (x.item_type === 'window' && !(Number.isInteger(x.panes) && x.panes >= 1)) {
+    var wp = windowPanes_(x);
+    if (wp.panes) {
+      x.panes = wp.panes;
+      if (wp.how === 'one-glass-line') x.routing_review.push('Panes: 1 counted from the one glass line (no quantity written)');
+    }
+  }
   routing.flags.forEach(function (f) { if (x.routing_review.indexOf(f) < 0) x.routing_review.push(f); });
-  if (group) {
+  if (group && (groupPartsLine_(group) || /\b\d{5,7}\b/.test(group))) { // a real whole-group instruction, not a one-screen comment
     var note = 'Group extras need manual allocation; never multiply by tag/frame count';
     if (x.routing_review.indexOf(note) < 0) x.routing_review.push(note);
   }

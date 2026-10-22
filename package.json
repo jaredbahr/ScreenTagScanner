@@ -1,0 +1,13 @@
+{
+  "name": "screen-tag-scanner",
+  "private": true,
+  "description": "Photo of an Ace Hardware screen repair tag -> Claude reads it -> row in the shop's Google Sheet.",
+  "scripts": {
+    "test": "node tests/run-all.cjs",
+    "release:check": "node tools/release-check.cjs",
+    "release:validate": "node tools/validate-release.cjs"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

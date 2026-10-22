@@ -1,0 +1,25 @@
+# ---------------------------------------------------------------
+# Customer data must never be committed.
+# Tag photos and the business spreadsheet contain names and phone
+# numbers. Keep them in private/ (ignored) or out of the repo.
+# ---------------------------------------------------------------
+private/
+*.jpg
+*.jpeg
+*.png
+*.heic
+*.HEIC
+*.xlsx
+*.xlsm
+*.xls
+*.csv
+!tools/extract-test/truth.example.csv
+
+# Secrets
+.env
+.env.*
+.clasp.json
+.clasprc.json
+
+# Node
+node_modules/
