@@ -181,7 +181,7 @@ test('spring pins with no quantity are counted from the $2.00-each price (real D
     unclear:['580602 line has no quantity written']});return {t,r,sh:t.ss.tabs['Homer Glen']};};
   let {sh}=pin('580602 $2.00');assert.equal(sh.get(2,12),0.5);assert.match(sh.notes.get('2,12'),/1 each \(from \$2\.00 at \$2\.00 each\)/);
   ({sh}=pin('580602 Spring pins $6.00'));assert.equal(sh.get(2,12),1.5);
-  ({sh}=pin('580602 pins 2.00 4.00'));assert.equal(sh.get(2,12),1,'the last amount is the line total');
+  ({sh}=pin('580602 pins 2.00 4.00'));assert.equal(sh.get(2,12),'','multiple prices do not establish a line total');
   ({sh}=pin('580602 pins $2.50'));assert.equal(sh.get(2,12),'','not a multiple of $2.00: no guess');
   ({sh}=pin('580602 pins PK .50'));assert.equal(sh.get(2,12),'','no customer price: no guess');
   ({sh}=pin('Pay Cashier: 3rd pin 580602 $2.00'));assert.equal(sh.get(2,12),'','an ordinal means a running total: stays manual');

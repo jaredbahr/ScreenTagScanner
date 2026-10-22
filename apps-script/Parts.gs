@@ -38,15 +38,26 @@ function pinQuantityFromPrice_(raw, literalText) {
   var lines=[String(raw||'')].concat(String(literalText||'').split('\n').filter(function(l){return /\b580602\b/.test(l);}));
   // "3rd pin $2.00" means three pins in total, not one: ordinals stay manual (see ordinal-parts tests).
   if(lines.some(function(l){return /\b\d+(?:st|nd|rd|th)\b|\b(?:first|second|third|fourth|another|extra|additional)\b/i.test(l);}))return null;
+  var amount=null,unitCents=Math.round(PIN_CUSTOMER_PRICE*100);
   for(var i=0;i<lines.length;i++){
-    var amounts=(lines[i].replace(/\b580602\b/g,' ').match(/(?:^|[^\d.])\$?(\d{1,3}\.\d{2})(?![\d.])/g)||[])
-      .map(function(a){return Number(a.replace(/[^\d.]/g,''));});
-    if(!amounts.length)continue;
-    var q=amounts[amounts.length-1]/PIN_CUSTOMER_PRICE; // the last amount is the line total
-    if(Number.isInteger(Math.round(q*100)/100)&&q>=1&&q<=50)return {quantity:Math.round(q),amount:amounts[amounts.length-1]};
-    return null;
+    var line=lines[i];
+    // Signed amounts, credits, unit prices and multiple numbers cannot establish a positive line total.
+    if(/refund|credit|cancel|return|discount|\b(?:cr|minus|negative)\b|\bno\s+charge\b|[-−–—]\s*\$?\s*\d|\$\s*[-−–—]\s*\d|\d+\.\d{2}\s*[-−–—]|\(\s*\$?\s*\d/i.test(line))return null;
+    if(/\?|\b(?:or|maybe|approx(?:imately)?|about|unclear|illegible|unreadable)\b/i.test(line))return null;
+    if(/\b(?:pk|earnings?|wholesale)\b/i.test(line))return null; // shop earnings are not a customer line total
+    if(/\b(?:ea|each|unit\s+price|per\s+pin)\b|\/\s*(?:ea|each|pin)\b/i.test(line))return null;
+    var skus=line.match(/\b\d{5,7}\b/g)||[];
+    if(skus.length>1||skus.some(function(s){return s!=='580602';}))return null;
+    if(skus.indexOf('580602')<0)continue; // require literal SKU evidence for the price being used
+    if(/^\s*\d+\s+580602\b/.test(line)||/\b(?:qty|quantity)\s*[:=#]?\s*[-+]?\d/i.test(line))return null;
+    var numbers=line.replace(/\b580602\b/g,' ').match(/(?:\$\s*)?\d+(?:\.\d+)?/g)||[];
+    if(!numbers.length)continue;
+    if(numbers.length!==1||!/^\$?\s*\d{1,3}\.\d{2}$/.test(numbers[0]))return null;
+    var cents=Math.round(Number(numbers[0].replace(/[^\d.]/g,''))*100),q=cents/unitCents;
+    if(!Number.isInteger(q)||q<1||q>50||amount!==null&&amount!==cents)return null;
+    amount=cents;
   }
-  return null;
+  return amount===null?null:{quantity:amount/unitCents,amount:amount/100};
 }
 function calculateParts_(x) {
   var laborLines=x._extra_labor_plan ? x._extra_labor_plan.recognized : [];
@@ -57,7 +68,7 @@ function calculateParts_(x) {
   var plan={items:[],flags:[],posted:[],references:[]},parts=Array.isArray(x.parts)?x.parts:[];
   var literalAll=[x.extras||'',x.group_extras||''].join('\n'),derivedPins=false;
   parts=parts.map(function(p){
-    if(!p||String(p.sku||'').trim()!=='580602'||Number.isInteger(p.quantity)&&p.quantity>=1)return p;
+    if(!p||String(p.sku||'').trim()!=='580602'||p.quantity!==0)return p;
     var d=pinQuantityFromPrice_(p.raw,literalAll);if(!d)return p;
     derivedPins=true;return Object.assign({},p,{quantity:d.quantity,derived:'$'+d.amount.toFixed(2)+' at $'+PIN_CUSTOMER_PRICE.toFixed(2)+' each'});
   });
@@ -71,7 +82,8 @@ function calculateParts_(x) {
   if(parts.length>30){plan.flags.push('More than 30 parts lines: earnings need manual review');return plan;}
   // A missing pins quantity that the $2.00 price settled is no longer a doubt.
   var unclearParts=(Array.isArray(x.unclear)?x.unclear:[]).filter(function(f){f=String(f);
-    return /part|extra|pin|sku|quantity/i.test(f)&&!(derivedPins&&/580602|\bpins?\b/i.test(f)&&/quantity|\bqty\b/i.test(f)&&!/digit|handwrit|misread|identity/i.test(f));});
+    var missingOnly=/580602|\bpins?\b/i.test(f)&&/quantity|\bqty\b/i.test(f)&&/\b(?:no|missing|without|absent)\b|not\s+(?:written|stated|provided)/i.test(f)&&!/digit|handwrit|misread|identity|conflict|unclear|unknown|uncertain|ambigu|disagree|correction|illegible|unread|total|price|amount/i.test(f);
+    return /part|extra|pin|sku|quantity/i.test(f)&&!(derivedPins&&missingOnly);});
   if(parts.length&&unclearParts.length){
     plan.flags.push('Parts quantity/identity was flagged unclear: earnings need manual review');return plan;
   }

@@ -92,7 +92,8 @@
     "tests/upload-ui.test.cjs": 33,
     "tests/workbook-backup.test.cjs": 26,
     "tests/review-tiers.test.cjs": 19,
-    "tests/release-guards.test.cjs": 8
+    "tests/release-guards.test.cjs": 8,
+    "tests/pin-price-evidence.test.cjs": 14
   },
   "allowWorkflowDefinitions": true
 }
