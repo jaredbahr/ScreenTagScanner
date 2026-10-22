@@ -661,7 +661,8 @@ test('saved photos: a Drive failure never stops the scan; file names carry no cu
   const r = t.scan({ ticket_number: '8169601' });
   assert.equal(r.status, 'ok'); assert.match(r.message, /Added/);
   const u = load({ props: { SAVE_IMAGES: 'true' } }), made = [], trashed = [];
-  const file = (name, ageDays) => ({ getDateCreated: () => new Date(Date.now() - ageDays * 864e5), setTrashed() { trashed.push(name); } });
+  // Ages use the script's frozen clock, not the real one (the real clock made this fail after 2026-10-22).
+  const file = (name, ageDays) => ({ getDateCreated: () => new Date(u.ctx.Date.now() - ageDays * 864e5), setTrashed() { trashed.push(name); } });
   const old = [file('old', 40), file('new', 2)];
   const folder = { createFile: b => { made.push(b.name); return { getUrl: () => 'https://drive.example/' + made.length }; },
     getFiles: () => { let i = 0; return { hasNext: () => i < old.length, next: () => old[i++] }; } };
