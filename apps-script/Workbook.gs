@@ -113,8 +113,12 @@ var HINT_COLOR = '#fdf6dd';
 
 /** Display severity only. Money/placement and unknown reasons fail closed to row review. */
 function reviewTier_(reason) {
-  var r = String(reason || '');
-  var sequence = /tag_count|tag_index|tag x of n|x of n|\bqty( box)?\b[^.]*\b\d+ of \d+|\bqty box\b/i;
+  // "digit group" in an OCR doubt is about handwriting, not a group of tags (0.13.22, October data).
+  var r = String(reason || '').replace(/\bdigit groups?\b/ig, 'digits');
+  if (/^Group check \(name\)/.test(r)) return {tier:'cell',field:'NAME'};
+  if (/^Group check \(ticket\)/.test(r)) return {tier:'cell',field:'TICKET'};
+  if (/^Group check \(tag\)/.test(r)) return {tier:'cell',field:'SEQUENCE'};
+  var sequence = /tag_count|tag_index|tag x of n|x of n|\bqty( box)?\b[^.]*\b\d+ of \d+|\bqty box\b|'of n'|\bof n\b|\btotal n\b/i;
   var serious = /(?:^|[^a-z])(?:amount|cost|charge|fee)s?(?:[^a-z]|$)|inches|\$|price|earning|\bbill(?:ed|able|ing)\b|screening|lb earn|\bparts\b|part sku|unrecognized part|\blabor\b|\bextras?\b|group|receipt|reserved|unposted|unit needs|window|pane|thermopane|build|frame|screens|store|sticker|\bfull\b|duplicate|already scanned|material|glass|acrylic|routed|layout|type is unknown|not a tag|refund|credit|redo|warranty|cancel|no charge|no record|spline-reference|literal (?:qty|row)|pending|interrupted|not placed|unplaced|reconcil|\bpartial\b|original scan/i; // "partially uncertain" OCR is not a partial save
   if (/^Correction\/refund:/i.test(r)) {
     var what = r.replace(/^Correction\/refund:\s*/i, '');
@@ -123,8 +127,11 @@ function reviewTier_(reason) {
     if (/\bqty\b/i.test(what)) return {tier:'row'};
     if (/ticket|tag (number|#)/i.test(what)) return {tier:'cell',field:'TICKET'};
     if (/phone|name/i.test(what)) return {tier:'log'};
+    if (/\bdate\b/i.test(what)) return {tier:'cell',field:'DATE_IN'}; // a crossed-out date is one value, not money
     return {tier:'row'};
   }
+  // A width/height doubt that the tag's own QTY or totals already confirm is detail for the Scans log.
+  if (/^(?:width|height)(?:_in)?\b/i.test(r) && /\bmatch(?:es|ing)?\b/i.test(r) && !/\$|price|refund|credit/i.test(r)) return {tier:'log'};
   if (/^Ticket # /.test(r)) return {tier:'cell',field:'TICKET'}; // digit-count and ticket-book hints (may say "store")
   if (/Ticket already on/i.test(r) || serious.test(r)) return {tier:'row'};
   if (/in Scans only until the sequence-column migration/.test(r)) return {tier:'log'};
@@ -343,10 +350,75 @@ function groupKey_(x, c) {
   if (!(n >= 2 && n <= GROUP_HOLD_MAX) || !name) return null;
   return { name: name, of: n, ticket: String(x.ticket_number || '').trim() };
 }
+/** Names that differ by a misread letter or two ("Surm"/"Surim", "Busin"/"Rusin"). */
+function namesClose_(a, b) {
+  a = String(a || '').toLowerCase().replace(/[^a-z]/g, ''); b = String(b || '').toLowerCase().replace(/[^a-z]/g, '');
+  if (!a || !b) return false;
+  if (a === b) return true;
+  return Math.min(a.length, b.length) >= 4 && editDistance_(a, b) <= 2;
+}
+/** Same ticket, sequential tickets within 50, or one misread digit ("8169684"/"8169084"). */
+function ticketsClose_(a, b) {
+  a = String(a || '').trim(); b = String(b || '').trim();
+  if (!a || !b) return false;
+  if (a === b) return true;
+  if (/^\d{7}$/.test(a) && /^\d{7}$/.test(b) && Math.abs(Number(a) - Number(b)) <= 50) return true;
+  if (a.length !== b.length || !/^\d+$/.test(a + b)) return false;
+  var diff = 0; for (var i = 0; i < a.length; i++) if (a.charAt(i) !== b.charAt(i)) diff++;
+  return diff === 1;
+}
 function sameGroup_(a, b) {
-  if (!a || !b || a.name !== b.name || a.of !== b.of || !a.ticket || !b.ticket) return false;
-  if (a.ticket === b.ticket) return true;
-  return /^\d{7}$/.test(a.ticket) && /^\d{7}$/.test(b.ticket) && Math.abs(Number(a.ticket) - Number(b.ticket)) <= 50;
+  return !!a && !!b && a.of === b.of && ticketsClose_(a.ticket, b.ticket) && namesClose_(a.name, b.name);
+}
+/**
+ * Group check (0.13.22, October data: 5 of 9 name fixes and the missed tickets were group tags read differently).
+ * Compares this tag with the other tags of its group already on the tab and returns cell notes for name, ticket
+ * and "x of N" disagreements. Notes only: values are never changed. Siblings: same N, close name, and a close
+ * ticket (or within 1000, since sequential books drift and misreads land nearby).
+ */
+function groupCheck_(sh, c, x, endRow) {
+  var seq = verifiedSequence_(tagOf_(x)), out = [];
+  if (!c.SEQUENCE || !seq || !(x.tag_count >= 2 && x.tag_count <= 100)) return out;
+  var me = { name: sequenceIdentity_(sheetName_(x)), ticket: String(x.ticket_number || '').trim(), index: Number(x.tag_index), of: Number(x.tag_count) };
+  var names = sh.getRange(2, c.NAME, endRow - 1, 1).getValues(), seqs = sh.getRange(2, c.SEQUENCE, endRow - 1, 1).getValues();
+  var tickets = sh.getRange(2, c.TICKET, endRow - 1, 1).getValues(), sibs = [];
+  for (var i = 0; i < names.length; i++) {
+    var m = /^(\d+) of (\d+)$/.exec(String(seqs[i][0]).trim());
+    if (!m || Number(m[2]) !== me.of) continue;
+    var s = { row: i + 2, name: sequenceIdentity_(names[i][0]), ticket: String(tickets[i][0]).trim(), index: Number(m[1]) };
+    var near = ticketsClose_(s.ticket, me.ticket) ||
+      (namesClose_(s.name, me.name) && /^\d{7}$/.test(s.ticket) && /^\d{7}$/.test(me.ticket) && Math.abs(Number(s.ticket) - Number(me.ticket)) <= 1000);
+    if (near && namesClose_(s.name, me.name)) sibs.push(s);
+  }
+  if (!sibs.length) return out;
+  var rowsOf = function (list) { return list.map(function (s) { return s.row; }).join(', '); };
+  var others = sibs.filter(function (s) { return s.name !== me.name; });
+  if (others.length) {
+    var seen = {}; others.forEach(function (s) { seen[s.name] = true; });
+    out.push('Group check (name): this tag reads "' + me.name + '"; other tags in this group read "' + Object.keys(seen).join('", "') +
+      '" (rows ' + rowsOf(others) + '). Check which is right.');
+  }
+  var tks = {}; sibs.forEach(function (s) { tks[s.ticket] = (tks[s.ticket] || 0) + 1; });
+  // One ticket for the whole group (Homer) only counts when at least two other tags agree on it;
+  // with a single earlier tag, sequential books (8159901, 8159903) are normal.
+  var ranked = Object.keys(tks).sort(function (p, q) { return tks[q] - tks[p]; });
+  var shared = ranked.length && tks[ranked[0]] >= 2 && (ranked.length === 1 || tks[ranked[0]] > tks[ranked[1]]) ? ranked[0] : null;
+  var nearAny = sibs.some(function (s) { return s.ticket === me.ticket || (/^\d{7}$/.test(s.ticket) && /^\d{7}$/.test(me.ticket) && Math.abs(Number(s.ticket) - Number(me.ticket)) <= 50); });
+  if (shared && shared !== me.ticket) {
+    var agree = sibs.filter(function (s) { return s.ticket === shared; });
+    out.push('Group check (ticket): this tag reads ' + me.ticket + '; ' + agree.length + ' other tags in this group read ' + shared + ' (rows ' + rowsOf(agree) + ').');
+  } else if (!shared && /^\d{7}$/.test(me.ticket) && !nearAny) {
+    var nums = sibs.map(function (s) { return Number(s.ticket); }).filter(isFinite).sort();
+    out.push('Group check (ticket): ' + me.ticket + ' is far from the rest of this group (' + nums[0] + (nums.length > 1 ? '–' + nums[nums.length - 1] : '') + ', rows ' + rowsOf(sibs) + ').');
+  }
+  var dup = sibs.filter(function (s) { return s.index === me.index; });
+  if (dup.length) {
+    var have = {}; sibs.concat([me]).forEach(function (s) { have[s.index] = true; });
+    var missing = []; for (var k = 1; k <= me.of; k++) if (!have[k]) missing.push(k);
+    out.push('Group check (tag): ' + me.index + ' of ' + me.of + ' is already on row ' + rowsOf(dup) +
+      (missing.length && missing.length <= 4 ? '; not yet on the tab: ' + missing.join(', ') + ' of ' + me.of : '') + '.');
+  }
+  return out;
 }
 function readGroupHold_(note) {
   var line = String(note || '').split('\n').filter(function (l) { return l.indexOf(GROUP_HOLD) === 0; })[0];
@@ -558,6 +630,7 @@ function writeToStoreTab_(ss, x, reasons) {
   var count = isBuild && multi ? x.screens_on_tag : 1;
   var end = screenBlockEnd_(sh);
   var rows = [];
+  groupCheck_(sh, c, x, end).forEach(function (f) { if (flags.indexOf(f) < 0) flags.push(f); });
   var group = count === 1 ? groupKey_(x, c) : null, heldRow = group ? takeGroupHold_(sh, c, group, end) : -1;
   if (heldRow > 0) rows.push(heldRow);
   for (var r = 2; rows.length < count; r++) {

@@ -43,6 +43,9 @@ _Last updated: 2026-10-23 (version 13 receipt verified at 00:51 UTC)._
 - Sheet fix (hers): one Homer ticket read with a leading 9 instead of 8 (the ticket-book note on it shows the fix).
   New Lenox double scan: resolved by Kirsten (checked read-only 2026-10-22).
 - Group rows (0.13.21): is a grey row + column-A note clear enough, or does she want "waiting for 2 of 6" text?
+- Group check (0.13.22) on existing rows, read-only 2026-10-23: names disagree within 6 groups (Homer 3, Joliet,
+  Willowbrook, Homer 2-of-2), 3 group tickets look misread (Homer row 44, Joliet row 17, Downers Grove row 22) and
+  New Lenox has "4 of 12" twice (rows 20, 24). Sent to Jared for Kirsten.
 
 ## Repository (2026-10-22)
 - This public repo, `jaredbahr/ScreenTagScanner`, is the single source from 2026-10-22. It starts with a clean

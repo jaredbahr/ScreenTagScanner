@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.13.22-draft — group check, looser group matching, fewer false yellow rows
+
+From the 61 scans of 2026-10-22 (Kirsten fixed 9 names, 5 of them group tags read differently; 13 rows were yellow
+and she changed 1):
+- **Group check.** A tag in an "x of N" group is compared with the group's tags already on the tab. A different
+  name, a ticket that disagrees with two or more agreeing tags or sits more than 50 from all of them, or the same
+  "x of N" twice gets a one-cell note ("4 of 12 is already on row 20; not yet on the tab: 8 of 12"). Notes only;
+  values are never changed. Replayed over the October workbook it raised 12 notes, all real disagreements.
+- **Looser group matching** for held rows: a name off by a letter or two, or a ticket off by one digit, still
+  matches (same N required).
+- **Short last names.** A last name of one or two letters ("S") keeps the name as written ("Ann B").
+- **Review levels.** An overwritten "of N", "digit group" handwriting doubts, width/height doubts the QTY already
+  confirms, and a crossed-out date no longer turn the whole row yellow.
+
 ## 0.13.21-draft — group rows stay together
 
 Kirsten's request (2026-10-22, approved by Jared): when the first tag of an "x of N" group (2–12 tags) lands on a store

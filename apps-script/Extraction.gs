@@ -16,7 +16,7 @@
  * Column mapping to the real spreadsheet is still pending. See TODO(fields).
  */
 
-var EXTRACTION_VERSION = '0.13.21-draft';
+var EXTRACTION_VERSION = '0.13.22-draft';
 
 var SYSTEM_PROMPT = [
   'You read Ace Hardware screen tags for a small screen repair shop. Each photo shows one paper form',
@@ -365,6 +365,9 @@ function reviewReasons_(x) {
 /** Last name as written to the sheet: best reading, with "(?)" when Claude wasn't sure. */
 function sheetName_(x) {
   var n = x.last_name || x.customer_name || '';
+  // "Ann B": a last name of one or two letters is an initial, so keep the name as written (0.13.22).
+  var full = String(x.customer_name || '').replace(/\s+/g, ' ').trim();
+  if (String(x.last_name || '').replace(/[^A-Za-z]/g, '').length <= 2 && full.length > String(x.last_name || '').length && /[A-Za-z]{2}/.test(full)) n = full;
   return n && x.name_unclear ? n + ' (?)' : n;
 }
 
