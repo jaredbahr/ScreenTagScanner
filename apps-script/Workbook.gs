@@ -116,12 +116,16 @@ function reviewTier_(reason) {
   // "digit group" in an OCR doubt is about handwriting, not a group of tags (0.13.22, October data).
   var r = String(reason || '').replace(/\bdigit groups?\b/ig, 'digits');
   if (/^Group check \(name\)/.test(r)) return {tier:'cell',field:'NAME'};
-  // A doubt about the ticket reading is one value, even when it mentions a price label or sticker (Homer, 2026-10-23).
-  if (/^ticket_number\b/i.test(r) && !/refund|credit|\$|earning|duplicate|already scanned/i.test(r)) return {tier:'cell',field:'TICKET'};
   if (/^Group check \(ticket\)/.test(r)) return {tier:'cell',field:'TICKET'};
   if (/^Group check \(tag\)/.test(r)) return {tier:'cell',field:'SEQUENCE'};
   var sequence = /tag_count|tag_index|tag x of n|x of n|\bqty( box)?\b[^.]*\b\d+ of \d+|\bqty box\b|'of n'|\bof n\b|\btotal n\b/i;
   var serious = /(?:^|[^a-z])(?:amount|cost|charge|fee)s?(?:[^a-z]|$)|inches|\$|price|earning|\bbill(?:ed|able|ing)\b|screening|lb earn|\bparts\b|part sku|unrecognized part|\blabor\b|\bextras?\b|group|receipt|reserved|unposted|unit needs|window|pane|thermopane|build|frame|screens|store|sticker|\bfull\b|duplicate|already scanned|material|glass|acrylic|routed|layout|type is unknown|not a tag|refund|credit|redo|warranty|cancel|no charge|no record|spline-reference|literal (?:qty|row)|pending|interrupted|not placed|unplaced|reconcil|\bpartial\b|original scan/i; // "partially uncertain" OCR is not a partial save
+  // A doubt about the ticket reading is one value, even when it mentions a price-gun label (Homer, 2026-10-23), but
+  // not when it also raises a store, slip, window, quantity or money question (review 2026-10-23).
+  if (/^ticket_number\b/i.test(r)) {
+    var rest = r.replace(/(?:ace )?price(?:[- ]gun)? (?:label|sticker)s?|ace price|price[- ]gun|printed label|covered by (?:a |the )?(?:sticker|label)|extra (?:\w+ )?digits?/ig, '');
+    if (!serious.test(rest) && !/slip|\bqty\b|quantit/i.test(rest)) return {tier:'cell',field:'TICKET'};
+  }
   if (/^Correction\/refund:/i.test(r)) {
     var what = r.replace(/^Correction\/refund:\s*/i, '');
     if (serious.test(what) || /size|inch|quantity/i.test(what)) return {tier:'row'};
@@ -632,7 +636,7 @@ function storeDates_(x) {
     month = us ? Number(m[1]) : monthFromName_(m[1]); day = Number(m[2]);
     year = y ? Number(y) : scanYear;
     // "26" on a tag scanned in 2026 or 2027 is plainly 2026; anything else gets a century check.
-    if (y && y.length === 2) { year += 2000; if (year !== scanYear && year !== scanYear - 1) reason = 'Two-digit tag year treated as 20YY; verify the century'; }
+    if (y && y.length === 2) { year += 2000; if (year !== scanYear && year !== scanYear - 1) reason = CENTURY_NOTE; }
   } else return {dateIn:'',dateOut:dateOut,reason:'Tag date is unreadable/unsupported: Date in left blank; enter it from the tag'};
   if (!validYmd_(year, month, day)) {
     return {dateIn:'',dateOut:dateOut,reason:'Tag date is invalid: Date in left blank; verify the written date'};
@@ -642,11 +646,14 @@ function storeDates_(x) {
   // A later month/day may need review, but never changes the inferred year.
   if (dateIn > dateOut) reason += (reason ? '; ' : '') + 'Tag date is after the scan date; verify it';
   // A written year far behind the scan (October audit: "24"/"2020"/"25" on 2026 tags; 4/6 and 0/6 look alike).
-  else if (year !== scanYear && dateOut - dateIn > 120) {
-    reason += (reason ? '; ' : '') + 'Tag year ' + year + ' looks off for a scan in ' + scanYear + ' (4/6 and 0/6 look alike); check the date on the tag';
+  // Over half a year, so a tag left over the winter (11/1 scanned 3/15) is not flagged; one note, not two.
+  else if (year !== scanYear && dateOut - dateIn > 183) {
+    reason = 'Tag year ' + year + ' looks off for a scan in ' + scanYear + ' (4/6 and 0/6 look alike' +
+      (reason === CENTURY_NOTE ? '; a two-digit year is read as 20YY, verify the century' : '') + '); check the date on the tag';
   }
   return {dateIn:dateIn,dateOut:dateOut,reason:reason};
 }
+var CENTURY_NOTE = 'Two-digit tag year treated as 20YY; verify the century';
 function validYmd_(year, month, day) {
   var check = new Date(Date.UTC(year, month - 1, day));
   return year >= 1900 && year <= 2199 && month >= 1 && month <= 12 && day >= 1 &&

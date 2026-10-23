@@ -248,7 +248,7 @@ function say(message) {
 }
 function showResult(result, storageNotice) {
   const needsReview = result.needsReview === true || /Flagged for a double check|Check on the sheet:|Saved, but|^Not added to the sheet/.test(result.message);
-  const where = /→ ([^\n]+?), (rows? [\d, ]+)\s*(?:\n|$)/.exec(result.message);
+  const where = /^[^\n]*→ ([^\n]+?), (rows? [\d, ]+)\s*(?:\n|$)/.exec(result.message); // last arrow: a name may hold one
   let summary;
   if (result.status === 'ok') {
     summary = /Already scanned/.test(result.message) ? 'Already scanned. Nothing new added.' :

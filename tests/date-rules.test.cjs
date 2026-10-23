@@ -28,8 +28,13 @@ test('two-digit year for this year or last year is accepted without a flag',()=>
 });
 test('a written year far behind the scan gets a Date in note (October audit: 24, 2020, 25 on 2026 tags)',()=>{
   for(const date of ['10/17/24','10/17/2020','10/20/25']){const t=load({now:new Date('2026-10-23T18:00:00Z')});const r=t.scan({date});const sh=t.ss.tabs['Homer Glen'];
-    assert.match(sh.notes.get('2,2')||'',/Tag year 20\d\d looks off for a scan in 2026 \(4\/6 and 0\/6 look alike\)/,date);
+    assert.match(sh.notes.get('2,2')||'',/Tag year 20\d\d looks off for a scan in 2026 \(4\/6 and 0\/6 look alike/,date);
+    assert.equal((sh.notes.get('2,2').match(/20YY|looks off/g)||[]).length,date==='10/17/24'?2:1,date+': one note, century folded in');
     assert.doesNotMatch(r.message,/Check on the sheet:/,date+': one cell, not a yellow row');}
+});
+test('a tag left over the winter (11/1/25 scanned 3/15/26) gets no year note; 7 months back does',()=>{
+  for(const [date,want] of [['11/1/25',false],['11/1/2025',false],['8/1/25',true]]){const t=load({now:new Date('2026-03-15T17:00:00Z')});t.scan({date});
+    assert.equal(/Tag year/.test(t.ss.tabs['Homer Glen'].notes.get('2,2')||''),want,date);}
 });
 test('written month names are read (Oct 8, Sept 21, October 7 2026)',()=>{
   for(const [date,want] of [['Oct 8','2026-10-08'],['Sept 21','2026-09-21'],['October 7, 2026','2026-10-07'],['oct-8','2026-10-08']]){
