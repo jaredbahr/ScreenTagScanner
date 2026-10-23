@@ -139,7 +139,12 @@ Window mapping is built from Kirsten's description and the first real October wi
     (N = 2–12) holds the empty rows right after it, grey with a column-A note. Later tags of the same group (same
     name and N, same ticket or tickets within 50) fill those rows in any order; other jobs skip them. Rows are never
     inserted or moved. Holds expire after 14 days, a deleted note frees the row, and a held row typed into by hand
-    is left alone. Screens block only, on tabs with the Tag x of N column.
+    is left alone. Screens block only, on tabs with the Tag x of N column. Since 0.13.22 the group match also
+    accepts a name off by a letter or two and a ticket off by one digit.
+24. **Group check** (2026-10-23, from the October 22 scans). A group tag is compared with its group's tags already
+    on the tab (same N, close name, ticket close or within 1000). Disagreeing name, ticket or "x of N" gets a note on
+    that one cell (pale, not yellow). Values are never changed.
+25. **Short last names** (2026-10-23): a last name of one or two letters keeps the name as written ("Ann B").
 
 ## Review display for 0.13.18
 
