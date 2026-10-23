@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.13.25-draft — balance-due slips, shop re-measurements, tag years (October 23 audit)
+
+Rules from Kirsten (2026-10-23): **bill what the customer was charged.**
+- A "measured wrong / balance due" Pay Cashier slip that charges more of the standard screening SKUs adds its QTY to
+  the tag's QTY (new plain-string field `balance_due_qty`; 75 + 20 = 95), with a row note. Not added when the inches
+  are held. Before, the slip went to extras and Kirsten re-entered inches and prices by hand.
+- A large marker re-measurement written on the tag ("39 x 36 = 75") is the shop's own note and is ignored for size,
+  QTY and conflicts; the tag's QTY is billed (before, it held billing as a conflict).
+- A written tag year more than 120 days behind the scan ("24", "2020", "25" on 2026 tags: five October rows) gets a
+  Date in note; the prompt lists 4/6 in years. Values are never changed.
+- The prompt warns that a thin handwritten 1 between digits is easy to skip.
+- Price arithmetic written beside the rows ("20 x .19 = 3.80") is not a size (prompt). If Claude still reports a
+  conflict while the tag's size, every QTY row and every $ total agree to the cent, the row is billed with a note.
+
 ## 0.13.24-draft — plain phone messages
 
 Kirsten found the phone reply hard to act on ("reconciliation" three times, no row, no names). Now:
