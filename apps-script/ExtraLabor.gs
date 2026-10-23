@@ -21,6 +21,8 @@ function calculateExtraLabor_(x) {
   [x.extras||'',x.group_extras||''].forEach(function(text,i){String(text).split('\n').forEach(function(raw){var item=extraLaborLine_(raw);if(item)lines.push({item:item,group:i===1||/\b(?:both|all|every|whole)\b/i.test(raw)});});});
   if(!lines.length)return plan;
   if(x.has_corrections || x.quantity_conflict || x.name_unclear || (x.unclear||[]).length){plan.flags.push('Additional labor has uncertain scan evidence: amount and scope need manual review');return plan;}
+  // A balance-due slip's labor is already billed through its extra inches; never credit it twice.
+  var due=balanceDueQty_(x);if(due.qty||due.bad){plan.flags.push('Additional labor on a tag with a balance-due slip may be the slip\'s own charge: reconcile by hand');return plan;}
   if(lines.some(function(l){return l.item.problem;})){plan.flags.push('Additional labor amount/basis needs manual review');return plan;}
   // Multiple labor lines require explicit reconciliation; do not add repeated slip/tag text.
   if(lines.length!==1){plan.flags.push('Multiple additional labor lines: reconcile before crediting');return plan;}
@@ -44,7 +46,7 @@ function extraLaborReceipts_(note) {
     if(line.indexOf(EXTRA_LABOR_RECEIPT)!==0)return;
     try{var r=JSON.parse(line.slice(EXTRA_LABOR_RECEIPT.length));
       var scope=JSON.parse(r.scope),client=JSON.parse(r.client),groupKey=JSON.parse(r.groupKey);
-      var identity=Array.isArray(client)&&client.length===3&&client.every(function(v){return typeof v==='string';})&&r.customer===(client[1]||client[0])&&/^\d+$/.test(client[2])&&Array.isArray(groupKey)&&groupKey.length===4&&groupKey[0]===r.tab&&groupKey[1]===client[2]&&Number.isFinite(groupKey[2])&&Number.isInteger(groupKey[3])&&groupKey[3]>=1&&Array.isArray(scope)&&scope[0]===r.tab&&
+      var identity=Array.isArray(client)&&client.length===3&&client.every(function(v){return typeof v==='string';})&&receiptCustomerOk_(r.customer,client)&&/^\d+$/.test(client[2])&&Array.isArray(groupKey)&&groupKey.length===4&&groupKey[0]===r.tab&&groupKey[1]===client[2]&&Number.isFinite(groupKey[2])&&Number.isInteger(groupKey[3])&&groupKey[3]>=1&&Array.isArray(scope)&&scope[0]===r.tab&&
         (r.group?scope.length===3&&scope[1]==='group'&&scope[2]===r.groupKey&&groupKey[3]>1:scope.length===7&&scope[1]==='tag'&&sequenceIdentity_(scope[2])===r.ticket&&scope[6]===(r.block==='windows'?'window':'screen'));
       var valid=identity&&r&&r.version===1&&typeof r.scope==='string'&&typeof r.client==='string'&&typeof r.customer==='string'&&!!r.customer&&typeof r.ticket==='string'&&!!r.ticket&&typeof r.tab==='string'&&!!storeByTabName_(r.tab)&&['screens','windows'].indexOf(r.block)>=0&&Number.isInteger(r.row)&&r.row>=2&&typeof r.group==='boolean'&&typeof r.key==='string'&&typeof r.groupKey==='string'&&Number.isFinite(r.amount)&&r.amount>0&&r.amount<=1000&&r.amount===cents_(r.amount)&&Number.isFinite(r.base)&&r.base>=0&&r.expectedTotal===cents_(r.base+r.amount)&&['reserved','posted'].indexOf(r.status)>=0;
       out.push(valid?r:{invalid:true});

@@ -98,6 +98,7 @@
     "tests/group-holds.test.cjs": 11,
     "tests/group-check.test.cjs": 10,
     "tests/audit-fixes.test.cjs": 6,
+    "tests/review-money.test.cjs": 12,
     "tests/review-messages.test.cjs": 3
   },
   "allowWorkflowDefinitions": true

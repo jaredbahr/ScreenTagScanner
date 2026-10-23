@@ -24,11 +24,16 @@ test('no slip: the tag QTY is billed as charged, whatever the shop re-measured',
 test('a slip on a tag whose inches are held is not added; the note says to enter the total by hand', () => {
   const t = load(), sh = t.ss.tabs['Homer Glen'];
   t.scan(job({ balance_due_qty: '20', quantity_conflict: true, quantity_conflict_details: 'Tag 75 vs other 80', qty_rows: '' }));
-  assert.equal(sh.get(2, 6), ''); assert.match(sh.notes.get('2,3') || '', /Balance-due slip adds 20 inches, not added because the inches are held/);
+  assert.equal(sh.get(2, 6), ''); assert.match(sh.notes.get('2,3') || '', /balance-due slip adds 20 inches, not added because the tag's inches are held/);
 });
 
-test('nonsense balance-due values are ignored', () => {
-  for (const v of ['abc', '-5', '999', '2.5']) { const t = load(); t.scan(job({ balance_due_qty: v })); assert.equal(t.ss.tabs['Homer Glen'].get(2, 6), 75, v); }
+test('unreadable balance-due values are not added and are flagged, never dropped silently (review 0.13.26)', () => {
+  for (const v of ['abc', '-5', '999', '2.5', '20 in', '+20', '20, 20']) {
+    const t = load(), sh = t.ss.tabs['Homer Glen']; const r = t.scan(job({ balance_due_qty: v }));
+    assert.equal(sh.get(2, 6), 75, v); assert.match(sh.notes.get('2,3') || '', /balance-due slip QTY ".*" unreadable, not added; enter the total by hand/, v);
+    assert.match(r.message, /Check on the sheet: inches/, v);
+  }
+  for (const v of ['', '0', 'none', 'N/A', null, undefined]) { const t = load(); const r = t.scan(job({ balance_due_qty: v })); assert.doesNotMatch(r.message, /Check on the sheet/, String(v)); }
 });
 
 test('prompt: thin 1s, 4/6 in years', () => {

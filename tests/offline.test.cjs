@@ -251,7 +251,7 @@ test('injection: safeCell_ leaves ordinary values alone', () => {
 
 test('prompt: Pay Cashier slips that add parts go to extras, not corrections or conflicts', () => {
   const { ctx } = load(); const p = ctx.SYSTEM_PROMPT;
-  assert.match(p, /Most slips just ADD parts or fees/);
+  assert.match(p, /Most other slips \(not a balance-due slip; see balance_due_qty\) just ADD parts or fees/);
   assert.match(p, /copy those lines into extras/);
   assert.match(p, /Set quantity_conflict only if it lists different screen SIZES/);
   const rule=p.slice(p.indexOf('- has_corrections:'),p.indexOf('- correction_details:'));
