@@ -53,13 +53,18 @@ test('a window tag with a slip gets a note instead of silence', () => {
 
 test('a unanimous tag does not override a conflict that names a slip, another screen or a correction', () => {
   const base = { ticket_number: '7708301', material: 'aluminum', width_in: 27, height_in: 73, billable_inches: 100, qty_rows: '100, 100, 100', line_totals: '19.00, 7.00, 20.00', quantity_conflict: true };
-  for (const d of ['Tag: 27x73 = 100 in. Slip: two 28x37 = 130 in.', 'Pay Cashier lists another screen', 'corrected size 28 x 73', 'second screen 80 in']) {
+  for (const d of ['Tag: 27x73 = 100 in. Slip: two 28x37 = 130 in.', 'Pay Cashier lists another screen', 'corrected size 28 x 73', 'second screen 80 in',
+    'Balance due 20 more inches', 'Measured wrong: should be 120 in', '2nd screen 28x37 = 65', '2 screens listed: 100 and 65',
+    'Receipt attached shows 120 in', 'Additional 28 x 37 screen listed']) {
     const t = load(), sh = t.ss.tabs['Homer Glen']; t.scan({ ...base, quantity_conflict_details: d });
     assert.equal(sh.get(2, 6), '', d); assert.doesNotMatch(sh.notes.get('2,3') || '', /billed: the tag's size/, d);
   }
-  const t = load(), sh = t.ss.tabs['Homer Glen']; t.scan({ ...base, quantity_conflict_details: '100 x .19 = 19.00.' });
-  assert.equal(sh.get(2, 6), 100, 'price arithmetic still bills');
-  assert.doesNotMatch(sh.notes.get('2,3') || '', /\.\. Check/, 'no double period');
+  for (const d of ['100 x .19 = 19.00.', '20 x .19 = 3.80 is price arithmetic, not a second size', 'probably price arithmetic, read correctly as 100',
+    'Tag: 27x73 = 100 in. Handwritten large note: 27 x 75 = 102.']) {
+    const t = load(), sh = t.ss.tabs['Homer Glen']; t.scan({ ...base, quantity_conflict_details: d });
+    assert.equal(sh.get(2, 6), 100, 'still bills: ' + d);
+    assert.doesNotMatch(sh.notes.get('2,3') || '', /\.\. Check/, 'no double period');
+  }
 });
 
 test('short last name: extra-labor receipt stays valid and later credits on the tab still post', () => {
@@ -88,6 +93,22 @@ test('short last name: tag 2 of a group-wide part is not held as edited by hand'
   const t = load(), sh = t.ss.tabs['Homer Glen'];
   const pj = i => ({ ...BASE, customer_name: 'Amy Li', last_name: 'Li', ticket_number: '1000001', tag_index: i, tag_count: 2, extras: '3 580602 spring pins $6', parts: [{ sku: '580602', quantity: 3, unit: 'each', group_wide: true, raw: '3 580602 spring pins $6' }] });
   t.scan(pj(1)); const r = t.scan(pj(2));
+  assert.doesNotMatch([...sh.notes.values()].join('\n') + r.message, /edited by hand|changed by hand/);
+});
+
+test('empty-looking slip values are nothing, not unreadable', () => {
+  const q = load().ctx.balanceDueQty_;
+  for (const v of ['', '0', '00', '0.0', '-', '\u2014', 'none', 'None.', 'no', 'nil', 'N/A', 'n.a.', null, undefined]) assert.equal(q({ balance_due_qty: v }).bad, undefined, String(v));
+  assert.equal(q({ balance_due_qty: '20' }).qty, 20); assert.equal(q({ balance_due_qty: '20.' }).bad, '20.');
+});
+
+test('short last name: a parts receipt written before this fix ("li") still matches the "Amy Li" Name cell', () => {
+  const t = load(), sh = t.ss.tabs['Homer Glen'], c = t.ctx.storeLayout_(sh).screens;
+  const pj = i => ({ ...BASE, customer_name: 'Amy Li', last_name: 'Li', ticket_number: '1000001', tag_index: i, tag_count: 2, extras: '3 580602 spring pins $6', parts: [{ sku: '580602', quantity: 3, unit: 'each', group_wide: true, raw: '3 580602 spring pins $6' }] });
+  t.scan(pj(1));
+  const k = sh.key(2, c.EARNING); sh.notes.set(k, sh.notes.get(k).replace(/"customer":"amy li"/g, '"customer":"li"'));
+  assert.match(sh.notes.get(k), /"customer":"li"/);
+  const r = t.scan(pj(2));
   assert.doesNotMatch([...sh.notes.values()].join('\n') + r.message, /edited by hand|changed by hand/);
 });
 

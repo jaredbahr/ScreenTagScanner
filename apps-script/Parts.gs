@@ -16,6 +16,11 @@ var PARTS_RECEIPT = 'PARTS_EARNINGS_V1: ';
 function escapePartsReceiptText_(text) {
   return String(text||'').replace(/(^|\n)(PARTS_EARNINGS_V1: )/g,'$1Literal OCR: $2');
 }
+/** The Name cell still matches a receipt. Receipts from 0.13.22-0.13.25 hold "li" while the cell holds "amy li". */
+function receiptNameOk_(receipt,nameCell) {
+  if(receipt.customer===nameCell)return true;
+  try{var client=JSON.parse(receipt.client);return Array.isArray(client)&&receipt.customer===(client[1]||client[0])&&receiptCustomerOk_(nameCell,client);}catch(err){return false;}
+}
 function partsClient_(x) {
   return JSON.stringify([sequenceIdentity_(x.customer_name),sequenceIdentity_(x.last_name),String(x.phone||'').replace(/\D/g,'')]);
 }
@@ -177,7 +182,7 @@ function preparePartsEarnings_(ss,x) {
         }
         var current=sh.getRange(row,earning).getValues()[0][0];
         var edited=(receipt.tab!==st.tab&&receipt.tab!==sh.getName())||receipt.block!==block||receipt.row!==row||
-          receipt.customer!==sequenceIdentity_(sh.getRange(row,c.NAME).getValues()[0][0])||
+          !receiptNameOk_(receipt,sequenceIdentity_(sh.getRange(row,c.NAME).getValues()[0][0]))||
           receipt.ticket!==rowTicket||receipt.status==='posted'&&current!==receipt.expectedTotal;
         found.push(Object.assign({},receipt,{block:block,row:row,paid:!edited&&current===receipt.expectedTotal,edited:edited}));
       });

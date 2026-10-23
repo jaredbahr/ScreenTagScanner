@@ -407,9 +407,13 @@ function quantityConflict_(x) {
  * "20 x .19" read as a second size): the rounded size, the billed QTY, every QTY row (2 or more) and every dollar
  * total (2 or more, at this material's rates, to the cent) all give the same inches. Corrections still hold.
  */
+var UNANIMOUS_REFUSE = new RegExp(['slip', 'cashier', 'receipt', 'balance', '\\bdue\\b', 'wrong', 'should be', 'refund', 'redo',
+  '\\bcorrect(?:ed|ion|ions|s)?\\b', 'second screen', '\\b2nd\\b', 'another', 'additional', '\\bextra\\b', 'other (?:screen|size)',
+  '\\b(?:two|three|\\d+) screens'].join('|'), 'i');
 function unanimousInches_(x) {
-  // A conflict that names a slip, another screen or a correction is a real disagreement, not price arithmetic.
-  if (/slip|cashier|second|another|other (?:screen|size)|two screens|correct|re-?measur|redo|refund/i.test(String(x.quantity_conflict_details || ''))) return null;
+  // A conflict that names a slip, a balance due, another screen or a correction is a real disagreement, not price
+  // arithmetic ("20 x .19 = 3.80 ... not a second size" and "read correctly" still pass). Review 2026-10-23.
+  if (UNANIMOUS_REFUSE.test(String(x.quantity_conflict_details || ''))) return null;
   if (x.has_corrections || !Number.isFinite(x.width_in) || !Number.isFinite(x.height_in) ||
       x.width_in < 6 || x.width_in > 120 || x.height_in < 6 || x.height_in > 120) return null;
   var rate = Object.prototype.hasOwnProperty.call(RATES, x.material) ? RATES[x.material] : null;
@@ -431,7 +435,7 @@ function unanimousInches_(x) {
  */
 function balanceDueQty_(x) {
   var raw = x && x.balance_due_qty !== null && x.balance_due_qty !== undefined ? String(x.balance_due_qty).trim() : '';
-  if (!raw || /^(?:0|none|n\/?a|null)$/i.test(raw)) return { qty: 0 };
+  if (!raw || /^(?:0+(?:\.0+)?|none|no|nil|n\/?a|n\.a|null|[-\u2013\u2014]+)\.?$/i.test(raw)) return { qty: 0 };
   if (/^\d{1,3}$/.test(raw) && Number(raw) >= 1 && Number(raw) <= 200) return { qty: Number(raw) };
   return { qty: 0, bad: raw.slice(0, 40) };
 }
