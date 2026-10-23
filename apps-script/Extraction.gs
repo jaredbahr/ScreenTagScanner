@@ -16,7 +16,7 @@
  * Column mapping to the real spreadsheet is still pending. See TODO(fields).
  */
 
-var EXTRACTION_VERSION = '0.13.22-draft';
+var EXTRACTION_VERSION = '0.13.23-draft';
 
 var SYSTEM_PROMPT = [
   'You read Ace Hardware screen tags for a small screen repair shop. Each photo shows one paper form',
@@ -29,7 +29,8 @@ var SYSTEM_PROMPT = [
   '',
   'Extract exactly what is written. Never guess or invent a value:',
   '- If a field is missing or unreadable, return null and say why in "unclear".',
-  '- If two readings are plausible (1/7, 3/8, 5/9, 0/6...), pick the more likely one and list it in "unclear".',
+  '- If two readings are plausible (1/7, 2/7, 3/8, 5/9, 0/6...), pick the more likely one and list it in "unclear".',
+  '  A handwritten 7 with a curled foot is often misread as 2 in ticket numbers: look twice before reading a 2.',
   '- Ignore crossed-out text, stamps, staples, highlighter, and colored stickers.',
   '',
   'Field rules:',
@@ -48,6 +49,8 @@ var SYSTEM_PROMPT = [
   '- glass_price: for window tags, the glass price written on the tag in dollars (null if none).',
   '- thermopane: true if a window tag says thermopane / insulated / double-pane glass, else false.',
   '- window_spline: true if a window tag has a spline line filled in, else false.',
+  '- ticket_number: some stores (Homer) put a printed Ace price-gun label ("ACE PRICE 1234567") on the Tag # line instead',
+  '  of writing it: that label\'s number IS the ticket number. Use it; it is normal, not uncertain.',
   '- ticket_number: the Tag # or Ticket # as written, digits only. If the printed store tag shows the full number',
   '  and a short number is also handwritten, use the full printed number. A staple,',
   '  hole or fold may cover a leading digit: preserve exactly the digits you can read, never guess or pad,',

@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.13.23-draft — misprinted group tickets, plain-text hold notes
+
+From Kirsten's Lockport group on 2026-10-23 (the second tag's ticket was printed wrong, so it skipped the grey row):
+- A tag whose name and N match a held group exactly, and whose "x of N" isn't on the tab yet, fills the held row even
+  when its ticket is far off; the group check notes the ticket difference.
+- Same scanning day: a close name (a letter or two off) with the same N, filling a gap in the group, matches too, even
+  when the ticket is misread to the wrong length (New Lenox, 2026-10-23). The group check now notes a ticket that
+  doesn't match its group whatever its length.
+- Look-alike digits: a ticket whose first four digits become the store's series by swapping confusable digits
+  (2/7, 1/7, 3/8, 4/9, 5/6) gets a "likely …" note. New Lenox 7s were often read as 2s ("2208169" for 7708169).
+  The prompt now lists 2/7. Replayed over October: one note, a likely misread.
+- Homer price-gun labels: the prompt says a printed "ACE PRICE" label on the Tag # line is the ticket number (one
+  such tag was left unplaced on 2026-10-23 because the label was rejected), and a ticket doubt that mentions a price
+  label or sticker tints only the ticket cell.
+- The hold note is plain text ("Saved for the rest of the … group"); its data moved to hidden row metadata
+  (`GROUP_HOLD_V2`). Deleting the note still frees the row. Notes from 0.13.21–0.13.22 keep working. If Sheets
+  rejects the metadata, the old visible note is written instead; a metadata read failure never stops a scan.
+
 ## 0.13.22-draft — group check, looser group matching, fewer false yellow rows
 
 From the 61 scans of 2026-10-22 (Kirsten fixed 9 names, 5 of them group tags read differently; 13 rows were yellow
