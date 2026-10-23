@@ -630,6 +630,8 @@ function writeWindowRow_(sh, store, x, flags, layout) {
   var perPane = x.thermopane ? WINDOW_LABOR_PER_PANE.thermopane : WINDOW_LABOR_PER_PANE.standard;
   var labor = x.panes ? cents_(x.panes * perPane) : '';
   if (!x.panes) flags.push('Window LB Earn not filled: panes unknown');
+  var winDue = balanceDueQty_(x);
+  if (winDue.qty || winDue.bad) flags.push('Balance-due slip on a window tag: not added; enter it by hand');
 
   var dates = storeDates_(x);
   if (dates.reason) flags.push(dates.reason);
@@ -781,12 +783,12 @@ function writeToStoreTab_(ss, x, reasons) {
   var rate = RATES[x.material];
   var ui = x.billable_inches;
   var holdBilling = null; // reason billing is left blank for review
-  var due = /^\d{1,3}$/.test(String(x.balance_due_qty || '').trim()) ? Number(String(x.balance_due_qty).trim()) : 0;
-  if (due > 200) due = 0;
+  var dueRead = balanceDueQty_(x), due = dueRead.qty;
+  if (dueRead.bad) flags.push('Inches: balance-due slip QTY "' + dueRead.bad + '" unreadable, not added; enter the total by hand');
   var conflict = quantityConflict_(x), agreed = conflict && x.quantity_conflict ? unanimousInches_(x) : null;
   if (agreed) {
     flags.push('Inches ' + agreed + '" billed: the tag\'s size, QTY rows and $ totals all agree; Claude also noted: ' +
-      String(x.quantity_conflict_details || 'a second size').slice(0, 160) + '. Check the tag');
+      String(x.quantity_conflict_details || 'a second size').slice(0, 160).replace(/[.\s]+$/, '') + '. Check the tag');
     conflict = null;
   }
   var settled = conflict && !(multi && !isBuild) ? settleInches_(x) : null;
@@ -812,11 +814,14 @@ function writeToStoreTab_(ss, x, reasons) {
   }
   // Balance-due slip (Kirsten, 2026-10-23): bill what the customer was charged, so a "measured wrong / balance
   // due" slip's extra QTY is added to the tag's QTY. A shop re-measurement alone never changes the bill.
-  if (due && !holdBilling && typeof ui === 'number') {
+  if (due && rows.length > 1) {
+    flags.push('Inches: balance-due slip adds ' + due + ' inches on a ' + rows.length + '-frame form, not added; add it to the right frame by hand');
+  } else if (due && !holdBilling && typeof ui === 'number') {
     flags.push('Inches include a balance-due slip: tag QTY ' + ui + ' + slip QTY ' + due + ' = ' + (ui + due) + '"; check the slip');
     ui += due;
   } else if (due) {
-    flags.push('Balance-due slip adds ' + due + ' inches, not added because the inches are held; enter the total by hand');
+    flags.push('Inches: balance-due slip adds ' + due + ' inches, not added because the tag\'s inches are ' +
+      (holdBilling ? 'held' : 'missing') + '; enter the total by hand');
   }
   var screening = '', labor = '';
   if (holdBilling) {

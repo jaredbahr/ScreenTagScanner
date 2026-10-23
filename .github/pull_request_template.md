@@ -4,6 +4,12 @@
 ## Changes
 -
 
+## Triple check (CONTRIBUTING)
+- [ ] 1. Author re-read the whole diff; `npm run release:validate` passes; tests cover new and neighboring behavior
+- [ ] 2. Independent review done (who: ___); findings fixed or answered below
+- [ ] 3. Writes differently? Read-only replay against real data: ___ (or "no change to what gets written")
+- Behavior changes Kirsten will see:
+
 ## Checks
 - [ ] `npm test` passes (all suites)
 - [ ] New or changed behavior has a test
