@@ -16,7 +16,7 @@
  * Column mapping to the real spreadsheet is still pending. See TODO(fields).
  */
 
-var EXTRACTION_VERSION = '0.13.24-draft';
+var EXTRACTION_VERSION = '0.13.25-draft';
 
 var SYSTEM_PROMPT = [
   'You read Ace Hardware screen tags for a small screen repair shop. Each photo shows one paper form',
@@ -29,8 +29,9 @@ var SYSTEM_PROMPT = [
   '',
   'Extract exactly what is written. Never guess or invent a value:',
   '- If a field is missing or unreadable, return null and say why in "unclear".',
-  '- If two readings are plausible (1/7, 2/7, 3/8, 5/9, 0/6...), pick the more likely one and list it in "unclear".',
+  '- If two readings are plausible (1/7, 2/7, 3/8, 5/9, 0/6, 4/6 in years...), pick the more likely one and list it in "unclear".',
   '  A handwritten 7 with a curled foot is often misread as 2 in ticket numbers: look twice before reading a 2.',
+  '  A thin handwritten 1 between other digits is easy to skip ("1201345" read as "120345"): look for it.',
   '- Ignore crossed-out text, stamps, staples, highlighter, and colored stickers.',
   '',
   'Field rules:',
@@ -85,6 +86,14 @@ var SYSTEM_PROMPT = [
   '- screen_color: "black" or "gray" if circled/marked, else "unknown".',
   '- tag_index / tag_count: from a "Qty x of N" box (x = which tag this is, N = tags in the group),',
   '  e.g. "Qty 2 of 3" -> 2 and 3. Some stores use one ticket number for a group of tags. null if absent.',
+  '- Large marker measurements written across the form by the repair shop (e.g. "39 x 36 = 75") are the shop\'s own',
+  '  re-measurement, not what the customer was charged: ignore them for width, height, QTY and quantity_conflict.',
+  '- balance_due_qty: only when an attached Pay Cashier slip says the screen was measured wrong / balance due and',
+  '  charges more of the standard screening SKUs (material 575001/575003/575006, spline 575005, labor 575011/',
+  '  575013/580606) with one extra QTY: that extra QTY as digits (e.g. "20"). The tag\'s own QTY stays in',
+  '  billable_inches, and those slip lines go nowhere else (not extras, parts or quantity_conflict). Else "".',
+  '- Arithmetic written beside the rows (QTY times the price, e.g. "20 x .19 = 3.80") is a price calculation, not a',
+  '  screen size: never use it for width/height and never report it as a quantity_conflict.',
   '- quantity_conflict: true if the form, or a slip attached to it, gives DIFFERENT sizes or inches for this',
   '  job (e.g. a corrected size, or a Pay Cashier slip listing other screens/sizes than the tag). Do not pick',
   '  one: put every version in quantity_conflict_details (e.g. "Tag: 27x73 = 100 in. Slip: two 28x37 = 130 in.").',
@@ -158,7 +167,7 @@ var TAG_SCHEMA = {
   additionalProperties: false,
   required: [
     'is_tag', 'form_type', 'item_type', 'panes', 'glass_price', 'thermopane', 'window_spline', 'ticket_number', 'store', 'sticker_color', 'customer_name', 'last_name', 'name_unclear', 'phone', 'date',
-    'width_in', 'height_in', 'billable_inches', 'material', 'screen_color', 'tag_index', 'tag_count', 'screens_on_tag', 'quantity_conflict', 'quantity_conflict_details', 'qty_rows', 'line_totals',
+    'width_in', 'height_in', 'billable_inches', 'material', 'screen_color', 'tag_index', 'tag_count', 'screens_on_tag', 'quantity_conflict', 'quantity_conflict_details', 'qty_rows', 'line_totals', 'balance_due_qty',
     'extras', 'notes', 'has_corrections', 'correction_details', 'unclear', 'job_evidence', 'group_extras', 'parts'
   ],
   properties: {
@@ -195,6 +204,7 @@ var TAG_SCHEMA = {
     // fields per schema (see tests/offline.test.cjs). "" means no conflict.
     quantity_conflict_details: { type: 'string' },
     qty_rows:                 { type: 'string' },
+    balance_due_qty:          { type: 'string' },
     line_totals:              { type: 'string' },
     extras:          NULLABLE_STRING,
     notes:           NULLABLE_STRING,
@@ -390,6 +400,27 @@ function quantityConflict_(x) {
     }
   }
   return null;
+}
+
+/**
+ * A reported conflict that the tag itself contradicts unanimously (New Lenox, 2026-10-23: price arithmetic
+ * "20 x .19" read as a second size): the rounded size, the billed QTY, every QTY row (2 or more) and every dollar
+ * total (2 or more, at this material's rates, to the cent) all give the same inches. Corrections still hold.
+ */
+function unanimousInches_(x) {
+  if (x.has_corrections || !Number.isFinite(x.width_in) || !Number.isFinite(x.height_in) ||
+      x.width_in < 6 || x.width_in > 120 || x.height_in < 6 || x.height_in > 120) return null;
+  var rate = Object.prototype.hasOwnProperty.call(RATES, x.material) ? RATES[x.material] : null;
+  if (!rate || typeof x.qty_rows !== 'string' || typeof x.line_totals !== 'string') return null;
+  var n = Math.ceil(x.width_in) + Math.ceil(x.height_in);
+  if (x.billable_inches !== n || !isSettlementInches_(n)) return null;
+  var rows = x.qty_rows.split(/[,;\s]+/).filter(Boolean), totals = x.line_totals.split(/[,;\s]+/).filter(Boolean);
+  if (rows.length < 2 || rows.length > 3 || rows.some(function (t) { return t !== String(n); })) return null;
+  var rates = [rate.material, 0.07, rate.labor];
+  if (totals.length < 2 || totals.length > 3 || totals.some(function (t, i) {
+    return !/^\$?\d+(?:\.\d{1,2})?$/.test(t) || Math.round(Number(t.replace(/^\$/, '')) * 100) !== Math.round(n * rates[i] * 100);
+  })) return null;
+  return n;
 }
 
 /** Conservative envelope derived from the existing 6..120-inch dimension review limits. */

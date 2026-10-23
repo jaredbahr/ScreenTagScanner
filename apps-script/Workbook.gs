@@ -641,6 +641,10 @@ function storeDates_(x) {
   // User rule: a missing written year always uses the admitted scan calendar year.
   // A later month/day may need review, but never changes the inferred year.
   if (dateIn > dateOut) reason += (reason ? '; ' : '') + 'Tag date is after the scan date; verify it';
+  // A written year far behind the scan (October audit: "24"/"2020"/"25" on 2026 tags; 4/6 and 0/6 look alike).
+  else if (year !== scanYear && dateOut - dateIn > 120) {
+    reason += (reason ? '; ' : '') + 'Tag year ' + year + ' looks off for a scan in ' + scanYear + ' (4/6 and 0/6 look alike); check the date on the tag';
+  }
   return {dateIn:dateIn,dateOut:dateOut,reason:reason};
 }
 function validYmd_(year, month, day) {
@@ -730,7 +734,14 @@ function writeToStoreTab_(ss, x, reasons) {
   var rate = RATES[x.material];
   var ui = x.billable_inches;
   var holdBilling = null; // reason billing is left blank for review
-  var conflict = quantityConflict_(x);
+  var due = /^\d{1,3}$/.test(String(x.balance_due_qty || '').trim()) ? Number(String(x.balance_due_qty).trim()) : 0;
+  if (due > 200) due = 0;
+  var conflict = quantityConflict_(x), agreed = conflict && x.quantity_conflict ? unanimousInches_(x) : null;
+  if (agreed) {
+    flags.push('Inches ' + agreed + '" billed: the tag\'s size, QTY rows and $ totals all agree; Claude also noted: ' +
+      String(x.quantity_conflict_details || 'a second size').slice(0, 160) + '. Check the tag');
+    conflict = null;
+  }
   var settled = conflict && !(multi && !isBuild) ? settleInches_(x) : null;
   if (conflict) {
     [['Literal QTY rows',x.qty_rows],['Literal row totals',x.line_totals]].forEach(function(evidence) {
@@ -751,6 +762,14 @@ function writeToStoreTab_(ss, x, reasons) {
     ui = Math.ceil(x.width_in) + Math.ceil(x.height_in);
     flags.push('Inches calculated from measurements: ' + formatInches_(x.width_in) + ' + ' +
       formatInches_(x.height_in) + ' -> ' + ui + '"');
+  }
+  // Balance-due slip (Kirsten, 2026-10-23): bill what the customer was charged, so a "measured wrong / balance
+  // due" slip's extra QTY is added to the tag's QTY. A shop re-measurement alone never changes the bill.
+  if (due && !holdBilling && typeof ui === 'number') {
+    flags.push('Inches include a balance-due slip: tag QTY ' + ui + ' + slip QTY ' + due + ' = ' + (ui + due) + '"; check the slip');
+    ui += due;
+  } else if (due) {
+    flags.push('Balance-due slip adds ' + due + ' inches, not added because the inches are held; enter the total by hand');
   }
   var screening = '', labor = '';
   if (holdBilling) {

@@ -22,8 +22,14 @@ test('an explicit future year is kept and flagged, never changed',()=>{
   assert.equal(sh.get(2,2),serial('2026-12-01'));assert.match(sh.notes.get('2,2'),/after the scan date/);
 });
 test('two-digit year for this year or last year is accepted without a flag',()=>{
-  for(const date of ['10/8/26','12/30/25']){const t=load();t.scan({date});const sh=t.ss.tabs['Homer Glen'];
+  // Last year's date is normal around New Year (a December tag scanned in January).
+  for(const [date,now] of [['10/8/26','2026-10-12T20:19:00Z'],['12/30/25','2026-01-05T18:00:00Z']]){const t=load({now:new Date(now)});t.scan({date});const sh=t.ss.tabs['Homer Glen'];
     assert.equal(sh.get(2,2),serial(date==='10/8/26'?'2026-10-08':'2025-12-30'),date);assert.equal(sh.notes.get('2,2'),undefined,date);}
+});
+test('a written year far behind the scan gets a Date in note (October audit: 24, 2020, 25 on 2026 tags)',()=>{
+  for(const date of ['10/17/24','10/17/2020','10/20/25']){const t=load({now:new Date('2026-10-23T18:00:00Z')});const r=t.scan({date});const sh=t.ss.tabs['Homer Glen'];
+    assert.match(sh.notes.get('2,2')||'',/Tag year 20\d\d looks off for a scan in 2026 \(4\/6 and 0\/6 look alike\)/,date);
+    assert.doesNotMatch(r.message,/Check on the sheet:/,date+': one cell, not a yellow row');}
 });
 test('written month names are read (Oct 8, Sept 21, October 7 2026)',()=>{
   for(const [date,want] of [['Oct 8','2026-10-08'],['Sept 21','2026-09-21'],['October 7, 2026','2026-10-07'],['oct-8','2026-10-08']]){
