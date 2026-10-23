@@ -26,7 +26,7 @@ class Sheet {
   constructor(name, screenRows = 750) {
     this.name = name; this.cells = new Map(); this.notes = new Map(); this.bg = new Map();
     this.validations=new Map();this.formats=new Map();this.widths=new Map();this.merges=[];
-    this.maxColumns=26;this.frozenColumns=0;this.frozenRows=0;this.insertions=[];
+    this.maxColumns=26;this.frozenColumns=0;this.frozenRows=0;this.insertions=[];this.devMeta=[];
     LEGACY_HEADERS.screens.forEach((h,i)=>this.set(1,i+2,h));
     LEGACY_HEADERS.windows.forEach((h,i)=>this.set(1,i+14,h));
     for (let r = 2; r <= screenRows; r++) {
@@ -70,8 +70,13 @@ class Sheet {
     }
     if(this.failAfterInsert){this.failAfterInsert=false;throw Error('Synthetic interruption after insertion');}
   }
+  // Row-level developer metadata, as Apps Script allows it (whole rows only, via A1 "5:5").
+  createDeveloperMetadataFinder(){const s=this;let key=null;return{withKey(k){key=k;return this;},find(){if(s.failMetadataRead)throw Error('Synthetic metadata failure');
+    return s.devMeta.filter(m=>!key||m.key===key).map(m=>({getKey:()=>m.key,getValue:()=>m.value,getLocation:()=>({getRow:()=>({getRow:()=>m.row})}),remove(){s.devMeta=s.devMeta.filter(x=>x!==m);}}));}};}
   getRange(r, c, nr = 1, nc = 1) {
     const s = this;
+    if (typeof r === 'string') { const m = /^(\d+):(\d+)$/.exec(r); assert.ok(m && m[1] === m[2], 'only whole single rows take metadata: ' + r);
+      return { addDeveloperMetadata(k, v) { if (s.failMetadata) throw Error('Synthetic metadata failure'); s.devMeta.push({ key: k, value: v, row: Number(m[1]) }); } }; }
     const range = {
       getValues: () => Array.from({ length: nr }, (_, i) => Array.from({ length: nc }, (_, j) => s.get(r + i, c + j))),
       getDisplayValues: () => range.getValues().map(row=>row.map(v=>String(v??''))),
