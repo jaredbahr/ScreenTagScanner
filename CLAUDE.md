@@ -9,7 +9,7 @@ Read [docs/STATUS.md](docs/STATUS.md) first (current state, standing rules, open
 - `npm test` runs every offline suite (CI runs the same). Before a deployment handoff, on a clean
   committed checkout: `npm run release:validate` and `npm run release:check -- --fetch`.
 - If the release gate reports missing deployed or upstream ancestry, reconcile with a merge; never weaken the gate.
-- **Be conservative: this runs a real business.** When in doubt leave it blank and flag it; money changes need a
-  stated business rule, a read-only replay and yellow flags; one deploy a day at most. See CONTRIBUTING.md.
+- **Triple-check every change: this runs a real business.** Author self-review + tests, an independent review
+  before merge, and a read-only replay on real data when writes change; batched, reviewed deploys. See CONTRIBUTING.md.
 - Never change the live sheets without Jared's approval. No customer data, Google IDs or secrets in GitHub.
   Ask before any paid scan. Codex does Google deployments.

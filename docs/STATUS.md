@@ -16,7 +16,7 @@ _Last updated: 2026-10-23 (version 14 receipt verified at 01:33 UTC)._
 | Testing phase | Kirsten scans and checks every row; Paul isn't ready to scan alone. Jared watches unplaced scans during testing |
 
 ## Standing rules from Jared
-0. **Be conservative: this is used for real business** (2026-10-23). See CONTRIBUTING.md, "Be conservative".
+0. **Triple-check every code change: this is used for real business** (2026-10-23). See CONTRIBUTING.md.
 1. Work through GitHub only. Codex handles Google deployments. Anything else Google-side (Script
    Properties, sharing, data fixes) starts as a GitHub issue.
 2. **Never change the live sheets without Jared's direct approval.** Reading them to find patterns is fine.

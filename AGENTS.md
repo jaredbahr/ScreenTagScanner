@@ -2,8 +2,8 @@
 
 The default branch is `main` (renamed from `ccr-33fb9a05-rmui7r` on 2026-10-22). Since 0.13.19 (2026-10-22) it contains the deployed twelve-file runtime and all default-branch work, so develop from a freshly pulled default branch, not from the old `integrate/*`, `reconcile/*` or `proposal/*` branches. The reviewed baseline and runtime inventory are in `release/manifest.json`. Current state and standing rules: [docs/STATUS.md](docs/STATUS.md). A draft PR does not update the default branch or Google.
 
-- **Be conservative: this runs a real business.** When in doubt leave it blank and flag it; money changes need a
-  stated business rule, a read-only replay and yellow flags; one deploy a day at most. See CONTRIBUTING.md.
+- **Triple-check every change: this runs a real business.** Author self-review + tests, an independent review
+  before merge, and a read-only replay on real data when writes change; batched, reviewed deploys. See CONTRIBUTING.md.
 - Fetch the canonical default branch before beginning or handing off a release. Preserve ancestry from both the last verified deployment and current upstream. Do not replace the twelve-file runtime with an older nine-file tree.
 - Run `npm test` (no install or dependencies required): every offline suite; the free `tests` GitHub Action runs the same on each push. Before a deployment handoff, commit the candidate and run `npm run release:validate`: the release gate plus every suite sequentially, with minimum case counts. Never use the paid extraction harness as a substitute. Keep CPU use modest.
 - Before deployment handoff run `npm run release:check -- --fetch`. It performs a read-only Git fetch and rejects new upstream work missing from the candidate. Offline checks cannot certify remote freshness or Google's current saved source.

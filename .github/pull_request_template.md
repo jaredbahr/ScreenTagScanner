@@ -4,11 +4,11 @@
 ## Changes
 -
 
-## Money impact (CONTRIBUTING: be conservative)
-<!-- Pick one. Anything but "None" needs the business rule (who, date), a read-only replay result, and yellow-row flags. -->
-- [ ] None: wording, notes, docs or tests only
-- [ ] Placement only: which row or group (falls back to the old behavior when unsure)
-- [ ] Changes amounts or billing: rule from ___ on ___; replay result: ___; every automatic decision flags the row
+## Triple check (CONTRIBUTING)
+- [ ] 1. Author re-read the whole diff; `npm run release:validate` passes; tests cover new and neighboring behavior
+- [ ] 2. Independent review done (who: ___); findings fixed or answered below
+- [ ] 3. Writes differently? Read-only replay against real data: ___ (or "no change to what gets written")
+- Behavior changes Kirsten will see:
 
 ## Checks
 - [ ] `npm test` passes (all suites)
