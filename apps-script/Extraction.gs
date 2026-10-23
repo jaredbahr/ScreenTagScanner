@@ -49,6 +49,8 @@ var SYSTEM_PROMPT = [
   '- glass_price: for window tags, the glass price written on the tag in dollars (null if none).',
   '- thermopane: true if a window tag says thermopane / insulated / double-pane glass, else false.',
   '- window_spline: true if a window tag has a spline line filled in, else false.',
+  '- ticket_number: some stores (Homer) put a printed Ace price-gun label ("ACE PRICE 1234567") on the Tag # line instead',
+  '  of writing it: that label\'s number IS the ticket number. Use it; it is normal, not uncertain.',
   '- ticket_number: the Tag # or Ticket # as written, digits only. If the printed store tag shows the full number',
   '  and a short number is also handwritten, use the full printed number. A staple,',
   '  hole or fold may cover a leading digit: preserve exactly the digits you can read, never guess or pad,',

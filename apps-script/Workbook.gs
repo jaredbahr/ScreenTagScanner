@@ -116,6 +116,8 @@ function reviewTier_(reason) {
   // "digit group" in an OCR doubt is about handwriting, not a group of tags (0.13.22, October data).
   var r = String(reason || '').replace(/\bdigit groups?\b/ig, 'digits');
   if (/^Group check \(name\)/.test(r)) return {tier:'cell',field:'NAME'};
+  // A doubt about the ticket reading is one value, even when it mentions a price label or sticker (Homer, 2026-10-23).
+  if (/^ticket_number\b/i.test(r) && !/refund|credit|\$|earning|duplicate|already scanned/i.test(r)) return {tier:'cell',field:'TICKET'};
   if (/^Group check \(ticket\)/.test(r)) return {tier:'cell',field:'TICKET'};
   if (/^Group check \(tag\)/.test(r)) return {tier:'cell',field:'SEQUENCE'};
   var sequence = /tag_count|tag_index|tag x of n|x of n|\bqty( box)?\b[^.]*\b\d+ of \d+|\bqty box\b|'of n'|\bof n\b|\btotal n\b/i;

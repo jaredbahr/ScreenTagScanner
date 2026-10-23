@@ -113,4 +113,12 @@ test('look-alike digits: 7s read as 2s get the store-series fix (New Lenox patte
   assert.doesNotMatch(sh.notes.get(rowOf(sh, t.ctx.storeLayout_(sh).screens, '7708130') + ',5') || '', /look alike/, 'a ticket that fits gets no note');
 });
 
+test('price-gun ticket labels (Homer): the label number is the ticket, and a ticket doubt mentioning it is one cell', () => {
+  const t = load();
+  assert.match(t.ctx.SYSTEM_PROMPT, /printed Ace price-gun label/); assert.match(t.ctx.SYSTEM_PROMPT, /IS the ticket number/);
+  const r = t.ctx.reviewTier_('ticket_number: number appears on the Ace price sticker, Tag # line is blank; partly covered by sticker');
+  assert.deepEqual([r.tier, r.field], ['cell', 'TICKET']);
+  assert.equal(t.ctx.reviewTier_('ticket_number: refund slip ticket, $5 credit').tier, 'row', 'money words still turn the row yellow');
+});
+
 console.log(`${passed} group-check tests passed`);

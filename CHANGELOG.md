@@ -11,6 +11,9 @@ From Kirsten's Lockport group on 2026-10-23 (the second tag's ticket was printed
 - Look-alike digits: a ticket whose first four digits become the store's series by swapping confusable digits
   (2/7, 1/7, 3/8, 4/9, 5/6) gets a "likely …" note. New Lenox 7s were often read as 2s ("2208169" for 7708169).
   The prompt now lists 2/7. Replayed over October: one note, a likely misread.
+- Homer price-gun labels: the prompt says a printed "ACE PRICE" label on the Tag # line is the ticket number (one
+  such tag was left unplaced on 2026-10-23 because the label was rejected), and a ticket doubt that mentions a price
+  label or sticker tints only the ticket cell.
 - The hold note is plain text ("Saved for the rest of the … group"); its data moved to hidden row metadata
   (`GROUP_HOLD_V2`). Deleting the note still frees the row. Notes from 0.13.21–0.13.22 keep working. If Sheets
   rejects the metadata, the old visible note is written instead; a metadata read failure never stops a scan.
