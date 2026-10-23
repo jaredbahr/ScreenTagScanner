@@ -170,6 +170,7 @@ function ticketBookHint_(sh, layout, ticket) {
   var near = function (s) { var n = Number(s); return known.some(function (k) { return Math.abs(k - n) <= 300; }); };
   if (t.length === 7 && near(t)) return null;
   if (t.length <= 5) return shortTicketHint_(t, known, near);
+  if (t.length === 7) { var alike = lookAlikeTicket_(t, known, near); if (alike) return alike; }
   var cands = {};
   for (var p = 0; p <= t.length; p++) for (var d = 0; d <= 9; d++) {
     var c = t.length === 6 ? t.slice(0, p) + d + t.slice(p) : (p < 7 ? t.slice(0, p) + d + t.slice(p + 1) : null);
@@ -190,6 +191,24 @@ function ticketBookHint_(sh, layout, ticket) {
   }
   if (list.length && t.length === 6) return 'Ticket # ' + t + ' is missing a digit; this store\'s tickets look like ' + book + ', check the tag';
   return null;
+}
+
+/**
+ * Handwritten look-alikes in the first four digits (New Lenox, 2026-10-23: 7s read as 2s, "2208169" for 7708169).
+ * Swapping only confusable pairs into the store's ticket series gives one likely ticket; never changes the value.
+ */
+var LOOK_ALIKE = { '2': '7', '7': '21', '1': '7', '3': '8', '8': '3', '4': '9', '9': '4', '5': '6', '6': '50', '0': '6' };
+function lookAlikeTicket_(t, known, near) {
+  var books = {}; known.forEach(function (k) { var p = String(k).slice(0, 4); books[p] = (books[p] || 0) + 1; });
+  var found = Object.keys(books).filter(function (p) {
+    if (p === t.slice(0, 4) || books[p] < 2) return false;
+    for (var i = 0; i < 4; i++) if (p.charAt(i) !== t.charAt(i) && (LOOK_ALIKE[t.charAt(i)] || '').indexOf(p.charAt(i)) < 0) return false;
+    return near(p + t.slice(4));
+  });
+  if (found.length !== 1) return null;
+  var fix = found[0] + t.slice(4), pairs = [];
+  for (var i = 0; i < 4; i++) if (fix.charAt(i) !== t.charAt(i)) pairs.push(t.charAt(i) + '/' + fix.charAt(i));
+  return 'Ticket # ' + t + ' looks off for this store (' + found[0] + 'xxx): likely ' + fix + ' (' + pairs.filter(function (p, k) { return pairs.indexOf(p) === k; }).join(', ') + ' look alike), check the tag';
 }
 
 /**
@@ -385,7 +404,8 @@ function groupCheck_(sh, c, x, endRow) {
   if (!c.SEQUENCE || !seq || !(x.tag_count >= 2 && x.tag_count <= 100)) return out;
   var me = { name: sequenceIdentity_(sheetName_(x)), ticket: String(x.ticket_number || '').trim(), index: Number(x.tag_index), of: Number(x.tag_count) };
   var names = sh.getRange(2, c.NAME, endRow - 1, 1).getValues(), seqs = sh.getRange(2, c.SEQUENCE, endRow - 1, 1).getValues();
-  var tickets = sh.getRange(2, c.TICKET, endRow - 1, 1).getValues(), sibs = [];
+  var tickets = sh.getRange(2, c.TICKET, endRow - 1, 1).getValues(), sibs = [], today = scanDateSerial_();
+  var outs = c.DATE_OUT ? sh.getRange(2, c.DATE_OUT, endRow - 1, 1).getValues() : [];
   for (var i = 0; i < names.length; i++) {
     var m = /^(\d+) of (\d+)$/.exec(String(seqs[i][0]).trim());
     if (!m || Number(m[2]) !== me.of) continue;
@@ -393,7 +413,8 @@ function groupCheck_(sh, c, x, endRow) {
     var near = ticketsClose_(s.ticket, me.ticket) ||
       (namesClose_(s.name, me.name) && /^\d{7}$/.test(s.ticket) && /^\d{7}$/.test(me.ticket) && Math.abs(Number(s.ticket) - Number(me.ticket)) <= 1000);
     var exact = s.name === me.name && me.name.replace(/[^a-z]/g, '').length >= 4; // misprinted ticket, same customer
-    if ((near && namesClose_(s.name, me.name)) || exact) sibs.push(s);
+    var sameDay = namesClose_(s.name, me.name) && s.index !== me.index && outs[i] && daySerial_(outs[i][0]) === today;
+    if ((near && namesClose_(s.name, me.name)) || exact || sameDay) sibs.push(s);
   }
   if (!sibs.length) return out;
   var rowsOf = function (list) { return list.map(function (s) { return s.row; }).join(', '); };
@@ -412,8 +433,8 @@ function groupCheck_(sh, c, x, endRow) {
   if (shared && shared !== me.ticket) {
     var agree = sibs.filter(function (s) { return s.ticket === shared; });
     out.push('Group check (ticket): this tag reads ' + me.ticket + '; ' + agree.length + ' other tags in this group read ' + shared + ' (rows ' + rowsOf(agree) + ').');
-  } else if (!shared && /^\d{7}$/.test(me.ticket) && !nearAny) {
-    var nums = sibs.map(function (s) { return Number(s.ticket); }).filter(isFinite).sort();
+  } else if (!shared && me.ticket && !nearAny) {
+    var nums = sibs.map(function (s) { return s.ticket; }).filter(Boolean).sort();
     out.push('Group check (ticket): ' + me.ticket + ' is far from the rest of this group (' + nums[0] + (nums.length > 1 ? '–' + nums[nums.length - 1] : '') + ', rows ' + rowsOf(sibs) + ').');
   }
   var dup = sibs.filter(function (s) { return s.index === me.index; });
@@ -482,11 +503,14 @@ function takeGroupHold_(sh, c, key, endRow) {
     meta = meta || groupHoldMeta_(sh);
     var h = holdAt_(notes[i][0], meta, i + 2);
     if (!h || today - h.day > GROUP_HOLD_DAYS) continue;
-    // A misprinted ticket (Lockport, 2026-10-23: 1041534 for the group's 7041533) still matches when the name and N
+    // A misprinted ticket (Lockport, 2026-10-23: a ticket printed with a wrong first digit) still matches when the name and N
     // are exactly the same and this tag fills a gap in the group; the group check notes the ticket difference.
+    // Also when the name is close and the hold was made today (New Lenox, 2026-10-23: a name read two letters apart with a
+    // 6-digit misread ticket): same N, a gap in the group, and the same scanning day are strong enough together.
     if (!sameGroup_(h, key)) {
-      if (h.name !== key.name || h.of !== key.of || key.name.replace(/[^a-z]/g, '').length < 4) continue;
-      if (gap === null) gap = !exactNameIndexTaken_(sh, c, key, endRow);
+      var exactName = h.name === key.name && key.name.replace(/[^a-z]/g, '').length >= 4;
+      if (h.of !== key.of || !(exactName || (namesClose_(h.name, key.name) && h.day === today))) continue;
+      if (gap === null) gap = !closeNameIndexTaken_(sh, c, key, endRow);
       if (!gap) continue;
     }
     releaseGroupHold_(sh, i + 2, c, meta);
@@ -494,13 +518,19 @@ function takeGroupHold_(sh, c, key, endRow) {
   }
   return -1;
 }
-/** True when a row with exactly this name and N already has this tag's "k of N". */
-function exactNameIndexTaken_(sh, c, key, endRow) {
+/** True when a row with this (or a close) name and N already has this tag's "k of N". */
+function closeNameIndexTaken_(sh, c, key, endRow) {
   var names = sh.getRange(2, c.NAME, endRow - 1, 1).getValues(), seqs = sh.getRange(2, c.SEQUENCE, endRow - 1, 1).getValues();
   for (var i = 0; i < names.length; i++) {
-    if (sequenceIdentity_(names[i][0]) === key.name && String(seqs[i][0]).trim() === key.index + ' of ' + key.of) return true;
+    if (namesClose_(sequenceIdentity_(names[i][0]), key.name) && String(seqs[i][0]).trim() === key.index + ' of ' + key.of) return true;
   }
   return false;
+}
+/** A Date-out cell as a Sheets serial day (numbers as written; Date objects as read back from Sheets). */
+function daySerial_(v) {
+  if (typeof v === 'number') return v;
+  if (v instanceof Date) return serialFromYmd_(Utilities.formatDate(v, 'America/Chicago', 'yyyy-MM-dd'));
+  return NaN;
 }
 /** After the first tag of a group is written at `row`, hold the next empty rows for the rest of it. */
 function holdGroupRows_(sh, c, key, row, endRow, x) {

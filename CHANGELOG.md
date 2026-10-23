@@ -5,6 +5,12 @@
 From Kirsten's Lockport group on 2026-10-23 (the second tag's ticket was printed wrong, so it skipped the grey row):
 - A tag whose name and N match a held group exactly, and whose "x of N" isn't on the tab yet, fills the held row even
   when its ticket is far off; the group check notes the ticket difference.
+- Same scanning day: a close name (a letter or two off) with the same N, filling a gap in the group, matches too, even
+  when the ticket is misread to the wrong length (New Lenox, 2026-10-23). The group check now notes a ticket that
+  doesn't match its group whatever its length.
+- Look-alike digits: a ticket whose first four digits become the store's series by swapping confusable digits
+  (2/7, 1/7, 3/8, 4/9, 5/6) gets a "likely …" note. New Lenox 7s were often read as 2s ("2208169" for 7708169).
+  The prompt now lists 2/7. Replayed over October: one note, a likely misread.
 - The hold note is plain text ("Saved for the rest of the … group"); its data moved to hidden row metadata
   (`GROUP_HOLD_V2`). Deleting the note still frees the row. Notes from 0.13.21–0.13.22 keep working. If Sheets
   rejects the metadata, the old visible note is written instead; a metadata read failure never stops a scan.

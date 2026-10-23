@@ -142,7 +142,10 @@ Window mapping is built from Kirsten's description and the first real October wi
     is left alone. Screens block only, on tabs with the Tag x of N column. Since 0.13.22 the group match also
     accepts a name off by a letter or two and a ticket off by one digit. Since 0.13.23 an exact name and N with an
     "x of N" not yet on the tab also match (misprinted tickets), and the hold data sits in hidden row metadata; the
-    visible note is plain text and deleting it still frees the row.
+    visible note is plain text and deleting it still frees the row. A close name with the same N, filling a gap, also
+    matches when the hold was made the same scanning day.
+26. **Look-alike ticket digits** (2026-10-23): when swapping confusable digits (2/7, 1/7, 3/8, 4/9, 5/6) in the first
+    four digits gives the store's ticket series, the ticket cell gets a "likely …" note. Values are never changed.
 24. **Group check** (2026-10-23, from the October 22 scans). A group tag is compared with its group's tags already
     on the tab (same N, close name, ticket close or within 1000). Disagreeing name, ticket or "x of N" gets a note on
     that one cell (pale, not yellow). Values are never changed.

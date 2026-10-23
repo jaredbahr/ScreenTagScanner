@@ -88,4 +88,29 @@ test('review levels: four October false alarms move off the yellow row; money st
   assert.equal(tier('Correction/refund: A scribbled-out line above the spring pins row (crossed out, unreadable).'), 'row');
 });
 
+test('same scanning day: a close name and a short misread ticket still fill the held row and get a ticket note', () => {
+  const t = load({ now: new Date('2026-10-23T17:00:00Z') }), { sh, c } = modern(t, 'New Lenox');
+  t.scan(tag('New Lenox', 'Synthpepw', '7708275', 1, 2));
+  t.scan(tag('New Lenox', 'Synthpeplow', '770867', 2, 2)); // name off by two letters, ticket missing a digit
+  assert.equal(sh.get(3, c.TICKET), '770867', 'lands in the held row');
+  assert.match(note(sh, 3, c.TICKET), /Group check \(ticket\): 770867 is far from the rest of this group \(7708275, rows 2\)/);
+  assert.match(note(sh, 3, c.NAME), /Group check \(name\)/);
+  const u = load({ now: new Date('2026-10-23T17:00:00Z') }), m = modern(u, 'New Lenox');
+  u.scan(tag('New Lenox', 'Synthpepw', '7708275', 1, 2));
+  u.setNow(new Date('2026-10-25T17:00:00Z'));
+  u.scan(tag('New Lenox', 'Synthpeplow', '770867', 2, 2));
+  assert.equal(m.sh.get(3, m.c.TICKET), '', 'on another day a close name alone is not enough');
+});
+
+test('look-alike digits: 7s read as 2s get the store-series fix (New Lenox pattern)', () => {
+  const t = load(), sh = t.ss.tabs['New Lenox'];
+  t.scan(tag('New Lenox', 'Synthone', '7708101', 1, 1)); t.scan(tag('New Lenox', 'Synthtwo', '7708150', 1, 1));
+  t.scan(tag('New Lenox', 'Synththree', '2208120', 1, 1));
+  const r = rowOf(sh, t.ctx.storeLayout_(sh).screens, '2208120');
+  assert.match(sh.notes.get(r + ',5') || '', /Ticket # 2208120 looks off for this store \(7708xxx\): likely 7708120 \(2\/7 look alike\)/);
+  assert.match(t.ctx.SYSTEM_PROMPT, /2\/7/); assert.match(t.ctx.SYSTEM_PROMPT, /misread as 2 in ticket numbers/);
+  t.scan(tag('New Lenox', 'Synthfour', '7708130', 1, 1));
+  assert.doesNotMatch(sh.notes.get(rowOf(sh, t.ctx.storeLayout_(sh).screens, '7708130') + ',5') || '', /look alike/, 'a ticket that fits gets no note');
+});
+
 console.log(`${passed} group-check tests passed`);
