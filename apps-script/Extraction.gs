@@ -16,7 +16,7 @@
  * Column mapping to the real spreadsheet is still pending. See TODO(fields).
  */
 
-var EXTRACTION_VERSION = '0.13.20-draft';
+var EXTRACTION_VERSION = '0.13.21-draft';
 
 var SYSTEM_PROMPT = [
   'You read Ace Hardware screen tags for a small screen repair shop. Each photo shows one paper form',

@@ -135,6 +135,12 @@ Window mapping is built from Kirsten's description and the first real October wi
     ticket-cell note with the likely 7-digit number from that store's series, or both numbers when two series
     share those last digits. Notes stay on the cell until someone clears them; correcting the value doesn't remove them.
 
+23. **Group rows stay together** (Kirsten's request, approved by Jared 2026-10-22). The first tag of an "x of N" group
+    (N = 2–12) holds the empty rows right after it, grey with a column-A note. Later tags of the same group (same
+    name and N, same ticket or tickets within 50) fill those rows in any order; other jobs skip them. Rows are never
+    inserted or moved. Holds expire after 14 days, a deleted note frees the row, and a held row typed into by hand
+    is left alone. Screens block only, on tabs with the Tag x of N column.
+
 ## Review display for 0.13.18
 
 Future placed scans use three review levels. Money, placement, interrupted-save

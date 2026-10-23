@@ -40,7 +40,9 @@ _Last updated: 2026-10-22 (version 12 receipt verified at 03:10 UTC)._
    the 7-digit suggestion notes and asked whether they stay: yes, until someone clears them → rule 22.
 
 ## Waiting on Kirsten
-- Sheet fixes (hers): one Homer ticket read with a leading 9 instead of 8 (the ticket-book note on it shows the fix); New Lenox rows 9/10 double scan.
+- Sheet fix (hers): one Homer ticket read with a leading 9 instead of 8 (the ticket-book note on it shows the fix).
+  New Lenox double scan: resolved by Kirsten (checked read-only 2026-10-22).
+- Group rows (0.13.21): is a grey row + column-A note clear enough, or does she want "waiting for 2 of 6" text?
 
 ## Repository (2026-10-22)
 - This public repo, `jaredbahr/ScreenTagScanner`, is the single source from 2026-10-22. It starts with a clean

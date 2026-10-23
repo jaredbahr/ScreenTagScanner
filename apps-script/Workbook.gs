@@ -309,14 +309,93 @@ function screenBlockEnd_(sh) {
   return end;
 }
 
-/** First row at or after `from` in the screens block whose Date in, Name, Ticket # and Uni/In are blank. */
+/** First row at or after `from` in the screens block that is blank and not held for a group. */
 function firstEmptyScreenRowFrom_(sh, from, endRow, layout) {
   if (from > endRow) return -1;
   var c = (layout || storeLayout_(sh)).screens;
   var cols = [c.DATE_IN, c.NAME, c.SEQUENCE, c.DATE_OUT, c.TICKET, c.UNI_IN, c.SCREENING, c.LB_EARN, c.EXTRAS, c.EARNING].filter(Boolean);
   var vals = sh.getRange(from, c.DATE_IN, endRow - from + 1, c.EARNING - c.DATE_IN + 1).getValues();
-  for (var i = 0; i < vals.length; i++) if (cols.every(function (col) { return vals[i][col - c.DATE_IN] === ''; })) return from + i;
+  var holds = sh.getRange(from, COUNTER_COL, endRow - from + 1, 1).getNotes(), today = scanDateSerial_();
+  for (var i = 0; i < vals.length; i++) {
+    if (!cols.every(function (col) { return vals[i][col - c.DATE_IN] === ''; })) continue;
+    var hold = readGroupHold_(holds[i][0]);
+    if (hold && today - hold.day <= GROUP_HOLD_DAYS) continue; // saved for the rest of a group
+    if (hold) releaseGroupHold_(sh, from + i, c);              // expired: free it for anyone
+    return from + i;
+  }
   return -1;
+}
+
+/**
+ * Group rows (Kirsten, 2026-10-22): tags "1 of 6" ... "6 of 6" often arrive out of order and mixed with other
+ * jobs. When the first tag of a group lands on a tab, the next empty rows are held for the rest of the group
+ * (grey, with a note in column A). A later tag of the same group fills a held row; other jobs skip them.
+ * Rows never move, so row-based receipts and the Scans log stay valid. Holds expire after GROUP_HOLD_DAYS.
+ * Same group = same name and N, and the same ticket (Homer) or tickets within 50 (sequential books).
+ */
+var GROUP_HOLD = 'GROUP_HOLD_V1: ';
+var HOLD_COLOR = '#ececec';
+var GROUP_HOLD_MAX = 12;   // groups of 2..12 tags get holds; larger "x of N" readings are likely misreads
+var GROUP_HOLD_DAYS = 14;
+function groupKey_(x, c) {
+  if (!c.SEQUENCE || !verifiedSequence_(tagOf_(x))) return null;
+  var n = Number(x.tag_count), name = sequenceIdentity_(sheetName_(x));
+  if (!(n >= 2 && n <= GROUP_HOLD_MAX) || !name) return null;
+  return { name: name, of: n, ticket: String(x.ticket_number || '').trim() };
+}
+function sameGroup_(a, b) {
+  if (!a || !b || a.name !== b.name || a.of !== b.of || !a.ticket || !b.ticket) return false;
+  if (a.ticket === b.ticket) return true;
+  return /^\d{7}$/.test(a.ticket) && /^\d{7}$/.test(b.ticket) && Math.abs(Number(a.ticket) - Number(b.ticket)) <= 50;
+}
+function readGroupHold_(note) {
+  var line = String(note || '').split('\n').filter(function (l) { return l.indexOf(GROUP_HOLD) === 0; })[0];
+  if (!line) return null;
+  try {
+    var h = JSON.parse(line.slice(GROUP_HOLD.length));
+    return h && typeof h.name === 'string' && Number.isInteger(h.of) && typeof h.ticket === 'string' && Number.isFinite(h.day) ? h : null;
+  } catch (err) { return null; }
+}
+function releaseGroupHold_(sh, row, c) {
+  sh.getRange(row, COUNTER_COL).setNote('');
+  sh.getRange(row, c.DATE_IN, 1, c.EARNING - c.DATE_IN + 1).setBackground(null);
+}
+function rowBlank_(sh, row, c) {
+  var cols = [c.DATE_IN, c.NAME, c.SEQUENCE, c.DATE_OUT, c.TICKET, c.UNI_IN, c.SCREENING, c.LB_EARN, c.EXTRAS, c.EARNING].filter(Boolean);
+  var v = sh.getRange(row, c.DATE_IN, 1, c.EARNING - c.DATE_IN + 1).getValues()[0];
+  return cols.every(function (col) { return v[col - c.DATE_IN] === ''; });
+}
+/** A held row for this tag's group, released for its use; -1 if none. Stale holds (row typed in) are dropped. */
+function takeGroupHold_(sh, c, key, endRow) {
+  var notes = sh.getRange(2, COUNTER_COL, endRow - 1, 1).getNotes(), today = scanDateSerial_();
+  for (var i = 0; i < notes.length; i++) {
+    var h = readGroupHold_(notes[i][0]);
+    if (!h || today - h.day > GROUP_HOLD_DAYS || !sameGroup_(h, key)) continue;
+    releaseGroupHold_(sh, i + 2, c);
+    if (rowBlank_(sh, i + 2, c)) return i + 2;
+  }
+  return -1;
+}
+/** After the first tag of a group is written at `row`, hold the next empty rows for the rest of it. */
+function holdGroupRows_(sh, c, key, row, endRow, x) {
+  var vals = sh.getRange(2, c.NAME, endRow - 1, 1).getValues(), seqs = sh.getRange(2, c.SEQUENCE, endRow - 1, 1).getValues();
+  var tickets = sh.getRange(2, c.TICKET, endRow - 1, 1).getValues(), notes = sh.getRange(2, COUNTER_COL, endRow - 1, 1).getNotes();
+  for (var i = 0; i < vals.length; i++) {
+    if (i + 2 === row) continue;
+    var m = /^\d+ of (\d+)$/.exec(String(seqs[i][0]).trim());
+    var sibling = m && sameGroup_({ name: sequenceIdentity_(vals[i][0]), of: Number(m[1]), ticket: String(tickets[i][0]).trim() }, key);
+    if (sibling || sameGroup_(readGroupHold_(notes[i][0]), key)) return 0; // group already started here: no new holds
+  }
+  var label = String(sheetName_(x)).replace(/[\r\n]+/g, ' ').slice(0, 60), held = 0, day = scanDateSerial_();
+  for (var r = row + 1; r <= endRow && held < key.of - 1; r++) {
+    if (!rowBlank_(sh, r, c) || readGroupHold_(sh.getRange(r, COUNTER_COL).getNote())) break; // only rows right after
+    sh.getRange(r, COUNTER_COL).setNote('Saved for the rest of the ' + label + ' group (' + key.of + ' tags). The scanner ' +
+      'fills it when another tag of that group is scanned; released after ' + GROUP_HOLD_DAYS + ' days. Delete this note to free the row.\n' +
+      GROUP_HOLD + JSON.stringify({ name: key.name, of: key.of, ticket: key.ticket, day: day }));
+    sh.getRange(r, c.DATE_IN, 1, c.EARNING - c.DATE_IN + 1).setBackground(HOLD_COLOR);
+    held++;
+  }
+  return held;
 }
 
 /** Ticket lookup uses each block's current headers, including during migration. */
@@ -479,6 +558,8 @@ function writeToStoreTab_(ss, x, reasons) {
   var count = isBuild && multi ? x.screens_on_tag : 1;
   var end = screenBlockEnd_(sh);
   var rows = [];
+  var group = count === 1 ? groupKey_(x, c) : null, heldRow = group ? takeGroupHold_(sh, c, group, end) : -1;
+  if (heldRow > 0) rows.push(heldRow);
   for (var r = 2; rows.length < count; r++) {
     var next = firstEmptyScreenRowFrom_(sh, r, end, layout);
     if (next < 0) break;
@@ -559,6 +640,7 @@ function writeToStoreTab_(ss, x, reasons) {
     applyExtraLabor_(sh, row, c, x, i === 0, labor, flags);
     showReview_(sh,row,c,flags);
   });
+  if (group && heldRow < 0) holdGroupRows_(sh, c, group, rows[0], end, x);
   return { ok: true, store: store, tab: store.tab, row: rows.join(', '), block: 'screens', flags: flags };
 }
 

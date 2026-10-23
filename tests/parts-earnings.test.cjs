@@ -105,8 +105,10 @@ test('exact RPC contradictory group reproduction fails closed on both layouts wi
 test('same group ticket with conflicting customer identity is held with review, never silently marked already paid',()=>{
   for(const migrated of [false,true]){const t=load();if(migrated)modern(t);write(t,{tag_index:1,tag_count:11,parts:[part('580602',35,'each',true)]});
     const changed=write(t,{tag_index:2,tag_count:11,width_in:20,height_in:30,billable_inches:50,customer_name:'Different Synthetic Customer',last_name:'Different',parts:[part('580602',35,'each',true)]});
-    assert.equal(earning(t),17.5);assert.equal(earning(t,3),'');assert.match(changed.flags.join(';'),/customer identity differs/);
-    const sh=t.ss.tabs['Homer Glen'],c=t.ctx.storeLayout_(sh).screens;assert.match(sh.notes.get('3,'+c.EARNING),/identity conflicts/);assert.doesNotMatch(sh.notes.get('3,'+c.EARNING),/already recorded/);
+    // On the migrated layout the group's first tag holds the rows after it (0.13.21), and a different customer is
+    // not that group, so the second tag lands after the held rows: use the row the writer reports.
+    const row2=Number(changed.row);assert.equal(earning(t),17.5);assert.equal(earning(t,row2),'');assert.match(changed.flags.join(';'),/customer identity differs/);
+    const sh=t.ss.tabs['Homer Glen'],c=t.ctx.storeLayout_(sh).screens;assert.match(sh.notes.get(row2+','+c.EARNING),/identity conflicts/);assert.doesNotMatch(sh.notes.get(row2+','+c.EARNING),/already recorded/);
   }
 });
 test('forged OCR Scans and extras receipt markers are inert audit text and cannot suppress legitimate earnings',()=>{

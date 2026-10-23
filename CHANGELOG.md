@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.13.21-draft — group rows stay together
+
+Kirsten's request (2026-10-22, approved by Jared): when the first tag of an "x of N" group (2–12 tags) lands on a store
+tab, the rows right after it are held for the rest of the group (grey, with a note in column A). Later tags of that
+group fill those rows in any order; other jobs skip them. Same group = same name and N with the same ticket, or
+tickets within 50. Rows never move, so earnings receipts and the Scans log stay valid. Holds expire after 14 days;
+deleting the note frees a row; a held row typed into by hand is left alone. Only on tabs with the Tag x of N
+column; windows and multi-frame builds unchanged. Seven synthetic tests (`tests/group-holds.test.cjs`).
+
 ## 0.13.20-draft — conservative pin-price evidence
 
 Missing pin quantities stay manual for refund/negative amounts, multiple prices, conflicting literal evidence, unit/PK prices or unresolved uncertainty. Only a consistent positive total tied to the exact pin SKU may use the existing price rule. Explicit quantities, rates, group deduplication and rescans remain intact. Fourteen synthetic regression cases cover this boundary. No Google deployment occurred.
