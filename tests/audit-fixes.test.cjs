@@ -36,4 +36,17 @@ test('prompt: thin 1s, 4/6 in years', () => {
   assert.match(p, /thin handwritten 1 between other digits is easy to skip/); assert.match(p, /4\/6 in years/);
 });
 
+test('price arithmetic read as a second size: billed when size, QTY rows and $ totals all agree (New Lenox case)', () => {
+  const base = { ticket_number: '7708301', material: 'aluminum', width_in: 10, height_in: 10, billable_inches: 20, qty_rows: '20, 20, 20',
+    line_totals: '3.80, 1.40, 4.00', quantity_conflict: true, quantity_conflict_details: 'Screen size 10 x 10 = 20 in; calculation 20 x 19 = 3.80' };
+  const t = load(), sh = t.ss.tabs['Homer Glen']; const r = t.scan(base);
+  assert.equal(sh.get(2, 6), 20); assert.equal(sh.get(2, 7), 3.8); assert.equal(sh.get(2, 8), 4);
+  assert.match(sh.notes.get('2,3') || '', /Inches 20" billed: the tag's size, QTY rows and \$ totals all agree; Claude also noted: Screen size 10 x 10/);
+  assert.match(r.message, /Check on the sheet: inches/);
+  for (const x of [{ line_totals: '3.80, 1.40, 4.10' }, { qty_rows: '20, 20' , line_totals: '3.80' }, { has_corrections: true }, { billable_inches: 21 }]) {
+    const u = load(); u.scan({ ...base, ...x }); assert.equal(u.ss.tabs['Homer Glen'].get(2, 6), '', JSON.stringify(x) + ' still held');
+  }
+  assert.match(load().ctx.SYSTEM_PROMPT, /price calculation, not a\s+screen size/);
+});
+
 console.log(`${passed} audit-fix tests passed`);

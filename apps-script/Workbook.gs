@@ -736,7 +736,12 @@ function writeToStoreTab_(ss, x, reasons) {
   var holdBilling = null; // reason billing is left blank for review
   var due = /^\d{1,3}$/.test(String(x.balance_due_qty || '').trim()) ? Number(String(x.balance_due_qty).trim()) : 0;
   if (due > 200) due = 0;
-  var conflict = quantityConflict_(x);
+  var conflict = quantityConflict_(x), agreed = conflict && x.quantity_conflict ? unanimousInches_(x) : null;
+  if (agreed) {
+    flags.push('Inches ' + agreed + '" billed: the tag\'s size, QTY rows and $ totals all agree; Claude also noted: ' +
+      String(x.quantity_conflict_details || 'a second size').slice(0, 160) + '. Check the tag');
+    conflict = null;
+  }
   var settled = conflict && !(multi && !isBuild) ? settleInches_(x) : null;
   if (conflict) {
     [['Literal QTY rows',x.qty_rows],['Literal row totals',x.line_totals]].forEach(function(evidence) {

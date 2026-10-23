@@ -11,6 +11,8 @@ Rules from Kirsten (2026-10-23): **bill what the customer was charged.**
 - A written tag year more than 120 days behind the scan ("24", "2020", "25" on 2026 tags: five October rows) gets a
   Date in note; the prompt lists 4/6 in years. Values are never changed.
 - The prompt warns that a thin handwritten 1 between digits is easy to skip.
+- Price arithmetic written beside the rows ("20 x .19 = 3.80") is not a size (prompt). If Claude still reports a
+  conflict while the tag's size, every QTY row and every $ total agree to the cent, the row is billed with a note.
 
 ## 0.13.24-draft — plain phone messages
 
