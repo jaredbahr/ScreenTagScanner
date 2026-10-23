@@ -3,13 +3,13 @@
 Living notes so any session (Claude Code or Codex) can pick up where the last one stopped. Update this
 file whenever the state below changes. No customer data, emails, Google IDs or secrets here.
 
-_Last updated: 2026-10-22 (version 12 receipt verified at 03:10 UTC)._
+_Last updated: 2026-10-23 (version 13 receipt verified at 00:51 UTC)._
 
 ## Where things stand
 | | |
 |---|---|
-| Live in Google | Immutable version 12 / **0.13.20-draft**, source `c3c32f9a133a0868dd7345a9d9fe9909220360c8`. Deployed 2026-10-22 03:07 UTC; final verification 03:10 UTC (minute precision). All twelve saved files matched the pin. |
-| Ready to deploy | This pin is already deployed. PR #2 is merged. Future runtime changes require a new reviewed `main` pin and release validation; see issue #1 for this deployment receipt. |
+| Live in Google | Immutable version 13 / **0.13.21-draft**, source `a5bb9bc0108b3b93245cc5dfb8ad6d1626be870a`. Deployed 2026-10-23 00:50 UTC; final health/browser checks 00:51 UTC (minute precision). All twelve saved files matched the pin before deployment. UI checks used a normal cloud viewport, not phone-sized or physical-phone QA. |
+| Ready to deploy | This pin is already deployed. PR #5 is merged. Future runtime changes require a new reviewed `main` pin and release validation; see issue #6 for this deployment receipt. |
 | Who deploys | Codex, per [DEPLOYMENT.md](DEPLOYMENT.md) and the release gate, recorded as a `deployment` issue |
 | Lesson (2026-10-22) | Google ran Codex's unmerged PR line for a week while the default branch moved on separately. Rule now: deploy only from the default branch; the release gate fails a candidate that lacks the deployed source's history |
 | Workbook in use | "October 2026" in the shared monthly folder; tabs named by store ("Downers Grove", …); a "Tag x of N" column after Name in both blocks |

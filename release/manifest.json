@@ -4,12 +4,12 @@
   "reconciliationBranch": "main",
   "requiredUpstreamCommit": "5ebceb692142a7968f628b4cf841e0179e27b8cf",
   "lastVerifiedDeployment": {
-    "sourceCommit": "c3c32f9a133a0868dd7345a9d9fe9909220360c8",
-    "version": "0.13.20-draft",
-    "appsScriptVersion": 12,
-    "deployedAtUtc": "2026-10-22T03:07:00Z",
-    "verifiedAtUtc": "2026-10-22T03:10:00Z",
-    "evidence": "Coordinating Google worker independently read back all twelve saved files and checked health/browser UI. Timestamps have minute precision; no private target identifiers are recorded."
+    "sourceCommit": "a5bb9bc0108b3b93245cc5dfb8ad6d1626be870a",
+    "version": "0.13.21-draft",
+    "appsScriptVersion": 13,
+    "deployedAtUtc": "2026-10-23T00:50:00Z",
+    "verifiedAtUtc": "2026-10-23T00:51:00Z",
+    "evidence": "Google browser worker independently reloaded/read all twelve saved files against the pin before deployment, then verified live health and normal-cloud-viewport UI. Timestamps have minute precision; no private target identifiers are recorded."
   },
   "requiredProductionFiles": [
     "apps-script/Backup.gs",
@@ -29,14 +29,14 @@
     "apps-script/Backup.gs": "ebb93e40165fdea0e509e40e8ca9e84edd7e85bf",
     "apps-script/Code.gs": "ae6b724afe7da65bfa897b50d2483ef403cfe162",
     "apps-script/ExtraLabor.gs": "e0489c27eeaa0783e075a5c2688aaf60bcb73f49",
-    "apps-script/Extraction.gs": "340d885b82f61987a3c7c8e83c94314db0754eb0",
+    "apps-script/Extraction.gs": "95f5dd994d140788db17941a3dcda09a4948e1d3",
     "apps-script/Layout.gs": "c2b21344d81e934ea7b1dc7a5607f45e68232da2",
     "apps-script/Month.gs": "313dbc09c372695495aaa36dadda07599ccff55b",
     "apps-script/MonthArchive.gs": "eb3a398ff452cb7c4ef208fc97582cddf2509e16",
     "apps-script/Parts.gs": "b858668194e07023393716fdb4df4b5ff51292b9",
     "apps-script/Routing.gs": "3d2a680ecd1e36c1d68ec737d71599209f8707b3",
-    "apps-script/Upload.html": "12ff3175acd5e9130bb934dcbe91a208e1edca26",
-    "apps-script/Workbook.gs": "75cf3826d517eb26b21db245e8d643ab3b15a518",
+    "apps-script/Upload.html": "cd64719c189ea42a2924df54e3dc3138b48c5568",
+    "apps-script/Workbook.gs": "bdf94e28449a35d634defad52d83022d26bb802b",
     "apps-script/appsscript.json": "af507c4c66583975efc63b989fea75ceb033c1f8"
   },
   "allowedPublicFunctions": [
