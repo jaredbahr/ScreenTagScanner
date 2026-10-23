@@ -16,6 +16,11 @@ var PARTS_RECEIPT = 'PARTS_EARNINGS_V1: ';
 function escapePartsReceiptText_(text) {
   return String(text||'').replace(/(^|\n)(PARTS_EARNINGS_V1: )/g,'$1Literal OCR: $2');
 }
+/** The Name cell still matches a receipt. Receipts from 0.13.22-0.13.25 hold "li" while the cell holds "amy li". */
+function receiptNameOk_(receipt,nameCell) {
+  if(receipt.customer===nameCell)return true;
+  try{var client=JSON.parse(receipt.client);return Array.isArray(client)&&receipt.customer===(client[1]||client[0])&&receiptCustomerOk_(nameCell,client);}catch(err){return false;}
+}
 function partsClient_(x) {
   return JSON.stringify([sequenceIdentity_(x.customer_name),sequenceIdentity_(x.last_name),String(x.phone||'').replace(/\D/g,'')]);
 }
@@ -144,7 +149,7 @@ function partsReceipts_(text) {
         var valid=ref&&Array.isArray(scope)&&scope.length>=3&&sameTab&&sequenceIdentity_(scope[1])===r.ticket&&
           (r.group?['group','build-form'].indexOf(scope[2])>=0:scope[2]==='tag')&&
           Array.isArray(client)&&client.length===3&&client.every(function(v){return typeof v==='string';})&&
-          !!(client[1]||client[0])&&r.customer===(client[1]||client[0])&&/^\d*$/.test(client[2])&&
+          !!(client[1]||client[0])&&receiptCustomerOk_(r.customer,client)&&/^\d*$/.test(client[2])&&
           typeof r.customer==='string'&&!!r.customer&&typeof r.ticket==='string'&&!!r.ticket&&
           Number.isInteger(r.quantity)&&r.quantity>=1&&r.quantity<=1000&&r.rate===ref.rate&&r.unit===ref.unit&&
           Number.isFinite(r.amount)&&r.amount===cents_(r.quantity*r.rate)&&typeof r.group==='boolean'&&
@@ -177,7 +182,7 @@ function preparePartsEarnings_(ss,x) {
         }
         var current=sh.getRange(row,earning).getValues()[0][0];
         var edited=(receipt.tab!==st.tab&&receipt.tab!==sh.getName())||receipt.block!==block||receipt.row!==row||
-          receipt.customer!==sequenceIdentity_(sh.getRange(row,c.NAME).getValues()[0][0])||
+          !receiptNameOk_(receipt,sequenceIdentity_(sh.getRange(row,c.NAME).getValues()[0][0]))||
           receipt.ticket!==rowTicket||receipt.status==='posted'&&current!==receipt.expectedTotal;
         found.push(Object.assign({},receipt,{block:block,row:row,paid:!edited&&current===receipt.expectedTotal,edited:edited}));
       });
@@ -206,7 +211,7 @@ function applyPartsEarnings_(sh,row,c,x,firstRow,base) {
   if(!firstRow&&plan.posted.length)lines.push('Parts total is recorded on the first row of this form; no duplicate amount added.');
   if(!lines.length)return;
   var receipts=firstRow?plan.items.map(function(item){return Object.assign({},item,{status:'reserved',tab:storeByTabName_(sh.getName()).tab,block:x.item_type==='window'?'windows':'screens',row:row,
-    client:partsClient_(x),customer:sequenceIdentity_(x.last_name||x.customer_name),ticket:sequenceIdentity_(x.ticket_number)});}):[];
+    client:partsClient_(x),customer:sequenceIdentity_(sheetName_(x)),ticket:sequenceIdentity_(x.ticket_number)});}):[];
   var extra=receipts.reduce(function(n,item){return n+item.amount;},0),total=cents_((base||0)+extra);
   receipts.forEach(function(r){r.expectedTotal=total;});
   var human=escapePartsReceiptText_((note?note+'\n\n':'')+lines.join('\n'));

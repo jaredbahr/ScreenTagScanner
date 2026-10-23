@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.13.26-draft — money fixes from the independent review of 0.13.23–0.13.25
+
+Found by the pre-deploy review (CONTRIBUTING: triple check). Nothing here was live except the short-name receipt bug
+(0.13.22), which had not fired: October has no extra-labor receipts.
+- **Balance-due slip on a multi-frame build** was added to every frame (40" billed for a 20" slip). Now it is not added
+  and the rows say to add it to the right frame by hand. A single-frame build still adds it once.
+- **Slip labor paid twice:** extra labor on a tag with a balance-due slip is held for reconciliation instead of being
+  credited on top of the slip inches. The prompt's general slip rule now excludes balance-due slips.
+- **Unreadable slip QTY** ("20 in", "+20", "999") was dropped silently. It is now a yellow-row note to enter by hand.
+- **Unanimous-tag billing** no longer overrides a conflict that names a slip, a balance due, a wrong measurement,
+  another screen or a correction; price arithmetic ("not a second size", "read correctly") still bills (October
+  replay: Downers Grove row 39 still bills; the two New Lenox balance-due tags stay held). No double period.
+- **Short last names** ("Amy Li"): extra-labor receipts were read as invalid, which blocked every later extra-labor
+  credit on that tab for the month, and tag 2 of a group-wide part was held as "edited by hand". Receipts now accept
+  the full name the Name cell holds; older receipts (both kinds) still read.
+- Empty-looking slip values ("00", "-", "None.") count as no slip, not as unreadable.
+- Notes: a slip on a tag with missing inches says "missing", not "held"; a slip on a window tag gets a note.
+
 ## 0.13.25-draft — balance-due slips, shop re-measurements, tag years (October 23 audit)
 
 Rules from Kirsten (2026-10-23): **bill what the customer was charged.**
