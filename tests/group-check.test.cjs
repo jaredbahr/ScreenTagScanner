@@ -29,7 +29,7 @@ test('same-ticket group (Homer style): a name or ticket read differently gets a 
   t.scan(tag('HOMER', 'Synthrus', '8169901', 2, 6));
   t.scan(tag('HOMER', 'Synthrus', '8169501', 1, 6)); // two agreeing tags: the shared-ticket wording
   assert.match(note(sh, rowOf(sh, c, '8169501'), c.TICKET), /this tag reads 8169501; 2 other tags in this group read 8169901/);
-  assert.doesNotMatch(r.message, /Flagged/, 'cell notes, not a yellow row');
+  assert.doesNotMatch(r.message, /Check on the sheet:/, 'cell notes, not a yellow row');
   assert.notEqual(sh.bg.get(row + ',' + c.DATE_IN), t.ctx.FLAG_COLOR);
 });
 

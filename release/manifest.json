@@ -90,7 +90,7 @@
     "tests/sequence-migration.test.cjs": 19,
     "tests/store-alias.test.cjs": 8,
     "tests/store-rescan.test.cjs": 6,
-    "tests/upload-ui.test.cjs": 33,
+    "tests/upload-ui.test.cjs": 35,
     "tests/workbook-backup.test.cjs": 26,
     "tests/review-tiers.test.cjs": 19,
     "tests/release-guards.test.cjs": 8,

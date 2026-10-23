@@ -497,7 +497,7 @@ test('review signal reaches the page while Shortcut JSON interface stays unchang
 });
 test('synthetic actual correction stays flagged, unlike ordinary extras-only slips', () => {
   const t=load();t.setOutput({has_corrections:true,correction_details:'Synthetic credit for returned parts',extras:'Extra corners'});
-  const r=t.ctx.scanTag(request());assert.equal(r.needsReview,true);assert.match(r.message,/Flagged/);
+  const r=t.ctx.scanTag(request());assert.equal(r.needsReview,true);assert.match(r.message,/Check on the sheet:/);
 });
 test('provider failure returns phone error with zero emails and no secrets/customer text in diagnostic', () => {
   const t=load({fetchFail:true}),diagnostics=[];t.ctx.console.error=s=>diagnostics.push(s);
@@ -528,13 +528,13 @@ test('HTML page served, explicit health endpoint preserved', () => {
 test('a ticket that is not 7 digits is flagged (a staple hid the leading 8 on a real Homer tag)', () => {
   const t = load();
   const r = t.scan({ ticket_number: '169725' });
-  assert.doesNotMatch(r.message, /Flagged/, 'one value to glance at, not a row flag');
+  assert.doesNotMatch(r.message, /Check on the sheet:/, 'one value to glance at, not a row flag');
   assert.match(t.ss.tabs['Homer Glen'].notes.get('2,5'), /Glance at this value:\n- Ticket # has 6 digits \(Ace tickets have 7\)/);
   assert.equal(t.ss.tabs['Homer Glen'].bg.get('2,5'), t.ctx.HINT_COLOR);
   assert.notEqual(t.ss.tabs['Homer Glen'].bg.get('2,2'), t.ctx.FLAG_COLOR, 'row stays white');
   assert.equal(t.ss.tabs['Homer Glen'].get(2, 5), '169725', 'written as read, never guessed');
   const u = load();
-  assert.equal(u.scan({ ticket_number: '8169725' }).message.includes('Flagged'), false);
+  assert.equal(u.scan({ ticket_number: '8169725' }).message.includes('Check on the sheet:'), false);
   assert.equal(u.ss.tabs['Homer Glen'].bg.get('2,5'), undefined);
   assert.match(t.ctx.SYSTEM_PROMPT, /staple,/); assert.match(t.ctx.SYSTEM_PROMPT, /blank rows under the printed SKU list/);
 });
@@ -545,7 +545,7 @@ test('settle inches: $ totals that agree with width + height bill the job (real 
     billable_inches: 47, qty_rows: '47, 67, 87', line_totals: '16.53, 6.09, 17.40' });
   assert.equal(sh.get(2, 6), 87); assert.equal(sh.get(2, 7), 16.53); assert.equal(sh.get(2, 8), 17.4);
   assert.match(sh.notes.get('2,3'), /Inches 87" taken from the written \$ totals \(\$16\.53, \$6\.09, \$17\.40\)/);
-  assert.match(r.message, /Flagged/, 'still yellow so she glances at it');
+  assert.match(r.message, /Check on the sheet:/, 'still yellow so she glances at it');
 });
 
 test('settle inches: consistent QTY rows bill even when the size is misread (real Homer tag, 46 read as 96)', () => {
@@ -604,7 +604,7 @@ test('review levels: money/placement turns the row yellow; one-value doubts tint
   // On the sheet: a phone-only doubt leaves the row clean, and the phone isn't told it was flagged.
   const r = t.scan({ ticket_number: '8169500', phone: '5175550100' });
   const sh = t.ss.tabs['Homer Glen'];
-  assert.doesNotMatch(r.message, /Flagged/); assert.equal(sh.bg.get('2,2'), undefined); assert.equal(sh.notes.get('2,3'), undefined);
+  assert.doesNotMatch(r.message, /Check on the sheet:/); assert.equal(sh.bg.get('2,2'), undefined); assert.equal(sh.notes.get('2,3'), undefined);
   const log = t.ss.tabs.Scans, H = t.ctx.HEADERS;
   assert.equal(log.get(2, H.indexOf('Needs Review') + 1), '', 'not marked in Scans either');
   assert.match(log.get(2, H.indexOf('Review Reason') + 1), /Area code 517/, 'but still listed there');
@@ -654,7 +654,7 @@ test('a tag rescanned with a different ticket reading is flagged as a possible d
   const tag = { store: 'New Lenox', last_name: 'Synthetic', width_in: 22, height_in: 54, billable_inches: 76, tag_index: 1, tag_count: 1 };
   t.scan({ ...tag, ticket_number: '7707611' });
   const r = t.scan({ ...tag, ticket_number: '7702611' });
-  assert.match(r.message, /Flagged/);
+  assert.match(r.message, /Check on the sheet:/);
   assert.match(sh.notes.get('3,3'), /Possible duplicate: same name, size and Tag x of N as New Lenox screens row 2 \(ticket read as 7707611\)/);
   const u = load(); u.scan({ ...tag, ticket_number: '7707611' }); u.scan({ ...tag, ticket_number: '7707612', tag_index: 2, tag_count: 2 });
   assert.equal(u.ss.tabs['New Lenox'].notes.get('3,3'), undefined, 'a different tag in the group is not a duplicate');
@@ -709,7 +709,7 @@ test('interrupted save: Scans row is written first, so a retry never adds a seco
   assert.equal(log.bg.get('2,1'),t.ctx.UNPLACED_COLOR);
   assert.equal(rowsWith(sh, '7700001',ticketCol).length, 1);
   t.ctx.writeToStoreTab_ = real;
-  const next=t.scan({ticket_number:'7700002'});assert.equal(next.status,'ok');assert.match(next.message,/1 earlier scan still needs reconciliation/);assert.match(next.message,/add a row only after confirming it is missing/);assert.doesNotMatch(next.message,/needs? placing/);
+  const next=t.scan({ticket_number:'7700002'});assert.equal(next.status,'ok');assert.match(next.message,/1 earlier tag didn't save/);assert.match(next.message,/may be partly saved, so check its store tab first/);assert.doesNotMatch(next.message,/needs? placing/);
   const r2 = t.scan({ ticket_number: '7700001' });
   assert.match(r2.message, /Already scanned/);
   assert.equal(rowsWith(sh, '7700001',ticketCol).length, 1, 'retry did not duplicate the store row');
@@ -725,16 +725,16 @@ test('unplaced scans are counted on every phone reply until their Needs Review Y
   const t = load(), review = t.ctx.HEADERS.indexOf('Needs Review') + 1;
   const r1 = t.scan({ ticket_number: '7700010', store: 'NOWHERE' }), log = t.ss.tabs.Scans;
   assert.match(r1.message, /NOT PLACED|not recognised/);
-  assert.doesNotMatch(r1.message, /earlier scan/, 'the scan itself is not counted as earlier');
+  assert.doesNotMatch(r1.message, /earlier (?:scan|tag)/, 'the scan itself is not counted as earlier');
   assert.equal(log.bg.get('2,1'), t.ctx.UNPLACED_COLOR);
   const r2 = t.scan({ ticket_number: '7700011' });
-  assert.match(r2.message, /1 earlier scan still needs reconciliation/);
+  assert.match(r2.message, /1 earlier tag didn't save/);
   t.scan({ ticket_number: '7700011' }); // exact rescan: not counted
   const r3 = t.scan({ ticket_number: '7700012', store: 'NOWHERE' });
-  assert.match(r3.message, /1 earlier scan still needs reconciliation/);
-  assert.match(t.scan({ ticket_number: '7700013' }).message, /2 earlier scans still need reconciliation/);
+  assert.match(r3.message, /1 earlier tag didn't save/);
+  assert.match(t.scan({ ticket_number: '7700013' }).message, /2 earlier tags didn't save/);
   log.set(2, review, ''); log.set(5, review, '');      // Kirsten placed both by hand
-  assert.doesNotMatch(t.scan({ ticket_number: '7700014' }).message, /earlier scan/);
+  assert.doesNotMatch(t.scan({ ticket_number: '7700014' }).message, /earlier (?:scan|tag)/);
 });
 
 function recoveryFixture(migrated) {
@@ -750,8 +750,8 @@ test('completion interruption stays orange and requires checking existing rows, 
     assert.equal(t.scan({ticket_number:'RECOVER'}).status,'error');assert.equal(rowsWith(sh,'RECOVER',c.TICKET).length,1);
     assert.equal(log.get(2,t.ctx.COL.WRITTEN_TO),'PENDING');assert.equal(log.bg.get('2,1'),t.ctx.UNPLACED_COLOR);
     log.getRange=range;
-    const next=t.scan({ticket_number:'NEXT'});assert.equal(next.status,'ok');assert.match(next.message,/1 earlier scan still needs reconciliation/);
-    assert.match(next.message,/Existing or partial store rows may already be present; add a row only after confirming it is missing/);assert.doesNotMatch(next.message,/needs? placing/);
+    const next=t.scan({ticket_number:'NEXT'});assert.equal(next.status,'ok');assert.match(next.message,/1 earlier tag didn't save/);
+    assert.match(next.message,/may be partly saved, so check its store tab first/);assert.doesNotMatch(next.message,/needs? placing/);
     assert.equal(log.bg.get('3,1'),null,'clean completion clears the initial orange pending fill');
     assert.match(t.scan({ticket_number:'RECOVER'}).message,/Already scanned/);assert.equal(rowsWith(sh,'RECOVER',c.TICKET).length,1);
     for(const [k,v] of formulas)assert.equal(sh.cells.get(k),v);
@@ -760,8 +760,8 @@ test('completion interruption stays orange and requires checking existing rows, 
 test('optional count read failure after durable completion preserves confirmed success, including rescans',()=>{
   for(const migrated of [false,true]){
     const t=recoveryFixture(migrated),sh=t.ss.tabs['Homer Glen'],c=t.ctx.storeLayout_(sh).screens;
-    t.ctx.unplacedCount_=()=>{throw Error('Synthetic count read failure');};
-    t.setOutput({ticket_number:'COUNT'});const r=t.ctx.scanTag(request());assert.equal(r.status,'ok');assert.match(r.message,/Added/);assert.match(r.message,/review status could not be checked/);assert.doesNotMatch(r.message,/Save could not be confirmed/);
+    t.ctx.unplacedRows_=()=>{throw Error('Synthetic count read failure');};
+    t.setOutput({ticket_number:'COUNT'});const r=t.ctx.scanTag(request());assert.equal(r.status,'ok');assert.match(r.message,/Added/);assert.match(r.message,/Could not check for earlier tags/);assert.doesNotMatch(r.message,/Save could not be confirmed/);
     assert.equal(rowsWith(sh,'COUNT',c.TICKET).length,1);assert.match(t.ss.tabs.Scans.get(2,t.ctx.COL.WRITTEN_TO),/screens row/);assert.equal(t.ss.tabs.Scans.bg.get('2,1'),null);
     const again=t.ctx.scanTag(request());assert.equal(again.status,'ok');assert.match(again.message,/Already scanned/);assert.equal(rowsWith(sh,'COUNT',c.TICKET).length,1);
   }
@@ -771,7 +771,7 @@ test('unresolved count uses controlled state, never the phrase already scanned i
     const t=recoveryFixture(migrated);t.scan({ticket_number:'WAIT',store:'NOWHERE',has_corrections:true,correction_details:'already scanned; cancel duplicate'});
     const log=t.ss.tabs.Scans;assert.equal(log.get(2,t.ctx.COL.WRITTEN_TO),'NOT PLACED');assert.equal(t.ctx.unplacedCount_(log,0),1);
     t.scan({ticket_number:'CONTROL'});t.scan({ticket_number:'CONTROL'});assert.equal(log.get(4,t.ctx.COL.WRITTEN_TO),'RESCAN');assert.equal(t.ctx.unplacedCount_(log,0),1,'genuine controlled rescan is excluded');
-    assert.match(t.scan({ticket_number:'AFTER'}).message,/1 earlier scan still needs reconciliation/);
+    assert.match(t.scan({ticket_number:'AFTER'}).message,/1 earlier tag didn't save/);
     log.set(2,t.ctx.HEADERS.indexOf('Needs Review')+1,'');assert.equal(t.ctx.unplacedCount_(log,0),0);
   }
 });
