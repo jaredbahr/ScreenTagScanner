@@ -29,7 +29,7 @@ test('prompt includes highlighted handwritten rows in literal and structured evi
 test('short and long numeric tickets get one-cell hints and remain exactly as read in both layouts', () => {
   for (const modern of [false, true]) for (const ticket of ['920046', '92000046', '0']) {
     const {t, sh, c} = fixture(modern), r = t.scan({ticket_number:ticket});
-    assert.equal(r.status, 'ok'); assert.doesNotMatch(r.message, /Flagged/);
+    assert.equal(r.status, 'ok'); assert.doesNotMatch(r.message, /Check on the sheet:/);
     assert.equal(sh.get(2, c.TICKET), ticket);
     assert.match(sh.notes.get('2,' + c.TICKET), new RegExp('Ticket # has ' + ticket.length + ' digits'));
     assert.equal(sh.bg.get('2,' + c.TICKET),t.ctx.HINT_COLOR);
@@ -42,7 +42,7 @@ test('short and long numeric tickets get one-cell hints and remain exactly as re
 test('seven digits including leading zeroes stay literal and do not trigger a length warning', () => {
   for (const ticket of ['9200046', '0000046']) {
     const {t, sh, c} = fixture();
-    assert.doesNotMatch(t.scan({ticket_number:ticket}).message, /Flagged/);
+    assert.doesNotMatch(t.scan({ticket_number:ticket}).message, /Check on the sheet:/);
     assert.equal(sh.get(2, c.TICKET), ticket);
   }
 });
@@ -58,7 +58,7 @@ test('missing and nonnumeric ticket handling stays distinct from numeric length 
 
 test('a seven-digit uncertain reading remains visibly hinted without digit repair', () => {
   const {t, sh, c} = fixture();
-  assert.doesNotMatch(t.scan({ticket_number:'9200046', unclear:['ticket_number: leading digit obscured']}).message, /Flagged/);
+  assert.doesNotMatch(t.scan({ticket_number:'9200046', unclear:['ticket_number: leading digit obscured']}).message, /Check on the sheet:/);
   assert.equal(sh.get(2, c.TICKET), '9200046');
   assert.match(sh.notes.get('2,' + c.TICKET), /leading digit obscured/);
   assert.equal(sh.bg.get('2,' + c.TICKET),t.ctx.HINT_COLOR);
@@ -79,7 +79,7 @@ test('handwritten parts with missing structured evidence or uncertainty still ho
   for (const extra of [{parts:[]}, {parts:[corners()], unclear:['parts quantity unclear']},
     {parts:[corners({quantity:0})]}, {parts:[corners(), corners()]}]) {
     const {t, sh, c} = fixture();
-    assert.match(t.scan({ticket_number:'9200048', extras:raw, ...extra}).message, /Flagged/);
+    assert.match(t.scan({ticket_number:'9200048', extras:raw, ...extra}).message, /Check on the sheet:/);
     assert.equal(sh.get(2, c.EARNING), '');
   }
 });

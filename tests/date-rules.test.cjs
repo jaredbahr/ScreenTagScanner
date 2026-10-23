@@ -45,7 +45,7 @@ test('a missing-year leap date uses the current leap year, never an invalid prev
 });
 test('missing, invalid and unsupported dates stay blank with review instead of becoming scan date',()=>{
   for(const date of [null,'','2/29/2025','4/31/2026','13/1','0/10','10/0','31/10/2026','unreadable','2026-02-30']){
-    const t=load();const r=t.scan({date});const sh=t.ss.tabs['Homer Glen'];assert.equal(sh.get(2,2),'',String(date));assert.equal(sh.get(2,4),serial('2026-10-12'));assert.match(sh.notes.get('2,2'),/Date in left blank/);assert.doesNotMatch(r.message,/Flagged/);assert.equal(sh.bg.get('2,2'),t.ctx.HINT_COLOR);
+    const t=load();const r=t.scan({date});const sh=t.ss.tabs['Homer Glen'];assert.equal(sh.get(2,2),'',String(date));assert.equal(sh.get(2,4),serial('2026-10-12'));assert.match(sh.notes.get('2,2'),/Date in left blank/);assert.doesNotMatch(r.message,/Check on the sheet:/);assert.equal(sh.bg.get('2,2'),t.ctx.HINT_COLOR);
   }
 });
 test('a two-digit year older than last year keeps 20YY but flags a century check',()=>{

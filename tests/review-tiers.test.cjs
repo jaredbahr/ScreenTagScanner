@@ -37,7 +37,7 @@ test('unresolved states need review even with zero or metadata-only reasons',()=
 });
 test('ticket hints stay literal and tint only the ticket in both layouts',()=>{
   for(const modern of [false,true]){const {t,sh,c}=fixture(modern),r=rpc(t,{ticket_number:'980001'});
-    assert.equal(r.needsReview,false);assert.doesNotMatch(r.message,/Flagged/);assert.equal(sh.get(2,c.TICKET),'980001');
+    assert.equal(r.needsReview,false);assert.doesNotMatch(r.message,/Check on the sheet:/);assert.equal(sh.get(2,c.TICKET),'980001');
     assert.equal(sh.bg.get('2,'+c.TICKET),t.ctx.HINT_COLOR);assert.notEqual(sh.bg.get('2,'+c.DATE_IN),t.ctx.FLAG_COLOR);
     assert.match(sh.notes.get('2,'+c.TICKET),/6 digits/);assert.equal(marked(t),'');assert.match(reason(t),/6 digits/);
   }
@@ -63,7 +63,7 @@ test('phone-only uncertainty is retained in Scans without store paint or phone w
 });
 test('a money issue plus phone uncertainty retains the row warning and full log reasons',()=>{
   const {t,sh,c}=fixture(),r=rpc(t,{phone:'2025550100',billable_inches:114});assert.equal(r.needsReview,true);
-  assert.match(r.message,/Flagged/);assert.equal(marked(t),'YES');assert.equal(sh.get(2,c.UNI_IN),'');
+  assert.match(r.message,/Check on the sheet:/);assert.equal(marked(t),'YES');assert.equal(sh.get(2,c.UNI_IN),'');
   assert.equal(sh.bg.get('2,'+c.DATE_IN),t.ctx.FLAG_COLOR);assert.match(sh.notes.get('2,'+c.NAME),/Inches/);
   assert.match(reason(t),/Area code 202/);assert.match(reason(t),/Inches/);
 });
@@ -93,17 +93,17 @@ test('a prior legacy review flag is not silently reinterpreted or cleared on a r
 });
 test('unposted parts on an enriched rescan still require row-level reconciliation',()=>{
   const {t,sh,c}=fixture();rpc(t);const r=rpc(t,{extras:'4 580401 Corners',parts:[{sku:'580401',quantity:4,unit:'each',group_wide:false,raw:'4 580401 Corners'}]});
-  assert.equal(r.needsReview,true);assert.match(r.message,/reconcile/);assert.equal(marked(t,3),'YES');assert.equal(sh.get(2,c.EARNING),'');assert.equal(sh.get(3,c.TICKET),'');
+  assert.equal(r.needsReview,true);assert.match(r.message,/still needs checking/);assert.equal(marked(t,3),'YES');assert.equal(sh.get(2,c.EARNING),'');assert.equal(sh.get(3,c.TICKET),'');
 });
 test('unplaced scans remain orange and counted even if their original doubt was metadata',()=>{
   const {t}=fixture(),r=rpc(t,{store:'Invented unknown store',phone:'2025550100'});assert.equal(r.needsReview,true);assert.equal(marked(t),'YES');
-  assert.equal(t.ss.tabs.Scans.bg.get('2,1'),t.ctx.UNPLACED_COLOR);assert.match(rpc(t,{ticket_number:'9800002'}).message,/1 earlier scan/);
+  assert.equal(t.ss.tabs.Scans.bg.get('2,1'),t.ctx.UNPLACED_COLOR);assert.match(rpc(t,{ticket_number:'9800002'}).message,/1 earlier tag/);
 });
 test('pending/interrupted saves retain their review journal and reconciliation count',()=>{
   const {t}=fixture(),write=t.ctx.writeToStoreTab_;t.ctx.writeToStoreTab_=(...args)=>{
     assert.equal(marked(t),'YES');assert.equal(t.ss.tabs.Scans.get(2,t.ctx.COL.WRITTEN_TO),'PENDING');write(...args);throw Error('Invented interrupted save');};
   assert.equal(rpc(t).status,'error');assert.equal(marked(t),'YES');assert.equal(t.ss.tabs.Scans.get(2,t.ctx.COL.WRITTEN_TO),'INTERRUPTED');
-  t.ctx.writeToStoreTab_=write;assert.match(rpc(t,{ticket_number:'9800002'}).message,/1 earlier scan/);
+  t.ctx.writeToStoreTab_=write;assert.match(rpc(t,{ticket_number:'9800002'}).message,/1 earlier tag/);
 });
 test('new hints never repaint or rewrite pre-existing store history',()=>{
   const {t,sh,c}=fixture();sh.set(2,c.TICKET,'OLD-SYNTHETIC');sh.set(2,c.NAME,'Invented history');sh.bg.set('2,'+c.NAME,'#abcabc');sh.notes.set('2,'+c.NAME,'Existing manual note');

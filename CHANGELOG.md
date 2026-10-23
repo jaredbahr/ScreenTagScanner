@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.13.24-draft — plain phone messages
+
+Kirsten found the phone reply hard to act on ("reconciliation" three times, no row, no names). Now:
+- **Saved:** "Saved to Homer Glen, row 49."
+- **Flagged:** the yellow banner says what to check ("Check on the sheet: ticket, inches"), from the row-level reasons.
+- **Earlier tags that didn't save:** named, with the fix ("1 earlier tag didn't save: Name (Homer Glen, 2 of 4). Add it
+  by hand or scan again, then clear its YES in the Scans tab."); a possibly partial save says to check its tab first.
+- **Not placed:** "Not added to the sheet: … It is an orange row in the Scans tab; add it by hand or scan it again."
+No change to what is written to the sheet or when a row is flagged.
+
 ## 0.13.23-draft — misprinted group tickets, plain-text hold notes
 
 From Kirsten's Lockport group on 2026-10-23 (the second tag's ticket was printed wrong, so it skipped the grey row):

@@ -99,7 +99,12 @@
   <header><h2 id="notes-title">What's new</h2><button id="notes-back" type="button" class="link">Back</button></header>
   <!-- Release notes: plain language, no customer names, tickets, phones or photos. Newest first. -->
   <div class="notes">
-    <h3>0.13.23 &middot; Oct 23</h3>
+    <h3>0.13.24 &middot; Oct 23</h3>
+    <ul>
+      <li>After a scan the phone says where it went ("Saved to Homer Glen, row 49") and, when something needs a look, what to check.</li>
+      <li>If an earlier tag didn't save, the phone names it and says how to clear the warning.</li>
+    </ul>
+    <h3>0.13.23</h3>
     <ul>
       <li>A group tag with a wrongly printed ticket still goes in its grey row; the ticket cell gets a note.</li>
       <li>The note on grey rows is now plain words, without the code at the end.</li>
@@ -235,20 +240,26 @@ function say(message) {
   resultDetails.hidden = true; resultDetails.open = false; resultText.textContent = '';
 }
 function showResult(result, storageNotice) {
-  const needsReview = result.needsReview === true || /Flagged for a double check|Saved, but/.test(result.message);
+  const needsReview = result.needsReview === true || /Flagged for a double check|Check on the sheet:|Saved, but|^Not added to the sheet/.test(result.message);
+  const where = /→ ([^\n]+?), (rows? [\d, ]+)\s*(?:\n|$)/.exec(result.message);
   let summary;
   if (result.status === 'ok') {
     summary = /Already scanned/.test(result.message) ? 'Already scanned. Nothing new added.' :
-      /^Saved, but/.test(result.message) ? 'Saved to the log. Check the workbook.' : 'Saved.';
+      /^Saved, but|^Not added to the sheet/.test(result.message) ? 'Not added to the sheet. It is in the Scans tab; open Details.' :
+      where ? 'Saved to ' + where[1] + ', ' + where[2] + '.' : 'Saved.';
   } else {
     summary = /could not be confirmed|may have been saved/.test(result.message) ? 'Save unconfirmed. Check the workbook before retrying.' :
       result.message.length <= 140 && !result.message.includes('\n') ? result.message : 'Scan needs attention. Read Details before retrying.';
   }
+  const earlier = result.message.split('\n').find(line => /earlier tags? didn't save/.test(line));
   const waiting = /(\d+) earlier scans? still needs? (?:placing|reconciliation)/.exec(result.message);
-  if (waiting) summary += '\n' + (waiting[1] === '1' ? '1 earlier scan needs' : waiting[1] + ' earlier scans need') + ' reconciliation (Scans). Check existing store rows before adding.';
-  if (/Earlier scan review status could not be checked/.test(result.message)) summary += '\nEarlier review status unavailable. Check Scans and store rows before adding.';
+  if (earlier) summary += '\n' + earlier.replace(/^⚠️\s*/, '');
+  else if (waiting) summary += '\n' + (waiting[1] === '1' ? '1 earlier tag' : waiting[1] + ' earlier tags') + " didn't save. See the orange rows in the Scans tab.";
+  if (/Could not check for earlier tags|Earlier scan review status could not be checked/.test(result.message)) summary += "\nCouldn't check for earlier tags that didn't save. Look for orange rows in the Scans tab.";
   if (storageNotice) summary += '\nPhone password storage needs attention. Open Details.';
   say(summary);
+  const check = /Check on the sheet: ([^\n]+)/.exec(result.message);
+  review.textContent = check ? 'Check on the sheet: ' + check[1].replace(/\.$/, '') : 'Needs review — check the workbook.';
   review.hidden = !needsReview;
   resultText.textContent = result.message + (storageNotice ? '\n' + storageNotice : '');
   resultDetails.hidden = false;

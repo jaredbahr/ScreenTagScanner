@@ -134,19 +134,20 @@ function processAuthenticatedScan_(req, props) {
 
     if (placed.rescan) {
       return scanResult_(true, 'Already scanned: ' + confirmationText_(x).replace(/^Added: /, '') +
-        '. Nothing new added.' + (placed.needsReview ? '\nNeeds review: reconcile the original row and earnings before retrying.' : '') + waitingText_(placed.waiting, placed.waitingUnavailable),
+        '. Nothing new added.' + (placed.needsReview ? '\n⚠️ The first scan still needs checking: its row and earnings.' : '') + waitingText_(placed.waiting, placed.waitingUnavailable, placed.waitingList),
         'Already scanned. Nothing new added.' + (placed.needsReview ? ' It still needs review.' : ''), scanId, placed.needsReview);
     }
     if (!placed.ok) {
       // Saved to the Scans log but not to a store tab: needs a person.
       notice_(props, user, scanId, placed.problem, x);
-      return scanResult_(true, 'Saved, but ' + placed.problem + '. It is in Scans for manual review.' + waitingText_(placed.waiting, placed.waitingUnavailable),
+      return scanResult_(true, 'Not added to the sheet: ' + placed.problem + '. It is an orange row in the Scans tab; add it by hand or scan it again.' + waitingText_(placed.waiting, placed.waitingUnavailable, placed.waitingList),
         'Saved to the scan log only. It needs manual review.', scanId, true);
     }
-    var msg = confirmationText_(x) + ' → ' + placed.store.name;
+    var where = String(placed.row || ''), msg = confirmationText_(x) + ' → ' + placed.store.name +
+      (where ? (where.indexOf(',') >= 0 ? ', rows ' : ', row ') + where : '');
     var rowReasons = reasons.filter(function(r) { return reviewTier_(r).tier === 'row'; });
-    if (rowReasons.length) msg += '\n⚠️ Flagged for a double check.';
-    msg += waitingText_(placed.waiting, placed.waitingUnavailable);
+    if (rowReasons.length) msg += '\n⚠️ Check on the sheet: ' + reviewTopics_(rowReasons).join(', ') + '.';
+    msg += waitingText_(placed.waiting, placed.waitingUnavailable, placed.waitingList);
     return scanResult_(true, msg, spokenText_(x, rowReasons.length > 0), scanId, rowReasons.length > 0);
   } catch (err) {
     alert_(props, user, scanId, err, req.image);
@@ -356,8 +357,8 @@ function saveScan_(x, user, reasons, photoUrl, scanId, admittedId, leaseId) {
     });
     log.getRange(row, 1, 1, HEADERS.length).setBackground(needsReview_(reasons,writtenTo) ? (placed.ok || placed.rescan ? '#fff3c4' : UNPLACED_COLOR) : null);
     // Advisory only: store and completion log writes have already succeeded.
-    try { placed.waiting = unplacedCount_(log, row); }
-    catch (err) { placed.waiting = 0; placed.waitingUnavailable = true; }
+    try { placed.waitingList = unplacedRows_(log, row); placed.waiting = placed.waitingList.length; }
+    catch (err) { placed.waiting = 0; placed.waitingList = []; placed.waitingUnavailable = true; }
     return placed;
   } finally {
     // Complete buffered store/log writes before rollover can acquire this lock.
@@ -393,10 +394,52 @@ function unplacedCount_(log, exceptRow) {
   return n;
 }
 
-function waitingText_(n, unavailable) {
-  if (unavailable) return '\nEarlier scan review status could not be checked. Check Scans and store tabs before adding rows.';
-  return n ? '\n⚠️ ' + n + ' earlier scan' + (n === 1 ? '' : 's') + ' still need' + (n === 1 ? 's' : '') +
-    ' reconciliation. See orange rows in Scans. Existing or partial store rows may already be present; add a row only after confirming it is missing.' : '';
+/** The same rows as unplacedCount_, with what the phone needs to name them (0.13.24). */
+function unplacedRows_(log, exceptRow) {
+  var last = log.getLastRow();
+  if (last < 2) return [];
+  var rows = log.getRange(2, 1, last - 1, HEADERS.length).getValues(), out = [];
+  var review = HEADERS.indexOf('Needs Review'), lastName = HEADERS.indexOf('Last Name'), customer = HEADERS.indexOf('Customer');
+  rows.forEach(function (r, i) {
+    var state = String(r[COL.WRITTEN_TO - 1]);
+    if (i + 2 === exceptRow || ['NOT PLACED', 'PENDING', 'INTERRUPTED'].indexOf(state) < 0 || r[review] !== 'YES') return;
+    var st = resolveStore_({ store: String(r[COL.STORE - 1] || '') }).store;
+    out.push({ name: String(r[lastName] || r[customer] || 'no name').slice(0, 30), store: st ? st.name : String(r[COL.STORE - 1] || 'store?'),
+      tag: String(r[COL.TAG_OF - 1] || ''), partial: state !== 'NOT PLACED' });
+  });
+  return out;
+}
+
+/** Plain words for the phone: which earlier tags didn't save and what to do (0.13.24, Kirsten's feedback). */
+function waitingText_(n, unavailable, list) {
+  if (unavailable) return '\nCould not check for earlier tags that didn\'t save. Look for orange rows in the Scans tab.';
+  if (!n) return '';
+  var named = (list || []).slice(0, 3).map(function (w) { return w.name + ' (' + w.store + (w.tag ? ', ' + w.tag : '') + ')'; });
+  var more = n > named.length ? ' and ' + (n - named.length) + ' more' : '';
+  var partial = (list || []).some(function (w) { return w.partial; }) ? ' One may be partly saved, so check its store tab first.' : '';
+  return '\n⚠️ ' + n + ' earlier tag' + (n === 1 ? '' : 's') + ' didn\'t save' + (named.length ? ': ' + named.join(', ') + more : '') + '.' + partial +
+    ' Add ' + (n === 1 ? 'it' : 'them') + ' by hand or scan again, then clear ' + (n === 1 ? 'its' : 'their') + ' YES in the Scans tab.';
+}
+
+/** What a flagged row needs checked, in a few plain words (0.13.24). */
+function reviewTopics_(reasons) {
+  var topics = [];
+  var add = function (t) { if (topics.indexOf(t) < 0) topics.push(t); };
+  reasons.forEach(function (r) {
+    r = String(r);
+    if (/duplicate|already scanned/i.test(r)) add('possible duplicate');
+    else if (/refund|credit|correction|redo|warranty/i.test(r)) add('a correction on the tag');
+    else if (/\bparts?\b|part sku|pins?\b|extras?|spreader|corner|latch/i.test(r)) add('parts');
+    else if (/window|pane|glass|thermopane|acrylic/i.test(r)) add('window details');
+    else if (/inch|\bqty\b|quantity|size|width|height/i.test(r)) add('inches');
+    else if (/price|earning|screening|lb earn|labor|\$|bill/i.test(r)) add('prices');
+    else if (/store|sticker|routed/i.test(r)) add('store');
+    else if (/group/i.test(r)) add('group');
+    else if (/ticket/i.test(r)) add('ticket');
+    else if (/date/i.test(r)) add('date');
+    else add('details in the Scans tab');
+  });
+  return topics.slice(0, 3);
 }
 
 /**

@@ -118,7 +118,7 @@ test('legacy payloads without row evidence retain the original disagreement hold
 test('settled rows use existing rates, keep original readings and remain flagged in both layouts', () => {
   for(const modern of [false,true]) {
     const {t,sh,c} = fixture(modern), x = job(), r = t.scan(x);
-    assert.equal(r.status,'ok');assert.match(r.message,/Flagged/);
+    assert.equal(r.status,'ok');assert.match(r.message,/Check on the sheet:/);
     assert.equal(sh.get(2,c.UNI_IN),78);
     assert.equal(sh.get(2,c.SCREENING),t.ctx.cents_(78*t.ctx.RATES.fiberglass.material));
     assert.equal(sh.get(2,c.LB_EARN),t.ctx.cents_(78*t.ctx.RATES.fiberglass.labor));
@@ -133,7 +133,7 @@ test('settled rows use existing rates, keep original readings and remain flagged
 
 test('upstream zero and huge-QTY reproductions now keep all billing blank', () => {
   for(const qty_rows of ['0,0,0','9999,9999,9999']) {
-    const {t,sh,c} = fixture();assert.match(t.scan(job({qty_rows})).message,/Flagged/);
+    const {t,sh,c} = fixture();assert.match(t.scan(job({qty_rows})).message,/Check on the sheet:/);
     assert.deepEqual([sh.get(2,c.UNI_IN),sh.get(2,c.SCREENING),sh.get(2,c.LB_EARN)],['','','']);
   }
 });

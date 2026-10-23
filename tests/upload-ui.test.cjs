@@ -187,16 +187,27 @@ async function test(name,fn){await fn();passed++;console.log('PASS '+name);}
   await test('earlier unplaced scans are shown on the summary line, not hidden in Details',async()=>{
     const t=environment();await t.select();t.token();t.submit();
     t.success({status:'ok',message:'Added: Person #1 → Homer Glen\n⚠️ 2 earlier scans still need placing. See orange rows in the Scans tab.',authenticated:true});
-    assert.equal(t.elements.status.textContent,'Saved.\n2 earlier scans need reconciliation (Scans). Check existing store rows before adding.');
+    assert.equal(t.elements.status.textContent,"Saved.\n2 earlier tags didn't save. See the orange rows in the Scans tab.");
     const u=environment();await u.select();u.token();u.submit();
     u.success({status:'ok',message:'Added: Person #1 → Homer Glen\n⚠️ 1 earlier scan still needs placing. See orange rows in the Scans tab.',authenticated:true});
-    assert.equal(u.elements.status.textContent,'Saved.\n1 earlier scan needs reconciliation (Scans). Check existing store rows before adding.');
+    assert.equal(u.elements.status.textContent,"Saved.\n1 earlier tag didn't save. See the orange rows in the Scans tab.");
   });
-  await test('reconciliation and unavailable-count guidance stays visible on a confirmed-save summary',async()=>{
+  await test('0.13.24 wording: where it saved, what to check, and which earlier tag did not save',async()=>{
+    const t=environment();await t.select();t.token();t.submit();
+    t.success({status:'ok',needsReview:true,authenticated:true,message:"Added: Synthname #1234567, 35 x 45 → Homer Glen, row 49\n⚠️ Check on the sheet: ticket, inches.\n⚠️ 1 earlier tag didn't save: Synthother (Homer Glen, 2 of 4). Add it by hand or scan again, then clear its YES in the Scans tab."});
+    assert.equal(t.elements.status.textContent,"Saved to Homer Glen, row 49.\n1 earlier tag didn't save: Synthother (Homer Glen, 2 of 4). Add it by hand or scan again, then clear its YES in the Scans tab.");
+    assert.equal(t.elements.review.hidden,false);assert.equal(t.elements.review.textContent,'Check on the sheet: ticket, inches');
+    const u=environment();await u.select();u.token();u.submit();
+    u.success({status:'ok',needsReview:true,authenticated:true,message:'Not added to the sheet: no ticket number on the form (Homer Glen). It is an orange row in the Scans tab; add it by hand or scan it again.'});
+    assert.equal(u.elements.status.textContent,'Not added to the sheet. It is in the Scans tab; open Details.');assert.equal(u.elements.review.hidden,false);
+    const v=environment();await v.select();v.token();v.submit();v.success({status:'ok',authenticated:true,message:'Added: Synth #1, 20 x 30 → New Lenox, row 3'});
+    assert.equal(v.elements.status.textContent,'Saved to New Lenox, row 3.');assert.equal(v.elements.review.hidden,true);
+  });
+  await test('older server wording and unavailable-count guidance stay visible on a confirmed-save summary',async()=>{
     const t=environment();await t.select();t.token();t.submit();t.success({status:'ok',message:'Added\n1 earlier scan still needs reconciliation. Existing store rows may be present.',authenticated:true});
-    assert.match(t.elements.status.textContent,/Saved\.[\s\S]*needs reconciliation[\s\S]*Check existing store rows before adding/);assert.doesNotMatch(t.elements.status.textContent,/needs placing/);
-    const u=environment();await u.select();u.token();u.submit();u.success({status:'ok',message:'Added\nEarlier scan review status could not be checked. Check Scans and store tabs before adding rows.',authenticated:true});
-    assert.match(u.elements.status.textContent,/Saved\.[\s\S]*status unavailable[\s\S]*before adding/);
+    assert.match(t.elements.status.textContent,/Saved\.[\s\S]*1 earlier tag didn't save/);assert.doesNotMatch(t.elements.status.textContent,/needs placing/);
+    const u=environment();await u.select();u.token();u.submit();u.success({status:'ok',message:"Added\nCould not check for earlier tags that didn't save. Look for orange rows in the Scans tab.",authenticated:true});
+    assert.match(u.elements.status.textContent,/Saved\.[\s\S]*Couldn't check for earlier tags/);
   });
   await test('long names never suppress review summary; full message stays available as inert text',async()=>{
     const message='Added: '+ 'LongSyntheticName'.repeat(80)+' → Homer Glen\n⚠️ Flagged for a double check.';
