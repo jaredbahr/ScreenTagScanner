@@ -96,7 +96,8 @@
     "tests/release-guards.test.cjs": 8,
     "tests/pin-price-evidence.test.cjs": 14,
     "tests/group-holds.test.cjs": 11,
-    "tests/group-check.test.cjs": 10
+    "tests/group-check.test.cjs": 10,
+    "tests/audit-fixes.test.cjs": 5
   },
   "allowWorkflowDefinitions": true
 }

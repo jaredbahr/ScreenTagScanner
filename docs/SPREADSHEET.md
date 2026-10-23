@@ -144,6 +144,9 @@ Window mapping is built from Kirsten's description and the first real October wi
     "x of N" not yet on the tab also match (misprinted tickets), and the hold data sits in hidden row metadata; the
     visible note is plain text and deleting it still frees the row. A close name with the same N, filling a gap, also
     matches when the hold was made the same scanning day.
+27. **Bill what the customer was charged** (Kirsten, 2026-10-23). A "measured wrong / balance due" slip's extra QTY
+    of the standard screening SKUs is added to the tag QTY (row note). The shop's own marker re-measurement on a tag
+    is ignored. A written tag year more than 120 days behind the scan gets a Date in note.
 26. **Look-alike ticket digits** (2026-10-23): when swapping confusable digits (2/7, 1/7, 3/8, 4/9, 5/6) in the first
     four digits gives the store's ticket series, the ticket cell gets a "likely …" note. Values are never changed.
 24. **Group check** (2026-10-23, from the October 22 scans). A group tag is compared with its group's tags already
