@@ -265,6 +265,15 @@ function resumeTagSequenceScans_() {
 function sequenceIdentity_(v) {
   return String(v || '').replace(/^'(?=[=+\-@\t\r])/, '').replace(/ \(\?\)$/, '').trim().toLowerCase();
 }
+/**
+ * A receipt's customer must match its client identity [customer, last, phone]. Usually that is the last name;
+ * a last name of 1-2 letters is an initial, so the Name cell (and receipt) hold the full name (sheetName_).
+ */
+function receiptCustomerOk_(customer, client) {
+  var last = String(client[1] || ''), full = String(client[0] || '').replace(/\s+/g, ' ');
+  if (customer === (last || String(client[0] || ''))) return true;
+  return last.replace(/[^a-z]/g, '').length <= 2 && full.length > last.length && /[a-z]{2}/.test(full) && customer === full;
+}
 /** Conservative backfill. No Scans/Totals restructuring, rescan, or paid request. */
 function sequenceBackfill_(ss, commit) {
   var log = ss.getSheetByName(SCANS_TAB), candidates = {}, report = [];

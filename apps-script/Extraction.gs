@@ -16,7 +16,7 @@
  * Column mapping to the real spreadsheet is still pending. See TODO(fields).
  */
 
-var EXTRACTION_VERSION = '0.13.25-draft';
+var EXTRACTION_VERSION = '0.13.26-draft';
 
 var SYSTEM_PROMPT = [
   'You read Ace Hardware screen tags for a small screen repair shop. Each photo shows one paper form',
@@ -149,7 +149,7 @@ var SYSTEM_PROMPT = [
   '- unclear: one short string per field whose VALUE you were unsure about. Formatting, conversions and',
   '  layout differences are not uncertainty. Empty list if everything is clear.',
   '- An Ace "Please Pay Cashier" slip may be attached (or be the only form; still read it, is_tag true).',
-  '  Most slips just ADD parts or fees (corners, latches, frame, cut, springs): copy those lines into extras,',
+  '  Most other slips (not a balance-due slip; see balance_due_qty) just ADD parts or fees (corners, latches, frame, cut, springs): copy those lines into extras,',
   '  not corrections. Set has_corrections only if the slip records a refund, redo, credit, "no record", or',
   '  changes what was already on the tag. Set quantity_conflict only if it lists different screen SIZES or',
   '  inches than the tag. If a second, different tag is visible behind the main one, read only the front tag.',
@@ -408,6 +408,8 @@ function quantityConflict_(x) {
  * total (2 or more, at this material's rates, to the cent) all give the same inches. Corrections still hold.
  */
 function unanimousInches_(x) {
+  // A conflict that names a slip, another screen or a correction is a real disagreement, not price arithmetic.
+  if (/slip|cashier|second|another|other (?:screen|size)|two screens|correct|re-?measur|redo|refund/i.test(String(x.quantity_conflict_details || ''))) return null;
   if (x.has_corrections || !Number.isFinite(x.width_in) || !Number.isFinite(x.height_in) ||
       x.width_in < 6 || x.width_in > 120 || x.height_in < 6 || x.height_in > 120) return null;
   var rate = Object.prototype.hasOwnProperty.call(RATES, x.material) ? RATES[x.material] : null;
@@ -421,6 +423,17 @@ function unanimousInches_(x) {
     return !/^\$?\d+(?:\.\d{1,2})?$/.test(t) || Math.round(Number(t.replace(/^\$/, '')) * 100) !== Math.round(n * rates[i] * 100);
   })) return null;
   return n;
+}
+
+/**
+ * Balance-due slip QTY (0.13.25): {qty} when it reads as 1-200 whole inches, {qty: 0} when empty,
+ * else {qty: 0, bad: raw} so the caller flags it instead of dropping it silently.
+ */
+function balanceDueQty_(x) {
+  var raw = x && x.balance_due_qty !== null && x.balance_due_qty !== undefined ? String(x.balance_due_qty).trim() : '';
+  if (!raw || /^(?:0|none|n\/?a|null)$/i.test(raw)) return { qty: 0 };
+  if (/^\d{1,3}$/.test(raw) && Number(raw) >= 1 && Number(raw) <= 200) return { qty: Number(raw) };
+  return { qty: 0, bad: raw.slice(0, 40) };
 }
 
 /** Conservative envelope derived from the existing 6..120-inch dimension review limits. */
