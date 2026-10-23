@@ -409,7 +409,8 @@ function quantityConflict_(x) {
  */
 var UNANIMOUS_REFUSE = new RegExp(['slip', 'cashier', 'receipt', 'balance', '\\bdue\\b', 'wrong', 'should be', 'refund', 'redo',
   '\\bcorrect(?:ed|ion|ions|s)?\\b', 'second screen', '\\b2nd\\b', 'another', 'additional', '\\bextra\\b', 'other (?:screen|size)',
-  '\\b(?:two|three|\\d+) screens'].join('|'), 'i');
+  '\\b(?:two|three|\\d+) screens', 'owe[sd]?\\b', 'charged', 'upcharge', 'mis-?measur', '\\bplus \\d', 'more inch', 'crossed', 'changed',
+  'also lists', '\\bscreen \\d'].join('|'), 'i');
 function unanimousInches_(x) {
   // A conflict that names a slip, a balance due, another screen or a correction is a real disagreement, not price
   // arithmetic ("20 x .19 = 3.80 ... not a second size" and "read correctly" still pass). Review 2026-10-23.

@@ -55,7 +55,9 @@ test('a unanimous tag does not override a conflict that names a slip, another sc
   const base = { ticket_number: '7708301', material: 'aluminum', width_in: 27, height_in: 73, billable_inches: 100, qty_rows: '100, 100, 100', line_totals: '19.00, 7.00, 20.00', quantity_conflict: true };
   for (const d of ['Tag: 27x73 = 100 in. Slip: two 28x37 = 130 in.', 'Pay Cashier lists another screen', 'corrected size 28 x 73', 'second screen 80 in',
     'Balance due 20 more inches', 'Measured wrong: should be 120 in', '2nd screen 28x37 = 65', '2 screens listed: 100 and 65',
-    'Receipt attached shows 120 in', 'Additional 28 x 37 screen listed']) {
+    'Receipt attached shows 120 in', 'Additional 28 x 37 screen listed', 'Mis-measured; customer owes 20 inches more',
+    'Customer charged for 120 inches', 'Upcharge for 20 in', 'Plus 20 inches added by store', 'Also lists 28x37 = 65', 'Screen 2: 28 x 37',
+    'Size crossed out and changed to 28 x 74', 'Width changed from 27 to 28']) {
     const t = load(), sh = t.ss.tabs['Homer Glen']; t.scan({ ...base, quantity_conflict_details: d });
     assert.equal(sh.get(2, 6), '', d); assert.doesNotMatch(sh.notes.get('2,3') || '', /billed: the tag's size/, d);
   }
