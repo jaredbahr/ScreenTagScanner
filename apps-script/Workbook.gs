@@ -1016,6 +1016,11 @@ function writeToStoreTab_(ss, x, reasons) {
       earn.setNote(escapePartsReceiptText_(note.join('\n\n')));
       earn.setBackground(FLAG_COLOR);
     }
+    // Kirsten types "new patio door" and the size in Extras (2026-10-24); the scanner fills it on the new row.
+    if (x.form_type === 'patio_door' && c.EXTRAS && sh.getRange(row, c.EXTRAS).getValues()[0][0] === '') {
+      var size = typeof x.width_in === 'number' && typeof x.height_in === 'number' ? ' ' + formatInches_(x.width_in) + ' x ' + formatInches_(x.height_in) : '';
+      sh.getRange(row, c.EXTRAS).setValue(safeCell_('new patio door' + size));
+    }
     applyPartsEarnings_(sh, row, c, x, i === 0, isBuild ? NEW_BUILD.earningBase : 0);
     applyExtraLabor_(sh, row, c, x, i === 0, labor, flags);
     showReview_(sh,row,c,flags);

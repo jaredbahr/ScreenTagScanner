@@ -17,6 +17,7 @@ test('Kirsten\'s example: 75.5 x 48 is 76 + 48 = 124", billed at fiberglass rate
   assert.equal(sh.get(2, c.SCREENING), 18.6); assert.equal(sh.get(2, c.LB_EARN), 21.08, '124 x 0.17, no $9 build labor');
   assert.equal(sh.get(2, c.EARNING) || '', '', 'no $1.50 build base');
   assert.match(notes(sh, 2), /Patio door: inches = width \+ height, each rounded up \(48 \+ 76 = 124"\); no build labor or earning added/);
+  assert.equal(sh.get(2, c.EXTRAS), 'new patio door 48 x 75 1/2', 'Extras says what Kirsten used to type');
   assert.notEqual(sh.bg.get('2,' + c.DATE_IN), t.ctx.FLAG_COLOR, 'a note on the inches cell, not a yellow row');
 });
 

@@ -9,7 +9,8 @@ Kirsten (2026-10-24), with the shop's "Custom Patio Door Order" form as the exam
   The supplier's Circle Glass order form is Kirsten's own ordering sheet (she sent it by mistake): it reads as not a
   tag, so nothing is written.
 - Script: always fiberglass (another material read gets a note), inches = width + height each rounded up, no $9
-  build labor and no $1.50 Earning base. The inches note goes on the Uni/In cell, not a yellow row.
+  build labor and no $1.50 Earning base (Kirsten: Earning stays blank). Extras gets "new patio door" and the size,
+  which she used to type. The inches note goes on the Uni/In cell, not a yellow row.
 - Never dropped silently (independent review of #25): a conflict Claude reported, a different QTY read, or QTY/total
   rows (a sign of a repair tag) keep the worked-out inches but turn the row yellow and say what was read. A size whose
   short side is outside 20-60" or long side outside 60-100" (a handle height read as the height) leaves the inches
