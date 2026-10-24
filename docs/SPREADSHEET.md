@@ -146,7 +146,11 @@ Window mapping is built from Kirsten's description and the first real October wi
     matches when the hold was made the same scanning day. Since 0.13.26 the best hold wins (same ticket, then within
     50, then one digit off, then loose), a loose exact-name match also needs the same day or the same 4-digit ticket
     book, a row with any note in column A is never held, only the scanner's own note lines are removed when a hold is
-    filled, and if the hidden hold data can't be read every hold note counts as held.
+    filled, and if the hidden hold data can't be read every hold note counts as held. Since 0.13.27 a hold also matches
+    on the same phone (last 7 digits, kept only in the hidden metadata) with tickets within 50 on their last 6 digits,
+    and a strong match (same ticket, within 50, or the phone) fills a hold even when N changed: the group's other
+    holds take the larger N, one more blank row is saved per extra tag, a smaller N frees nothing, and the Tag x of N
+    cell gets a note.
 24. **Group check** (2026-10-23, from the October 22 scans). A group tag is compared with its group's tags already
     on the tab (same N, close name, ticket close or within 1000). Disagreeing name, ticket or "x of N" gets a note on
     that one cell (pale, not yellow). Values are never changed. Since 0.13.26 a looser match (ticket

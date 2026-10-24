@@ -9,7 +9,9 @@ function modern(t, tab = 'New Lenox') {
   sh.insertColumnAfter(15); sh.set(1, 16, 'Tag x of N'); sh.insertColumnAfter(3); sh.set(1, 4, 'Tag x of N');
   return { sh, c: t.ctx.storeLayout_(sh).screens };
 }
-const job = (name, ticket, i, n, extra = {}) => ({ store: 'New Lenox', last_name: name, customer_name: name, ticket_number: ticket,
+// Each synthetic customer has their own phone (same name, same phone), as on real tags; holds match on it (0.13.27).
+const phoneFor = name => '630555' + String([...name].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) % 10000, 7)).padStart(4, '0');
+const job = (name, ticket, i, n, extra = {}) => ({ store: 'New Lenox', last_name: name, customer_name: name, phone: phoneFor(name), ticket_number: ticket,
   tag_index: i, tag_count: n, width_in: 20 + i, height_in: 30, billable_inches: 50 + i + (extra.bump || 0), ...extra });
 const row = (sh, c, r) => [sh.get(r, c.NAME), sh.get(r, c.SEQUENCE), sh.get(r, c.TICKET)];
 const held = (t, sh, r) => !!t.ctx.holdAt_(sh.notes.get(r + ',1') || '', t.ctx.groupHoldMeta_(sh), r);

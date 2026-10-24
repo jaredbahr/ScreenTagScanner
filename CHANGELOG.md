@@ -1,5 +1,20 @@
 # Changelog
 
+## 0.13.27-draft — group holds match on the phone and survive a changed tag count
+
+From Kirsten's first scans on version 15 (2026-10-24). Both left extra blank lines; no amounts were wrong.
+- **Phone match (Joliet):** two tags had a first name and initial, the third the full name and a 6 read as 0, so it missed the
+  held row and left a blank line. A hold now also matches when the phone (last 7 digits) is the same and the tickets
+  are within 50 on their last 6 digits. The phone is kept only in the hidden row metadata, never in a visible note.
+- **Changed tag count (Downers Grove):** "1 of 6", then the order grew and later tags said "of 7". Holds required the
+  same N, so the "of 7" tags started a second group: 10 grey rows for 4 missing tags. A hold with a different N is
+  now filled on a strong match (same ticket, within 50, or the same phone). The group's other holds take the larger N
+  and one more blank row is saved per extra tag; a smaller N never frees rows. The Tag x of N cell gets a note.
+- A new group isn't started when a tag of the same customer with a different N is already on the tab or held.
+- Rewriting a hold keeps Kirsten's own lines in the column-A note.
+- Tests: each synthetic customer now has their own phone (same name, same phone), since every fixture tag used to
+  share one. A misprinted ticket with a repeated "k of N" fills the hold when the phone confirms the customer.
+
 ## 0.13.26-draft — money fixes from the independent review of 0.13.23–0.13.25
 
 Found by the pre-deploy review (CONTRIBUTING: triple check). Nothing here was live except the short-name receipt bug
