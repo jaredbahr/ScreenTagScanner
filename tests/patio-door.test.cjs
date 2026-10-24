@@ -72,6 +72,7 @@ test('a handle height read as the door height leaves the inches blank and turns 
   assert.equal(sh.get(2, c.UNI_IN) || '', ''); assert.equal(sh.get(2, c.SCREENING) || '', '');
   assert.equal(sh.bg.get('2,' + c.DATE_IN), t.ctx.FLAG_COLOR);
   assert.match(notes(sh, 2), /Patio door: size 48 x 37 1\/2 looks off \(the handle height is never billed\)/);
+  assert.equal(sh.get(2, c.EXTRAS), 'new patio door', 'a doubtful size is left out of Extras');
 });
 
 test('always fiberglass: another material read is billed as fiberglass with a note', () => {

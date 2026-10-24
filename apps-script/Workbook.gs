@@ -1018,7 +1018,7 @@ function writeToStoreTab_(ss, x, reasons) {
     }
     // Kirsten types "new patio door" and the size in Extras (2026-10-24); the scanner fills it on the new row.
     if (x.form_type === 'patio_door' && c.EXTRAS && sh.getRange(row, c.EXTRAS).getValues()[0][0] === '') {
-      var size = typeof x.width_in === 'number' && typeof x.height_in === 'number' ? ' ' + formatInches_(x.width_in) + ' x ' + formatInches_(x.height_in) : '';
+      var size = typeof ui === 'number' ? ' ' + formatInches_(x.width_in) + ' x ' + formatInches_(x.height_in) : ''; // a doubtful size stays out
       sh.getRange(row, c.EXTRAS).setValue(safeCell_('new patio door' + size));
     }
     applyPartsEarnings_(sh, row, c, x, i === 0, isBuild ? NEW_BUILD.earningBase : 0);

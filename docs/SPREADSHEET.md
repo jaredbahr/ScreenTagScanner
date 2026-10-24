@@ -48,7 +48,7 @@ Each store tab holds **two side-by-side tables**:
 | H | LB Earn | $ | – | **Filled:** UI × labor rate ($0.17 / $0.20 / $0.22 pet). What they earn ✅ (pet rate from tag, unconfirmed) |
 | I | Spline | $ | `=F*0.07` | automatic |
 | J | Spl Earn | $ | `=F*0.01` | automatic |
-| K | Extras | $ | – | Not written |
+| K | Extras | text | – | Kirsten's notes. Patio doors only (0.13.28): "new patio door W x H" on the new row |
 | L | Earning | $ | – | Kirsten enters her extras earnings + notes. Script adds a **cell note listing the tag's extras** and highlights it |
 
 Store total (K752 etc.) = SUM(H) + SUM(J) + SUM(L). `Totals` pulls H, J, L per store.
