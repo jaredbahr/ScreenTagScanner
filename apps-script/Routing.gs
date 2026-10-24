@@ -118,7 +118,8 @@ function patioDoor_(x, original) {
   var w = x.width_in, h = x.height_in, s = PATIO_DOOR_SIZE;
   var lo = Math.min(w, h), hi = Math.max(w, h);
   // What Claude read that the worked-out inches replace: never dropped silently (review of #25).
-  if (original.quantity_conflict || String(original.quantity_conflict_details || '').trim()) {
+  var said = String(original.quantity_conflict_details || '').trim();
+  if (original.quantity_conflict || (said && !/^(?:none|n\/?a|no|nothing|-+)\.?$/i.test(said))) {
     note('Patio door: Claude also noted: ' + String(original.quantity_conflict_details || 'a second size').slice(0, 160).replace(/[.\s]+$/, '') + '; check the inches');
   }
   var qtyRead = typeof original.billable_inches === 'number' ? original.billable_inches : null;

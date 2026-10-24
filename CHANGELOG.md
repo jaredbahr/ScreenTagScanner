@@ -19,6 +19,8 @@ Patio Screen Doors" order.
   is noted. A patio door's phone never keys a group hold (a supplier form may carry the shop's phone). The
   prompt says a patio order form is never new_build, a patio-door repair tag is a repair, and the Quantity box is
   screens_on_tag.
+- Round 2: patio rescans match a close last name and need a name read on both (two unnamed doors are written, not
+  one dropped); a conflict detail of "none"/"n/a" is not a conflict.
 
 ## 0.13.27-draft — group holds match on the phone and survive a changed tag count
 

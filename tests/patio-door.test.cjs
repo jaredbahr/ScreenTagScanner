@@ -104,4 +104,15 @@ test('the prompt and schema know the patio door form and the handle-height rule'
   assert.match(req, /patio_door/); assert.match(req, /Height to bottom of handle/); assert.match(req, /shop\\?'s own order to the supplier/);
 });
 
+test('review of #25 round 2: rescans match a misread name; unnamed doors are never dropped; "none" is not a conflict', () => {
+  const t = load(), { sh, c } = sheet(t);
+  t.scan(patio({ customer_name: 'Pat Synthone', last_name: 'Synthone' }));
+  assert.match(t.scan(patio({ customer_name: 'Pat Synthome', last_name: 'Synthome' })).message, /Already scanned/, 'one letter misread is the same tag');
+  const u = load(), m = sheet(u);
+  u.scan(patio({ customer_name: '', last_name: '' })); const r = u.scan(patio({ customer_name: '', last_name: '' }));
+  assert.equal(r.status, 'ok'); assert.equal(m.sh.get(3, m.c.UNI_IN), 124, 'second unnamed door written, not dropped');
+  const v = load(); v.scan(patio({ quantity_conflict: false, quantity_conflict_details: 'none' }));
+  const n = sheet(v); assert.doesNotMatch(notes(n.sh, 2), /Claude also noted/); assert.notEqual(n.sh.bg.get('2,' + n.c.DATE_IN), v.ctx.FLAG_COLOR);
+});
+
 console.log(`${passed} patio door tests passed`);

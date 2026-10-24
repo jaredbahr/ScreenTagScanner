@@ -495,7 +495,8 @@ function isExactRescan_(log, x, reasons) {
       Number(r[COL.WIDTH - 1]) === Number(x.width_in) &&
       Number(r[COL.HEIGHT - 1]) === Number(x.height_in) &&
       // Patio doors come in standard sizes and a supplier P.O. # can be read as the ticket: also the same name (review of #25).
-      (x.form_type !== 'patio_door' || String(r[COL.LAST - 1]).toLowerCase() === String(x.last_name || '').toLowerCase()) &&
+      // Only with a name read on both: two unnamed doors are written (a yellow duplicate) rather than one lost.
+      (x.form_type !== 'patio_door' || (!!String(x.last_name || '').trim() && namesClose_(r[COL.LAST - 1], x.last_name))) &&
       String(r[COL.WRITTEN_TO - 1]) !== 'NOT PLACED';
     if (match && reasons && ['PENDING', 'INTERRUPTED'].indexOf(String(r[COL.WRITTEN_TO - 1])) >= 0) {
       reasons.push('An earlier save of this tag was interrupted; check the store tab before entering it');
