@@ -166,13 +166,13 @@ Window mapping is built from Kirsten's description and the first real October wi
     of the standard screening SKUs is added to the tag QTY (row note). The shop's own marker re-measurement on a tag
     is ignored. A written tag year more than half a year behind the scan is noted in the Scans log (not the sheet:
     Kirsten doesn't use the year).
-28. **Patio screen doors** (Kirsten, 2026-10-24). Patio door order forms (the shop's "Custom Patio Door Order" and
-    the supplier's "Custom Size Patio Screen Doors") are screens, always fiberglass. Inches = width + height, each
+28. **Patio screen doors** (Kirsten, 2026-10-24). The shop's "Custom Patio Door Order" form is a screen, always
+    fiberglass. Inches = width + height, each
     rounded up (75.5 x 48 -> 76 + 48 = 124"), billed at the fiberglass rates with **no** build labor and **no**
     Earning base; Kirsten adds any earning. The handle height is never billed; a size whose short side is outside
     20-60" or long side outside 60-100" leaves the inches blank on a yellow row. A reported conflict, a different
-    QTY read, QTY rows or "Quantity 2" turn the row yellow and say so. On the supplier form the printed company, contact,
-    phone, address, Store # and P.O. are the shop's own; the customer comes from handwritten notes.
+    QTY read, QTY rows or "Quantity 2" turn the row yellow and say so. The supplier's Circle Glass order form is
+    Kirsten's own ordering sheet, never scanned: it reads as not a tag, so nothing is written.
 
 ## Review display for 0.13.18
 

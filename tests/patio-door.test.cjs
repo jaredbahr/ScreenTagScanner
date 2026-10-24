@@ -101,7 +101,7 @@ test('a regular screen build still gets its build labor and earning base', () =>
 
 test('the prompt and schema know the patio door form and the handle-height rule', () => {
   const ctx = load().ctx, req = JSON.stringify(ctx.buildRequest_('m', 'AAAA', 'image/jpeg'));
-  assert.match(req, /patio_door/); assert.match(req, /Height to bottom of handle/); assert.match(req, /shop\\?'s own order to the supplier/);
+  assert.match(req, /patio_door/); assert.match(req, /Height to bottom of handle/); assert.match(req, /Circle Glass[^.]*not a tag: is_tag false/);
 });
 
 test('review of #25 round 2: rescans match a misread name; unnamed doors are never dropped; "none" is not a conflict', () => {
