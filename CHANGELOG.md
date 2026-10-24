@@ -21,8 +21,11 @@ Review levels and messages (same review):
 - A **ticket doubt** that also raises a store, slip, window, quantity, group or money question keeps the yellow row
   (0.13.25 had made every "ticket_number" doubt one pale cell). A plain reading doubt, price-gun label included,
   stays one cell. October replay: all 154 reasons keep their level.
-- **Tag year:** flagged only when more than half a year behind the scan (a tag left over the winter is not), and one
-  note instead of two for a two-digit year.
+- **Tag year:** Kirsten (2026-10-23) doesn't use the year, so a year doubt alone now goes to the Scans log only, not
+  her sheet. It is flagged only when more than half a year behind the scan (a tag left over the winter is not), with
+  one note instead of two for a two-digit year. A date after the scan, or an unreadable date, still gets a cell note.
+- Ticket doubts that mention Pay Cashier, a second screen, inches, another tag or job, a rescan, a store by name, or
+  a price instead of a ticket also keep the yellow row; plain sticker and price-tag reading doubts stay one cell.
 - **Phone topics:** "reconcile before crediting" is prices, not a correction; "extra 20 inches" is inches, not parts;
   "store" and "pins" must be whole words.
 - The phone summary uses the last "→", so a name holding one can't garble it.

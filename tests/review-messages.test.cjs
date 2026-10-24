@@ -12,13 +12,23 @@ test('a ticket doubt that also raises a store, slip, window, quantity or group q
     'ticket_number: slip ticket differs; slip charges balance due for 20 more', 'ticket_number: may be a window tag ticket',
     'ticket_number unclear; the qty column also shows 95', 'ticket_number: red sticker means Lockport',
     'ticket_number read from a group tag; tag 2 of 3 bill separately', 'ticket_number: could be a Pay Cashier slip, not a tag',
-    'ticket_number: refund slip ticket, $5 credit']) assert.equal(T(s).tier, 'row', s);
+    'ticket_number: refund slip ticket, $5 credit', 'ticket_number: Pay Cashier ticket number differs from the tag',
+    'ticket_number: second screen on the form has its own ticket', 'ticket_number: written ticket and the 80 inch total disagree',
+    'ticket_number: tag 2 of 3; other tags have a different ticket', 'ticket_number: multiple tags share this number',
+    'ticket_number: two ticket numbers on the tag; may be two jobs', 'ticket_number: same ticket as the previous tag',
+    'ticket_number: may be a rescan of an earlier ticket', 'ticket_number: may match a tag scanned earlier today',
+    'ticket_number: balance due ticket 12.50 owed', 'ticket_number: may belong to Downers Grove', 'ticket_number: printed label says Lockport',
+    'ticket_number: label from another Ace location (New Lenox)', 'ticket_number: ACE PRICE label reads 14.99, not a ticket number',
+    'ticket_number: covered by a red sticker']) assert.equal(T(s).tier, 'row', s);
 });
 
 test('a plain ticket-reading doubt, price-gun label included, stays one cell', () => {
   for (const s of ['ticket_number: price label 1234567 vs handwritten 7654321', 'ticket_number: price-gun label partly covers the last digit',
     'ticket_number: number appears on the Ace price sticker, Tag # line is blank; partly covered by sticker',
-    'ticket_number: handwritten tag number has an extra leading digit overwritten', 'ticket_number: last digit could be 1 or 7']) {
+    'ticket_number: handwritten tag number has an extra leading digit overwritten', 'ticket_number: last digit could be 1 or 7',
+    'ticket_number: read from the price tag sticker', 'ticket_number: price tag partly covers digits', 'ticket_number: a sticker over the number hides digit 3',
+    'ticket_number: stickered over', 'ticket_number: the Ace sticker obscures digits', 'ticket_number: pricing label', 'ticket_number: barcode label',
+    'ticket_number: label covers the last digit', 'ticket_number: two digits unclear']) {
     const r = T(s); assert.deepEqual([r.tier, r.field], ['cell', 'TICKET'], s);
   }
 });
@@ -30,6 +40,15 @@ test('phone topics: "crediting" is not a correction, "extra inches" is not parts
   assert.deepEqual([...t.ctx.reviewTopics_(['3 pins, 2 corners on extras'])], ['parts']);
   assert.deepEqual([...t.ctx.reviewTopics_(['Store says Homer Glen but red sticker means Lockport'])], ['store']);
   assert.deepEqual([...t.ctx.reviewTopics_(['Customer name Storey looks unclear'])], ['details in the Scans tab']);
+});
+
+test('the tag year alone goes to the Scans log only (Kirsten: she does not use the year); a date after the scan stays on the cell', () => {
+  assert.equal(T('Tag year 2024 looks off for a scan in 2026 (4/6 and 0/6 look alike); check the date on the tag').tier, 'log');
+  assert.equal(T('Two-digit tag year treated as 20YY; verify the century').tier, 'log');
+  assert.equal(T('Two-digit tag year treated as 20YY; verify the century; Tag date is after the scan date; verify it').tier, 'cell');
+  assert.equal(T('Tag date is invalid: Date in left blank; verify the written date').tier, 'cell');
+  assert.deepEqual([...t.ctx.reviewTopics_(['Credits on the slip'])], ['a correction on the tag']);
+  assert.deepEqual([...t.ctx.reviewTopics_(['Extra charge on slip'])], ['prices']);
 });
 
 console.log(`${passed} review message tests passed`);

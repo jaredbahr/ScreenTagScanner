@@ -428,11 +428,11 @@ function reviewTopics_(reasons) {
   reasons.forEach(function (r) {
     r = String(r);
     if (/duplicate|already scanned/i.test(r)) add('possible duplicate');
-    else if (/refund|\bcredit\b|correction|redo|warranty/i.test(r)) add('a correction on the tag'); // not "crediting"
+    else if (/refund|\bcredits?\b|correction|redo|warranty/i.test(r)) add('a correction on the tag'); // not "crediting"
     else if (/\bparts?\b|part sku|\bpins?\b|\bextras\b|spreader|\bcorners?\b|latch/i.test(r)) add('parts'); // not "extra 20 in" 
     else if (/window|pane|glass|thermopane|acrylic/i.test(r)) add('window details');
     else if (/inch|\bqty\b|quantity|size|width|height/i.test(r)) add('inches');
-    else if (/price|earning|screening|lb earn|labor|\$|bill/i.test(r)) add('prices');
+    else if (/price|earning|screening|lb earn|labor|\$|bill|extra charge/i.test(r)) add('prices');
     else if (/\bstores?\b|\bsticker|routed/i.test(r)) add('store');
     else if (/group/i.test(r)) add('group');
     else if (/ticket/i.test(r)) add('ticket');

@@ -111,11 +111,24 @@ var RATES = {
 var FLAG_COLOR = '#fff3c4';
 var HINT_COLOR = '#fdf6dd';
 
+/** Words that make a ticket doubt a slip, quantity, other-job, rescan or money question (review of #19). */
+var TICKET_DOUBT_SERIOUS = new RegExp(['slip', 'pay cashier', 'balance', 'owed', '\\bqty\\b', 'quantit', '\\binch', '\\bscreen\\b',
+  '\\b\\d+ of \\d+\\b', '\\b(?:two|multiple|second) (?:tickets?|numbers?|jobs?|screens?|tags?)\\b',
+  '\\b(?:other|another|previous|earlier) (?:tags?|tickets?|jobs?|screens?|stores?|locations?)\\b', 'share', 'same ticket', 'repeat',
+  'rescan', 'scanned', 'location', 'not a ticket', '\\d\\.\\d\\d'].join('|'), 'i');
+/** True when a reason names one of the stores (by name or alias), e.g. "printed label says Lockport". */
+function storeNamed_(r) {
+  return STORES.some(function (s) {
+    return s.keys.concat([s.name]).some(function (k) { return /[a-z]/i.test(k) && new RegExp('\\b' + k + '\\b', 'i').test(r); });
+  });
+}
 /** Display severity only. Money/placement and unknown reasons fail closed to row review. */
 function reviewTier_(reason) {
   // "digit group" in an OCR doubt is about handwriting, not a group of tags (0.13.22, October data).
   var r = String(reason || '').replace(/\bdigit groups?\b/ig, 'digits');
   if (/^Group check \(name\)/.test(r)) return {tier:'cell',field:'NAME'};
+  // Kirsten (2026-10-23): she doesn't use the tag year, so a year doubt alone is kept in the Scans log only.
+  if (/^(?:Tag year \d{4} looks off|Two-digit tag year)/.test(r) && !/after the scan date|left blank|invalid|unreadable/i.test(r)) return {tier:'log'};
   if (/^Group check \(ticket\)/.test(r)) return {tier:'cell',field:'TICKET'};
   if (/^Group check \(tag\)/.test(r)) return {tier:'cell',field:'SEQUENCE'};
   var sequence = /tag_count|tag_index|tag x of n|x of n|\bqty( box)?\b[^.]*\b\d+ of \d+|\bqty box\b|'of n'|\bof n\b|\btotal n\b/i;
@@ -123,8 +136,9 @@ function reviewTier_(reason) {
   // A doubt about the ticket reading is one value, even when it mentions a price-gun label (Homer, 2026-10-23), but
   // not when it also raises a store, slip, window, quantity or money question (review 2026-10-23).
   if (/^ticket_number\b/i.test(r)) {
-    var rest = r.replace(/(?:ace )?price(?:[- ]gun)? (?:label|sticker)s?|ace price|price[- ]gun|printed label|covered by (?:a |the )?(?:sticker|label)|extra (?:\w+ )?digits?/ig, '');
-    if (!serious.test(rest) && !/slip|\bqty\b|quantit/i.test(rest)) return {tier:'cell',field:'TICKET'};
+    var rest = r.replace(/(?:ace )?price(?:[- ]gun| tag)? (?:label|sticker)s?|ace price|price[- ]gun|price tag|printed label|covered by (?:a |the )?(?:sticker|label)|(?:ace )?sticker (?:over|covers?|hides?|obscur\w*)|stickered|extra (?:\w+ )?digits?/ig, '');
+    if (!serious.test(rest) && !TICKET_DOUBT_SERIOUS.test(rest) && !storeNamed_(rest)) return {tier:'cell',field:'TICKET'};
+    return {tier:'row'}; // otherwise the generic "ticket" rule below would make it one cell again
   }
   if (/^Correction\/refund:/i.test(r)) {
     var what = r.replace(/^Correction\/refund:\s*/i, '');
@@ -624,6 +638,7 @@ function scanDateSerial_() {
 }
 
 /** Tag date in; admission's Chicago calendar day out. Invalid dates never silently roll. */
+var CENTURY_NOTE = 'Two-digit tag year treated as 20YY; verify the century';
 function storeDates_(x) {
   var scan = x._scan_ymd || Utilities.formatDate(new Date(), 'America/Chicago', 'yyyy-MM-dd');
   var dateOut = serialFromYmd_(scan), raw = typeof x.date === 'string' ? x.date.trim() : '';
@@ -655,7 +670,6 @@ function storeDates_(x) {
   }
   return {dateIn:dateIn,dateOut:dateOut,reason:reason};
 }
-var CENTURY_NOTE = 'Two-digit tag year treated as 20YY; verify the century';
 function validYmd_(year, month, day) {
   var check = new Date(Date.UTC(year, month - 1, day));
   return year >= 1900 && year <= 2199 && month >= 1 && month <= 12 && day >= 1 &&
