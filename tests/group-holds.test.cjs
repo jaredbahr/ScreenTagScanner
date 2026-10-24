@@ -12,7 +12,9 @@ function modern(t, tab = 'New Lenox') {
   sh.insertColumnAfter(15); sh.set(1, 16, 'Tag x of N'); sh.insertColumnAfter(3); sh.set(1, 4, 'Tag x of N');
   return { sh, c: t.ctx.storeLayout_(sh).screens };
 }
-const job = (name, ticket, i, n, extra = {}) => ({ store: 'New Lenox', last_name: name, customer_name: name, ticket_number: ticket,
+// Each synthetic customer has their own phone (same name, same phone), as on real tags; holds match on it (0.13.27).
+const phoneFor = name => '630555' + String([...name].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) % 10000, 7)).padStart(4, '0');
+const job = (name, ticket, i, n, extra = {}) => ({ store: 'New Lenox', last_name: name, customer_name: name, phone: phoneFor(name), ticket_number: ticket,
   tag_index: i, tag_count: n, width_in: 20 + i, height_in: 30, billable_inches: 50 + i + (extra.bump || 0), ...extra });
 const nameAt = (sh, c, r) => sh.get(r, c.NAME), seqAt = (sh, c, r) => sh.get(r, c.SEQUENCE);
 const held = (t, sh, r) => !!t.ctx.holdAt_(sh.notes.get(r + ',1') || '', t.ctx.groupHoldMeta_(sh), r);
@@ -48,8 +50,13 @@ test('a misprinted ticket still fills the group when name and N match exactly an
   assert.equal(seqAt(sh, c, 3), '2 of 2', 'lands in the held row'); assert.ok(!held(t, sh, 3));
   assert.match(sh.notes.get('3,' + c.TICKET) || '', /Group check \(ticket\): 1041934 is far from the rest of this group \(7041933, rows 2\)/);
   const u = load(), m = modern(u);
-  u.scan(job('Synthmcn', '7041933', 1, 3)); u.scan(job('Synthmcn', '1041934', 1, 3, { bump: 2 })); // "1 of 3" again: no gap
+  u.scan(job('Synthmcn', '7041933', 1, 3)); u.scan(job('Synthmcn', '1041934', 1, 3, { bump: 2, phone: null })); // "1 of 3" again, no phone read
   assert.equal(m.sh.get(3, m.c.TICKET), '', 'a repeated index does not take the held row'); assert.ok(held(u, m.sh, 3));
+  // The same phone and the same last 6 digits confirm the customer (0.13.27): the row fills, like a misread index.
+  const w = load(), n = modern(w);
+  w.scan(job('Synthmcn', '7041933', 1, 3)); w.scan(job('Synthmcn', '1041934', 1, 3, { bump: 2 }));
+  assert.equal(n.sh.get(3, n.c.TICKET), '1041934'); assert.match(n.sh.notes.get('3,' + n.c.TICKET) || '', /Group check \(ticket\): 1041934 is far from the rest of this group/);
+  assert.match(n.sh.notes.get('3,' + n.c.SEQUENCE) || '', /Group check \(tag\): 1 of 3 is already on the tab for this customer/);
 });
 
 test('holds expire after 14 days and the row is used normally', () => {

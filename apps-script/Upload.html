@@ -99,6 +99,12 @@
   <header><h2 id="notes-title">What's new</h2><button id="notes-back" type="button" class="link">Back</button></header>
   <!-- Release notes: plain language, no customer names, tickets, phones or photos. Newest first. -->
   <div class="notes">
+    <h3>0.13.27 &middot; Oct 24</h3>
+    <ul>
+      <li>Group tags also match on the phone number. When one tag has the full name and the others only a first name and initial, or a digit is misread, the tag still goes into its group's grey row instead of a new line.</li>
+      <li>When an order grows (a tag says "of 7" after the first said "of 6"), the new tags use the grey rows already saved, and one more row is saved for each extra tag. The Tag x of N cell gets a note to check the count.</li>
+      <li>If a later tag says a smaller count, no grey rows are freed; delete the note in column A to free a row you don't need.</li>
+    </ul>
     <h3>0.13.26 &middot; Oct 24</h3>
     <ul>
       <li>A tag year that only looks old (like 24 on a 2026 tag) no longer gets a note on the sheet; it is kept in the Scans tab. A missing date, or a date after the scan, still gets a note on Date in.</li>
