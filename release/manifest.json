@@ -4,12 +4,12 @@
   "reconciliationBranch": "main",
   "requiredUpstreamCommit": "5ebceb692142a7968f628b4cf841e0179e27b8cf",
   "lastVerifiedDeployment": {
-    "sourceCommit": "5ee59dc93d29b2805771ad3800a93a1fcd096d73",
-    "version": "0.13.22-draft",
-    "appsScriptVersion": 14,
-    "deployedAtUtc": "2026-10-23T01:33:00Z",
-    "verifiedAtUtc": "2026-10-23T01:33:00Z",
-    "evidence": "Google browser worker verified all twelve persisted files against the pin, live health, normal-cloud-viewport UI and the unchanged backup trigger. Timestamps have minute precision; no private target identifiers are recorded."
+    "sourceCommit": "bb991bcb23a00d0eb002a7e1f98d2ff9a0179089",
+    "version": "0.13.26-draft",
+    "appsScriptVersion": 15,
+    "deployedAtUtc": "2026-10-24T03:38:00Z",
+    "verifiedAtUtc": "2026-10-24T03:42:48.474Z",
+    "evidence": "Sole Google browser worker created one immutable version 15 on the existing deployment. Deployment action began 2026-10-24T03:38:53.801Z and succeeded by 03:39:19Z; deployedAtUtc records the action minute. All twelve reloaded saved HEAD files matched raw Git blobs. Immutable code/HTML copies matched raw; appsscript.json history copy omitted only its final LF (raw blob 1209f928704010a313ed09d80f84a8eeb507b483); restoring exactly one LF matched canonical blob af507c4c66583975efc63b989fea75ceb033c1f8. No trimming or other normalization. Health returned 0.13.26-draft; scanner and What's new (0.13.26 · Oct 24) passed. Existing endpoint, execution identity and Anyone access were preserved; exactly one nightlyWorkbookBackup_ trigger remained, with 0% errors. No Script Properties were read or changed; no sharing, trigger or sheet changes, scans or OAuth prompt. Normal cloud viewport verified; physical Android not tested, responsive DevTools preview blocked by browser organization policy with no bypass. No private target identifiers recorded."
   },
   "requiredProductionFiles": [
     "apps-script/Backup.gs",
@@ -27,16 +27,16 @@
   ],
   "baselineRuntimeBlobs": {
     "apps-script/Backup.gs": "ebb93e40165fdea0e509e40e8ca9e84edd7e85bf",
-    "apps-script/Code.gs": "ae6b724afe7da65bfa897b50d2483ef403cfe162",
-    "apps-script/ExtraLabor.gs": "e0489c27eeaa0783e075a5c2688aaf60bcb73f49",
-    "apps-script/Extraction.gs": "7084287a068ada0d7c969449c406fbfa75a56827",
-    "apps-script/Layout.gs": "c2b21344d81e934ea7b1dc7a5607f45e68232da2",
+    "apps-script/Code.gs": "2fb18017dab57a4c5069cffe3dd9beb7a4ddb24c",
+    "apps-script/ExtraLabor.gs": "c486f353d9f637f0e74b69da12f40d4c2334015a",
+    "apps-script/Extraction.gs": "9a86efa4dd4229b244dfb7bbcb6a5d9f1aed0c3b",
+    "apps-script/Layout.gs": "404068706c114dbfc678777af9c7d7a702c91e46",
     "apps-script/Month.gs": "313dbc09c372695495aaa36dadda07599ccff55b",
     "apps-script/MonthArchive.gs": "eb3a398ff452cb7c4ef208fc97582cddf2509e16",
-    "apps-script/Parts.gs": "b858668194e07023393716fdb4df4b5ff51292b9",
+    "apps-script/Parts.gs": "025366583816fa0003977ddb7c41820a27d26dd1",
     "apps-script/Routing.gs": "3d2a680ecd1e36c1d68ec737d71599209f8707b3",
-    "apps-script/Upload.html": "da4722ce4638c3d2922ecfba95e20e0cbd8ff0f8",
-    "apps-script/Workbook.gs": "2b64a4bc6bc24230b750bbf81a2f74609e96ee7a",
+    "apps-script/Upload.html": "e2bb07b4cd6b7266301e3657241346c6cc1be7a8",
+    "apps-script/Workbook.gs": "044ee594590eb4567f0c8ed33ae033bc7f269ea1",
     "apps-script/appsscript.json": "af507c4c66583975efc63b989fea75ceb033c1f8"
   },
   "allowedPublicFunctions": [
