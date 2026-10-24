@@ -673,8 +673,10 @@ function resizeGroupHolds_(sh, c, holds, taken, key, endRow, meta, flags) {
     writeGroupHold_(sh, r, c, data, label, meta);
     added++;
   }
-  if (flags) flags.push(said + '. ' + (added === want ? (added === 1 ? 'One more row' : added + ' more rows') + ' saved for the group' :
-    'Only ' + added + ' of ' + want + ' more rows could be saved right after the group') + '. Check the tag count.');
+  var rows = function (n) { return n + (n === 1 ? ' more row' : ' more rows'); };
+  if (flags) flags.push(said + '. ' + (added === want ? rows(added) + ' saved for the group' : added === 0 ?
+    'No more rows could be saved right after the group' : 'Only ' + rows(added) + ' of ' + want + ' could be saved right after the group') +
+    '. Check the tag count.');
 }
 /**
  * How well a hold matches this tag's group (N is checked by the caller): 1 same ticket, 2 within 50 or the same phone, 3 one digit off,
@@ -715,15 +717,16 @@ function daySerial_(v) {
 function holdGroupRows_(sh, c, key, row, endRow, x) {
   var vals = sh.getRange(2, c.NAME, endRow - 1, 1).getValues(), seqs = sh.getRange(2, c.SEQUENCE, endRow - 1, 1).getValues();
   var tickets = sh.getRange(2, c.TICKET, endRow - 1, 1).getValues(), notes = sh.getRange(2, COUNTER_COL, endRow - 1, 1).getNotes();
-  var meta = groupHoldMeta_(sh);
+  var meta = groupHoldMeta_(sh), otherN = 0;
   if (meta.failed) return 0; // hidden data unreadable: a new hold could not be used, so don't grey rows
   for (var i = 0; i < vals.length; i++) {
     if (i + 2 === row) continue;
     var m = /^\d+ of (\d+)$/.exec(String(seqs[i][0]).trim());
     // A different count only counts as started when this tag is past it ("7 of 7" after "1 of 6"; Downers Grove,
     // 2026-10-24); the same customer's next order ("1 of 3" after "2 of 2") gets its own rows (review of #23).
-    var sibling = m && namesClose_(sequenceIdentity_(vals[i][0]), key.name) && ticketsClose_(String(tickets[i][0]).trim(), key.ticket) &&
-      (Number(m[1]) === key.of || key.index > Number(m[1]));
+    var same = m && namesClose_(sequenceIdentity_(vals[i][0]), key.name) && ticketsClose_(String(tickets[i][0]).trim(), key.ticket);
+    var sibling = same && (Number(m[1]) === key.of || key.index > Number(m[1]));
+    if (same && !sibling) otherN = Number(m[1]);
     var h = holdAt_(notes[i][0], meta, i + 2), rank = h && !h.unknown ? holdFit_(h, key, scanDateSerial_()) : 0;
     if (sibling || sameGroup_(h, key) || (rank && rank <= 2)) return 0; // group already started here: no new holds
   }
@@ -735,6 +738,10 @@ function holdGroupRows_(sh, c, key, row, endRow, x) {
     if (key.phone) data.phone = key.phone; // hidden row data in the sheet only, to match the group's other tags
     writeGroupHold_(sh, r, c, data, label, meta);
     held++;
+  }
+  if (held && otherN) { // the same customer's earlier tags say another count: a new order, or a reprinted tag (review of #23)
+    appendReviewNote_(sh.getRange(row, c.SEQUENCE), 'Glance at this value:\n- Group check (tag): an earlier group of this customer says of ' +
+      otherN + '. If this tag belongs to that order, delete the grey rows\' notes in column A.');
   }
   return held;
 }

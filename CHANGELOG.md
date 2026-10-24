@@ -18,7 +18,8 @@ From Kirsten's first scans on version 15 (2026-10-24). Both left extra blank lin
 - Growing a group releases held rows someone typed into (their colours kept) instead of re-greying them, and the
   count note says how many rows were actually saved.
 - No new group is started for a "7 of 7" after "1 of 6" already on the tab; the same customer's next order
-  ("1 of 3" after "2 of 2") still gets its own rows.
+  ("1 of 3" after "2 of 2") still gets its own rows, with a note naming the earlier count in case it is a reprinted
+  tag of that order.
 - A repeated "k of N" matched on the phone gets a note on the Tag x of N cell.
 - Rewriting a hold keeps Kirsten's own lines in the column-A note, and an older hold picks up the phone.
 - Tests: each synthetic customer now has their own phone (same name, same phone), since every fixture tag used to

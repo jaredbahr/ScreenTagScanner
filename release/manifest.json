@@ -101,7 +101,7 @@
     "tests/review-money.test.cjs": 12,
     "tests/group-review.test.cjs": 14,
     "tests/review-messages.test.cjs": 5,
-    "tests/group-phone.test.cjs": 14
+    "tests/group-phone.test.cjs": 15
   },
   "allowWorkflowDefinitions": true
 }
