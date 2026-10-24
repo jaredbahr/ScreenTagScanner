@@ -117,13 +117,21 @@ var TICKET_DOUBT_SERIOUS = new RegExp(['slip', 'pay[- ]cashier', 'balance due', 
   '\\b(?:other|another|previous|earlier) (?:tags?|tickets?|jobs?|screens?|stores?|locations?|customers?)\\b',
   'share[sd]? (?:this|the|a) (?:ticket|number)', 'same ticket', '\\ba repeat\\b', 'repeat (?:job|order|customer|ticket)', 'rescan',
   'scanned (?:earlier|before|twice|already)', 'work order', 'both tags', 'not a ticket', '\\d\\.\\d\\d'].join('|'), 'i');
+/** A coloured sticker names a store, even when the doubt says it covers the number (checked on the full doubt). */
+var STICKER_COLOR_RE = /(?:red|green|blue|yellow|orange) sticker|sticker[^;]*\b(?:red|green|blue|yellow|orange)\b/i;
 /** True when a reason names one of the stores (by name or alias), e.g. "printed label says Lockport". */
 function storeNamed_(r) {
-  // Only when the doubt contrasts it ("belongs to Lockport", "label says Lockport"): naming the tag's own store
-  // ("HOMER tag uses an ACE PRICE label") is a plain reading doubt.
-  if (!/different|another|other|\bnot\b|\bbut\b|\bvs\b|instead|belong|routed|\bbook\b|prefix|\bsays\b|\bfrom\b/i.test(r)) return false;
-  return STORES.some(function (s) {
+  // Two different stores named ("Lockport ticket on a Homer form") is a placement question. One store only counts
+  // with a placement word ("belongs to Lockport", "label says Lockport"); naming the tag's own store ("HOMER tag
+  // uses an ACE PRICE label", "Homer label from the price gun") is a plain reading doubt (review of #19).
+  var named = STORES.filter(function (s) {
     return s.keys.concat([s.name]).some(function (k) { return /[a-z]/i.test(k) && new RegExp('\\b' + k + '\\b', 'i').test(r); });
+  });
+  if (named.length >= 2) return true;
+  if (!named.length) return false;
+  if (/different|another|other stores?|belong|routed|\bbook\b|prefix|instead/i.test(r)) return true;
+  return named[0].keys.concat([named[0].name]).some(function (k) {
+    return /[a-z]/i.test(k) && new RegExp('\\b(?:says|is|at|from) (?:the )?' + k + '\\b', 'i').test(r);
   });
 }
 /** Display severity only. Money/placement and unknown reasons fail closed to row review. */
@@ -141,7 +149,7 @@ function reviewTier_(reason) {
   // not when it also raises a store, slip, window, quantity or money question (review 2026-10-23).
   if (/^ticket_number\b/i.test(r)) {
     var rest = r.replace(/(?:ace )?price(?:[- ]gun| tag)? (?:label|sticker)s?|ace price|price[- ]gun|price tag|printed label|covered by (?:a |the )?(?:sticker|label)|(?:ace )?sticker (?:over|covers?|hides?|obscur\w*)|stickered|extra (?:\w+ )?digits?|store\s*#\s*\w+/ig, ''); // "Store # HOMER" is the form's own field
-    if (!serious.test(rest) && !TICKET_DOUBT_SERIOUS.test(rest) && !storeNamed_(rest)) return {tier:'cell',field:'TICKET'};
+    if (!serious.test(rest) && !TICKET_DOUBT_SERIOUS.test(rest) && !storeNamed_(r) && !STICKER_COLOR_RE.test(r)) return {tier:'cell',field:'TICKET'};
     return {tier:'row'}; // otherwise the generic "ticket" rule below would make it one cell again
   }
   if (/^Correction\/refund:/i.test(r)) {
