@@ -48,7 +48,7 @@ Each store tab holds **two side-by-side tables**:
 | H | LB Earn | $ | – | **Filled:** UI × labor rate ($0.17 / $0.20 / $0.22 pet). What they earn ✅ (pet rate from tag, unconfirmed) |
 | I | Spline | $ | `=F*0.07` | automatic |
 | J | Spl Earn | $ | `=F*0.01` | automatic |
-| K | Extras | $ | – | Not written |
+| K | Extras | text | – | Kirsten's notes. Patio doors only (0.13.28): "new patio door W x H" on the new row |
 | L | Earning | $ | – | Kirsten enters her extras earnings + notes. Script adds a **cell note listing the tag's extras** and highlights it |
 
 Store total (K752 etc.) = SUM(H) + SUM(J) + SUM(L). `Totals` pulls H, J, L per store.
@@ -88,7 +88,7 @@ Window mapping is built from Kirsten's description and the first real October wi
    Every tag gets its own row. Only an **exact rescan** (same store, ticket, "Qty x of N" and size) is skipped,
    with a calm "Already scanned" on the phone and no email. Same ticket with no "x of N" and a different size
    is written and flagged.
-10. **Measurement-only forms** (e.g. new-build patio doors, per Kirsten): when no QTY is written, inches =
+10. **Measurement-only forms** (per Kirsten; patio doors have their own rule 28): when no QTY is written, inches =
    each side rounded **up**, then added (35¼ + 79½ → 36 + 80 = 116"), and the row notes it was calculated.
 11. **Conflicting quantities are never billed silently.** For a numeric size/QTY disagreement, literal written
    totals may settle inches only when all filled total rows imply the same whole inches at the existing rates,
@@ -166,6 +166,13 @@ Window mapping is built from Kirsten's description and the first real October wi
     of the standard screening SKUs is added to the tag QTY (row note). The shop's own marker re-measurement on a tag
     is ignored. A written tag year more than half a year behind the scan is noted in the Scans log (not the sheet:
     Kirsten doesn't use the year).
+28. **Patio screen doors** (Kirsten, 2026-10-24). The shop's "Custom Patio Door Order" form is a screen, always
+    fiberglass. Inches = width + height, each
+    rounded up (75.5 x 48 -> 76 + 48 = 124"), billed at the fiberglass rates with **no** build labor and **no**
+    Earning (blank, per Kirsten). Extras gets "new patio door" and the size as written. The handle height is never billed; a size whose short side is outside
+    20-60" or long side outside 60-100" leaves the inches blank on a yellow row. A reported conflict, a different
+    QTY read, QTY rows or "Quantity 2" turn the row yellow and say so. The supplier's Circle Glass order form is
+    Kirsten's own ordering sheet, never scanned: it reads as not a tag, so nothing is written.
 
 ## Review display for 0.13.18
 

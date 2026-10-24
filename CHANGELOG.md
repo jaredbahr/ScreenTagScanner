@@ -1,5 +1,26 @@
 # Changelog
 
+## 0.13.28-draft — patio screen doors
+
+Kirsten (2026-10-24), with the shop's "Custom Patio Door Order" form as the example.
+- New `form_type` value `patio_door` (schema enum only; no new field). Prompt: width and height are the door's; the
+  handle height is never a dimension; "Quantity this size" is screens_on_tag; the circled door size/price line and
+  frame color are not extras or parts; a patio order form is never new_build and a patio-door repair tag is a repair.
+  The supplier's Circle Glass order form is Kirsten's own ordering sheet (she sent it by mistake): it reads as not a
+  tag, so nothing is written.
+- Script: always fiberglass (another material read gets a note), inches = width + height each rounded up, no $9
+  build labor and no $1.50 Earning base (Kirsten: Earning stays blank). Extras gets "new patio door" and the size,
+  which she used to type. The inches note goes on the Uni/In cell, not a yellow row.
+- Never dropped silently (independent review of #25): a conflict Claude reported, a different QTY read, or QTY/total
+  rows (a sign of a repair tag) keep the worked-out inches but turn the row yellow and say what was read. A size whose
+  short side is outside 20-60" or long side outside 60-100" (a handle height read as the height) leaves the inches
+  blank on a yellow row; width and height either way round bill the same. "Quantity this size 2" is one held row.
+- Never routed to windows; a glass SKU on a patio form is noted. A patio door's phone never keys a group hold.
+- Rescans: a patio door also needs a close last name read on both, so two customers with the same number and a
+  standard door size are two rows, and two unnamed doors are never one lost door. A conflict detail of "none" or
+  "n/a" is not a conflict.
+- Docs: rule 28; rule 10 no longer calls patio doors builds.
+
 ## 0.13.27-draft — group holds match on the phone and survive a changed tag count
 
 From Kirsten's first scans on version 15 (2026-10-24). Both left extra blank lines; no amounts were wrong.
