@@ -26,7 +26,9 @@ Group placement fixes (same review; the group check and looser matching have bee
   duplicate.
 - **Kirsten's notes are kept:** a row with any note in column A is never held, and filling a hold removes only the
   scanner's own lines.
-- If the hidden hold data can't be read, held rows are not reused; old hidden entries on a row are cleared.
+- If the hidden hold data can't be read, held rows are not reused and no new holds are written; old hidden entries on
+  a row are cleared. A hold note still counts when Kirsten adds a line above it.
+- Test and comment ticket numbers that matched real October tickets were replaced with made-up ones.
 - No look-alike ticket hint when the ticket's own book is already on the tab.
 - October replay (170 scans, read-only): identical placements and notes to before.
 - Notes: a slip on a tag with missing inches says "missing", not "held"; a slip on a window tag gets a note.

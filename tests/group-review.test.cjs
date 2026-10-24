@@ -52,7 +52,7 @@ test('a loose match whose "k of N" is already on the tab does not take a hold', 
 test('group check: the same surname three weeks later is not called a duplicate or a ticket mismatch', () => {
   const t = load({ now: new Date('2026-10-01T17:00:00Z') }), { sh, c } = modern(t, 'Homer Glen');
   const h = (n, tk, i) => ({ ...job(n, tk, i, 2), store: 'Homer Glen' });
-  t.scan(h('Smith', '8169100', 1)); t.scan(h('Smith', '8169100', 2));
+  t.scan(h('Smith', '8169450', 1)); t.scan(h('Smith', '8169450', 2));
   t.setNow(new Date('2026-10-22T17:00:00Z'));
   t.scan(h('Smith', '8169730', 1)); t.scan(h('Smith', '8169730', 2));
   for (const r of [4, 5]) assert.doesNotMatch(cellNotes(sh, r), /Group check/, 'row ' + r);
@@ -103,12 +103,31 @@ test('re-holding a row and filling it leaves no hidden entries behind', () => {
   assert.equal(m.sh.devMeta.length, 0, 'release removes every entry on the row');
 });
 
-test('look-alike hint: no hint when the ticket\'s own book is already on the tab', () => {
+test('look-alike hint: still given for a second misread in a book, not once the book is an established series', () => {
   const t = load(), sh = t.ss.tabs['New Lenox'];
   const one = (name, tk) => ({ store: 'New Lenox', last_name: name, customer_name: name, ticket_number: tk, tag_index: 1, tag_count: 1, width_in: 20, height_in: 30, billable_inches: 50 });
-  t.scan(one('Synthone', '7708101')); t.scan(one('Synthtwo', '7708150')); t.scan(one('Synthsix', '2208190'));
-  t.scan(one('Synththree', '2208120'));
-  assert.doesNotMatch([...sh.notes.values()].filter(v => /2208120/.test(v)).join('\n'), /look alike/);
+  const noteFor = tk => [...sh.notes.values()].filter(v => v.includes(tk)).join('\n');
+  t.scan(one('Synthone', '7708101')); t.scan(one('Synthtwo', '7708150'));
+  t.scan(one('Synthsix', '2208170')); assert.match(noteFor('2208170'), /likely 7708170/);
+  const lk = t.ctx.lookAlikeTicket_, near = () => true;
+  assert.match(lk('2208120', ['7708101', '7708150', '2208590'], near) || '', /likely 7708120/, 'one earlier misread does not hide the hint');
+  assert.equal(lk('2208120', ['7708101', '7708150', '2208170', '2208700'], near), null, 'own book has 2+ tickets: a real series');
+});
+
+test('if the hidden data cannot be read, no new holds are written (they could not be used)', () => {
+  const t = load(), { sh, c } = modern(t); sh.failMetadataRead = true;
+  t.scan(job('Synthm', '7707100', 1, 3));
+  assert.equal(sh.notes.get('3,1') || '', ''); assert.equal(sh.bg.get('3,' + c.NAME), undefined);
+});
+
+test('a hold note with a line Kirsten added above it still counts as held', () => {
+  const t = load(), { sh, c } = modern(t);
+  t.scan(job('Synthm', '7707100', 1, 2));
+  sh.notes.set('3,1', 'Kirsten: customer called\n' + sh.notes.get('3,1'));
+  t.scan(job('Synthq', '7707500', 1, 1));
+  assert.equal(sh.get(3, c.NAME), '', 'other jobs still skip it');
+  t.scan(job('Synthm', '7707100', 2, 2));
+  assert.equal(sh.get(3, c.NAME), 'Synthm'); assert.equal(sh.notes.get('3,1'), 'Kirsten: customer called');
 });
 
 test('hold ranking: same ticket beats one digit off beats a loose match', () => {

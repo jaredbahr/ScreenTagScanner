@@ -202,7 +202,7 @@ function ticketBookHint_(sh, layout, ticket) {
 var LOOK_ALIKE = { '2': '7', '7': '21', '1': '7', '3': '8', '8': '3', '4': '9', '9': '4', '5': '6', '6': '50', '0': '6' };
 function lookAlikeTicket_(t, known, near) {
   var books = {}; known.forEach(function (k) { var p = String(k).slice(0, 4); books[p] = (books[p] || 0) + 1; });
-  if (books[t.slice(0, 4)]) return null; // its own book is already on the tab: not a look-alike misread
+  if (books[t.slice(0, 4)] >= 2) return null; // its own book is an established series on the tab: not a misread
   var found = Object.keys(books).filter(function (p) {
     if (p === t.slice(0, 4) || books[p] < 2) return false;
     for (var i = 0; i < 4; i++) if (p.charAt(i) !== t.charAt(i) && (LOOK_ALIKE[t.charAt(i)] || '').indexOf(p.charAt(i)) < 0) return false;
@@ -383,7 +383,7 @@ function namesClose_(a, b) {
   if (a === b) return true;
   return Math.min(a.length, b.length) >= 4 && editDistance_(a, b) <= 2;
 }
-/** Same ticket, sequential tickets within 50, or one misread digit ("8169684"/"8169084"). */
+/** Same ticket, sequential tickets within 50, or one misread digit ("8160684"/"8160084"). */
 function ticketsClose_(a, b) {
   a = String(a || '').trim(); b = String(b || '').trim();
   if (!a || !b) return false;
@@ -446,7 +446,7 @@ function groupCheck_(sh, c, x, endRow) {
     var nums = sibs.map(function (s) { return s.ticket; }).filter(Boolean).sort();
     out.push('Group check (ticket): ' + me.ticket + ' is far from the rest of this group (' + nums[0] + (nums.length > 1 ? '–' + nums[nums.length - 1] : '') + ', rows ' + rowsOf(sibs) + ').');
   }
-  var dup = firm.filter(function (s) { return s.index === me.index; });
+  var dup = firm.filter(function (s) { return s.index === me.index; }); // a same-size rescan is caught by the possible-duplicate check
   if (dup.length) {
     var have = {}; firm.concat([me]).forEach(function (s) { have[s.index] = true; });
     var missing = []; for (var k = 1; k <= me.of; k++) if (!have[k]) missing.push(k);
@@ -488,7 +488,7 @@ function groupHoldMeta_(sh) {
 function holdAt_(note, meta, row) {
   var v1 = readGroupHold_(note);
   if (v1) return v1;
-  if (String(note || '').indexOf(HOLD_NOTE) !== 0) return null;
+  if (!String(note || '').split('\n').some(function (l) { return l.indexOf(HOLD_NOTE) === 0; })) return null; // any line: Kirsten may add one above
   if (meta[row] && meta[row].data) return meta[row].data;
   // Hidden data unreadable: treat the row as held (by no group, never expiring) rather than reuse it.
   return meta.failed ? { name: '', of: 0, ticket: '', day: scanDateSerial_(), unknown: true } : null;
@@ -585,6 +585,7 @@ function holdGroupRows_(sh, c, key, row, endRow, x) {
   var vals = sh.getRange(2, c.NAME, endRow - 1, 1).getValues(), seqs = sh.getRange(2, c.SEQUENCE, endRow - 1, 1).getValues();
   var tickets = sh.getRange(2, c.TICKET, endRow - 1, 1).getValues(), notes = sh.getRange(2, COUNTER_COL, endRow - 1, 1).getNotes();
   var meta = groupHoldMeta_(sh);
+  if (meta.failed) return 0; // hidden data unreadable: a new hold could not be used, so don't grey rows
   for (var i = 0; i < vals.length; i++) {
     if (i + 2 === row) continue;
     var m = /^\d+ of (\d+)$/.exec(String(seqs[i][0]).trim());

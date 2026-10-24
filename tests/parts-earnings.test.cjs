@@ -163,7 +163,7 @@ test('a one-screen comment in group_extras never holds the tag\'s own parts (rea
   assert.match(t.ctx.SYSTEM_PROMPT,/attached Pay Cashier slip/);
 });
 test('Kirsten editing one paid row never blocks other tickets on the tab (real Downers Grove case, Oct 21)',()=>{
-  const t=load();write(t,{ticket_number:'8159099',parts:[part('580401',2)]});const sh=t.ss.tabs['Homer Glen'],c=t.ctx.storeLayout_(sh).screens;
+  const t=load();write(t,{ticket_number:'8150099',parts:[part('580401',2)]});const sh=t.ss.tabs['Homer Glen'],c=t.ctx.storeLayout_(sh).screens;
   assert.equal(sh.get(2,c.EARNING),4);sh.set(2,c.EARNING,8); // she corrected corners to $8
   write(t,{ticket_number:'8159068',width_in:32,height_in:74,billable_inches:106,parts:[part('580605',1)]});
   assert.equal(sh.get(3,c.EARNING),2,'frame spreader earns $2 on another ticket');
