@@ -45,6 +45,8 @@ Review levels and messages (same review):
 - **Phone topics:** "reconcile before crediting" is prices, not a correction; "extra 20 inches" is inches, not parts;
   "store" and "pins" must be whole words.
 - The phone summary uses the last "→", so a name holding one can't garble it.
+- **What's new** on the phone page has the 0.13.26 entry, and a test now fails if the newest entry doesn't match
+  `EXTRACTION_VERSION` (Jared: What's new is always updated).
 
 ## 0.13.25-draft — balance-due slips, shop re-measurements, tag years (October 23 audit)
 
