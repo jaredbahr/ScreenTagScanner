@@ -3,13 +3,13 @@
 Living notes so any session (Claude Code or Codex) can pick up where the last one stopped. Update this
 file whenever the state below changes. No customer data, emails, Google IDs or secrets here.
 
-_Last updated: 2026-10-24 (version 15 receipt verified at 03:42:48.474 UTC)._
+_Last updated: 2026-10-24 (version 16 receipt verified at 2026-10-24T18:07:46.406Z)._
 
 ## Where things stand
 | | |
 |---|---|
-| Live in Google | Immutable version 15 / **0.13.26-draft**, source `bb991bcb23a00d0eb002a7e1f98d2ff9a0179089`. Deployment action minute: 2026-10-24 03:38 UTC (2026-10-23 22:38 America/Chicago); final checks completed 03:42:48.474 UTC. All twelve saved HEAD blobs matched raw. Immutable code/HTML matched raw; manifest history copy matched after restoring only its missing final LF. Health/scanner/What's new passed; endpoint/access and single backup trigger preserved. Normal cloud viewport only; physical Android not tested, responsive preview blocked by organization policy without bypass. |
-| Ready to deploy | The approved issue #12 pin is deployed. This metadata-only record awaits Claude/user review and merge; future runtime changes require a new reviewed main pin and release validation. |
+| Live in Google | Immutable version 16 / **0.13.28-draft**, source `832f80b4a896b0ed24e8422961a41d10b371eba9`. Deployed 2026-10-24 18:05 UTC / 13:05 America/Chicago (minute precision); verified 2026-10-24T18:07:46.406Z. All eleven code/HTML files matched raw target blobs, including immutable readback. Unchanged saved-editor manifest differed only by the terminal LF omission explicitly approved by Jared at 18:00 UTC; restoring that LF in memory matched the canonical blob. Manifest left untouched. Health and What's new (0.13.28 · Oct 24) passed; existing deployment preserved. No scans or property/sharing/trigger/sheet changes. |
+| Ready to deploy | The approved issue #24 pin is deployed. This metadata-only record awaits Claude/user review and merge; future runtime changes require a new reviewed main pin and release validation. |
 | Who deploys | Codex, per [DEPLOYMENT.md](DEPLOYMENT.md) and the release gate, recorded as a `deployment` issue |
 | Lesson (2026-10-22) | Google ran Codex's unmerged PR line for a week while the default branch moved on separately. Rule now: deploy only from the default branch; the release gate fails a candidate that lacks the deployed source's history |
 | Workbook in use | "October 2026" in the shared monthly folder; tabs named by store ("Downers Grove", …); a "Tag x of N" column after Name in both blocks |

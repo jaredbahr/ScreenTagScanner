@@ -4,12 +4,12 @@
   "reconciliationBranch": "main",
   "requiredUpstreamCommit": "5ebceb692142a7968f628b4cf841e0179e27b8cf",
   "lastVerifiedDeployment": {
-    "sourceCommit": "bb991bcb23a00d0eb002a7e1f98d2ff9a0179089",
-    "version": "0.13.26-draft",
-    "appsScriptVersion": 15,
-    "deployedAtUtc": "2026-10-24T03:38:00Z",
-    "verifiedAtUtc": "2026-10-24T03:42:48.474Z",
-    "evidence": "Sole Google browser worker created one immutable version 15 on the existing deployment. Deployment action began 2026-10-24T03:38:53.801Z and succeeded by 03:39:19Z; deployedAtUtc records the action minute. All twelve reloaded saved HEAD files matched raw Git blobs. Immutable code/HTML copies matched raw; appsscript.json history copy omitted only its final LF (raw blob 1209f928704010a313ed09d80f84a8eeb507b483); restoring exactly one LF matched canonical blob af507c4c66583975efc63b989fea75ceb033c1f8. No trimming or other normalization. Health returned 0.13.26-draft; scanner and What's new (0.13.26 · Oct 24) passed. Existing endpoint, execution identity and Anyone access were preserved; exactly one nightlyWorkbookBackup_ trigger remained, with 0% errors. No Script Properties were read or changed; no sharing, trigger or sheet changes, scans or OAuth prompt. Normal cloud viewport verified; physical Android not tested, responsive DevTools preview blocked by browser organization policy with no bypass. No private target identifiers recorded."
+    "sourceCommit": "832f80b4a896b0ed24e8422961a41d10b371eba9",
+    "version": "0.13.28-draft",
+    "appsScriptVersion": 16,
+    "deployedAtUtc": "2026-10-24T18:05:00Z",
+    "verifiedAtUtc": "2026-10-24T18:07:46.406Z",
+    "evidence": "Sole Google browser worker pasted exactly five changed files and created one immutable version 16 on the existing deployment. Google displayed 13:05 America/Chicago; deployedAtUtc has minute precision. Deployment action observed at 2026-10-24T18:05:40.532Z; success observed at 18:05:58.938Z, not claimed as exact Google creation time. Eleven saved code/HTML baseline files matched raw version-15 Git blobs; the unchanged saved-editor manifest omitted only one final LF. Jared explicitly approved that saved-editor serialization exception at 18:00 UTC; the manifest was left untouched. All eleven target code/HTML files, including immutable version 16 readback, matched raw Git blobs. The unchanged manifest raw blob was 1209f928704010a313ed09d80f84a8eeb507b483 (488 bytes); adding exactly one terminal LF in memory matched canonical af507c4c66583975efc63b989fea75ceb033c1f8 (489 bytes). No trimming or other normalization. This saved-editor exception is distinct from the prior version-15 immutable-history-copy normalization. Health returned 0.13.28-draft and What's new began 0.13.28 · Oct 24. Existing deployment preserved; no permission prompt, Script Properties, sharing, trigger or sheet changes, or scans. No private target identifiers recorded."
   },
   "requiredProductionFiles": [
     "apps-script/Backup.gs",
@@ -27,16 +27,16 @@
   ],
   "baselineRuntimeBlobs": {
     "apps-script/Backup.gs": "ebb93e40165fdea0e509e40e8ca9e84edd7e85bf",
-    "apps-script/Code.gs": "2fb18017dab57a4c5069cffe3dd9beb7a4ddb24c",
+    "apps-script/Code.gs": "5ba8e025ce2c735cc011c791d28a214162cc2a77",
     "apps-script/ExtraLabor.gs": "c486f353d9f637f0e74b69da12f40d4c2334015a",
-    "apps-script/Extraction.gs": "9a86efa4dd4229b244dfb7bbcb6a5d9f1aed0c3b",
+    "apps-script/Extraction.gs": "c3ff3e6d491b36641542913d163e21dc726e9e3a",
     "apps-script/Layout.gs": "404068706c114dbfc678777af9c7d7a702c91e46",
     "apps-script/Month.gs": "313dbc09c372695495aaa36dadda07599ccff55b",
     "apps-script/MonthArchive.gs": "eb3a398ff452cb7c4ef208fc97582cddf2509e16",
     "apps-script/Parts.gs": "025366583816fa0003977ddb7c41820a27d26dd1",
-    "apps-script/Routing.gs": "3d2a680ecd1e36c1d68ec737d71599209f8707b3",
-    "apps-script/Upload.html": "e2bb07b4cd6b7266301e3657241346c6cc1be7a8",
-    "apps-script/Workbook.gs": "044ee594590eb4567f0c8ed33ae033bc7f269ea1",
+    "apps-script/Routing.gs": "095b77271cb5951bd18616867457618c50285def",
+    "apps-script/Upload.html": "15977f5059a56df81ab628440adc144d50c58db0",
+    "apps-script/Workbook.gs": "79dcea5f43d918fdb40a8e50f0a3dcfdb110a77a",
     "apps-script/appsscript.json": "af507c4c66583975efc63b989fea75ceb033c1f8"
   },
   "allowedPublicFunctions": [
