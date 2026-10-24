@@ -202,6 +202,8 @@ async function test(name,fn){await fn();passed++;console.log('PASS '+name);}
     assert.equal(u.elements.status.textContent,'Not added to the sheet. It is in the Scans tab; open Details.');assert.equal(u.elements.review.hidden,false);
     const v=environment();await v.select();v.token();v.submit();v.success({status:'ok',authenticated:true,message:'Added: Synth #1, 20 x 30 → New Lenox, row 3'});
     assert.equal(v.elements.status.textContent,'Saved to New Lenox, row 3.');assert.equal(v.elements.review.hidden,true);
+    const w=environment();await w.select();w.token();w.submit();w.success({status:'ok',authenticated:true,message:'Added: B → C #1, 30 x 40 → Homer Glen, row 4'});
+    assert.equal(w.elements.status.textContent,'Saved to Homer Glen, row 4.','a name holding an arrow does not garble the summary');
   });
   await test('older server wording and unavailable-count guidance stay visible on a confirmed-save summary',async()=>{
     const t=environment();await t.select();t.token();t.submit();t.success({status:'ok',message:'Added\n1 earlier scan still needs reconciliation. Existing store rows may be present.',authenticated:true});

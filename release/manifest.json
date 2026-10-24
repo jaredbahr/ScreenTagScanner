@@ -77,7 +77,7 @@
   },
   "minimumTestCounts": {
     "tests/offline.test.cjs": 51,
-    "tests/date-rules.test.cjs": 14,
+    "tests/date-rules.test.cjs": 16,
     "tests/extra-labor.test.cjs": 32,
     "tests/glass-routing.test.cjs": 11,
     "tests/job-unit.test.cjs": 7,
@@ -99,7 +99,8 @@
     "tests/group-check.test.cjs": 10,
     "tests/audit-fixes.test.cjs": 6,
     "tests/review-money.test.cjs": 12,
-    "tests/group-review.test.cjs": 14
+    "tests/group-review.test.cjs": 14,
+    "tests/review-messages.test.cjs": 5
   },
   "allowWorkflowDefinitions": true
 }

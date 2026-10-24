@@ -111,17 +111,45 @@ var RATES = {
 var FLAG_COLOR = '#fff3c4';
 var HINT_COLOR = '#fdf6dd';
 
+/** Words that make a ticket doubt a slip, quantity, other-job, rescan or money question (review of #19). */
+var TICKET_DOUBT_SERIOUS = new RegExp(['slip', 'pay[- ]cashier', 'balance due', 'owed', '\\bqty\\b', 'quantit', '\\binch', '\\bscreen\\b',
+  '\\b(?:tag|screen|form) \\d+ of \\d+\\b', '\\b(?:two|multiple|second) (?:tickets?|jobs?|screens?|tags?)\\b', 'two numbers',
+  '\\b(?:other|another|previous|earlier) (?:tags?|tickets?|jobs?|screens?|stores?|locations?|customers?)\\b',
+  'share[sd]? (?:this|the|a) (?:ticket|number)', 'same ticket', '\\ba repeat\\b', 'repeat (?:job|order|customer|ticket)', 'rescan',
+  'scanned (?:earlier|before|twice|already)', 'work order', 'both tags', 'not a ticket', '\\d\\.\\d\\d'].join('|'), 'i');
+/** A coloured sticker names a store, even when the doubt says it covers the number (checked on the full doubt). */
+var STICKER_COLOR_RE = /(?:red|green|blue|yellow|orange) sticker|sticker[^;]*\b(?:red|green|blue|yellow|orange)\b/i;
+/**
+ * True when a reason names a store other than the one the tag was routed to (review of #19: wording alone can't
+ * tell "Homer tag, digit faint" from "may be a Lockport ticket"). Number-only codes count after "Store #".
+ * With no routed store, any store named counts (fail closed).
+ */
+function storeNamed_(r, routed) {
+  return STORES.some(function (s) {
+    if (routed && s.name === routed.name) return false;
+    return s.keys.concat([s.name]).some(function (k) {
+      return new RegExp(/[a-z]/i.test(k) ? '\\b' + k + '\\b' : 'store\\s*#\\s*' + k + '\\b', 'i').test(r);
+    });
+  });
+}
 /** Display severity only. Money/placement and unknown reasons fail closed to row review. */
-function reviewTier_(reason) {
+function reviewTier_(reason, routed) {
   // "digit group" in an OCR doubt is about handwriting, not a group of tags (0.13.22, October data).
   var r = String(reason || '').replace(/\bdigit groups?\b/ig, 'digits');
   if (/^Group check \(name\)/.test(r)) return {tier:'cell',field:'NAME'};
-  // A doubt about the ticket reading is one value, even when it mentions a price label or sticker (Homer, 2026-10-23).
-  if (/^ticket_number\b/i.test(r) && !/refund|credit|\$|earning|duplicate|already scanned/i.test(r)) return {tier:'cell',field:'TICKET'};
+  // Kirsten (2026-10-23): she doesn't use the tag year, so a year doubt alone is kept in the Scans log only.
+  if (/^(?:Tag year \d{4} looks off|Two-digit tag year)/.test(r) && !/after the scan date|left blank|invalid|unreadable/i.test(r)) return {tier:'log'};
   if (/^Group check \(ticket\)/.test(r)) return {tier:'cell',field:'TICKET'};
   if (/^Group check \(tag\)/.test(r)) return {tier:'cell',field:'SEQUENCE'};
   var sequence = /tag_count|tag_index|tag x of n|x of n|\bqty( box)?\b[^.]*\b\d+ of \d+|\bqty box\b|'of n'|\bof n\b|\btotal n\b/i;
   var serious = /(?:^|[^a-z])(?:amount|cost|charge|fee)s?(?:[^a-z]|$)|inches|\$|price|earning|\bbill(?:ed|able|ing)\b|screening|lb earn|\bparts\b|part sku|unrecognized part|\blabor\b|\bextras?\b|group|receipt|reserved|unposted|unit needs|window|pane|thermopane|build|frame|screens|store|sticker|\bfull\b|duplicate|already scanned|material|glass|acrylic|routed|layout|type is unknown|not a tag|refund|credit|redo|warranty|cancel|no charge|no record|spline-reference|literal (?:qty|row)|pending|interrupted|not placed|unplaced|reconcil|\bpartial\b|original scan/i; // "partially uncertain" OCR is not a partial save
+  // A doubt about the ticket reading is one value, even when it mentions a price-gun label (Homer, 2026-10-23), but
+  // not when it also raises a store, slip, window, quantity or money question (review 2026-10-23).
+  if (/^ticket_number\b/i.test(r)) {
+    var rest = r.replace(/(?:ace )?price(?:[- ]gun| tag)? (?:label|sticker)s?|ace price|price[- ]gun|price tag|printed label|covered by (?:a |the )?(?:sticker|label)|(?:ace )?sticker (?:over|covers?|hides?|obscur\w*)|stickered|extra (?:\w+ )?digits?|store\s*#\s*\w+/ig, ''); // "Store # HOMER" is the form's own field
+    if (!serious.test(rest) && !TICKET_DOUBT_SERIOUS.test(rest) && !storeNamed_(r, routed) && !STICKER_COLOR_RE.test(r)) return {tier:'cell',field:'TICKET'};
+    return {tier:'row'}; // otherwise the generic "ticket" rule below would make it one cell again
+  }
   if (/^Correction\/refund:/i.test(r)) {
     var what = r.replace(/^Correction\/refund:\s*/i, '');
     if (serious.test(what) || /size|inch|quantity/i.test(what)) return {tier:'row'};
@@ -233,7 +261,7 @@ function shortTicketHint_(t, known, near) {
 function showReview_(sh, row, c, flags) {
   var rowFlags = [], cells = {};
   flags.forEach(function(f) {
-    var t = reviewTier_(f);
+    var t = reviewTier_(f, storeByTabName_(sh.getName()));
     if (t.tier === 'row') rowFlags.push(f);
     else if (t.tier === 'cell') {
       var col = c[t.field] || c.NAME;
@@ -673,6 +701,7 @@ function scanDateSerial_() {
 }
 
 /** Tag date in; admission's Chicago calendar day out. Invalid dates never silently roll. */
+var CENTURY_NOTE = 'Two-digit tag year treated as 20YY; verify the century';
 function storeDates_(x) {
   var scan = x._scan_ymd || Utilities.formatDate(new Date(), 'America/Chicago', 'yyyy-MM-dd');
   var dateOut = serialFromYmd_(scan), raw = typeof x.date === 'string' ? x.date.trim() : '';
@@ -687,7 +716,7 @@ function storeDates_(x) {
     month = us ? Number(m[1]) : monthFromName_(m[1]); day = Number(m[2]);
     year = y ? Number(y) : scanYear;
     // "26" on a tag scanned in 2026 or 2027 is plainly 2026; anything else gets a century check.
-    if (y && y.length === 2) { year += 2000; if (year !== scanYear && year !== scanYear - 1) reason = 'Two-digit tag year treated as 20YY; verify the century'; }
+    if (y && y.length === 2) { year += 2000; if (year !== scanYear && year !== scanYear - 1) reason = CENTURY_NOTE; }
   } else return {dateIn:'',dateOut:dateOut,reason:'Tag date is unreadable/unsupported: Date in left blank; enter it from the tag'};
   if (!validYmd_(year, month, day)) {
     return {dateIn:'',dateOut:dateOut,reason:'Tag date is invalid: Date in left blank; verify the written date'};
@@ -697,8 +726,10 @@ function storeDates_(x) {
   // A later month/day may need review, but never changes the inferred year.
   if (dateIn > dateOut) reason += (reason ? '; ' : '') + 'Tag date is after the scan date; verify it';
   // A written year far behind the scan (October audit: "24"/"2020"/"25" on 2026 tags; 4/6 and 0/6 look alike).
-  else if (year !== scanYear && dateOut - dateIn > 120) {
-    reason += (reason ? '; ' : '') + 'Tag year ' + year + ' looks off for a scan in ' + scanYear + ' (4/6 and 0/6 look alike); check the date on the tag';
+  // Over half a year, so a tag left over the winter (11/1 scanned 3/15) is not flagged; one note, not two.
+  else if (year !== scanYear && dateOut - dateIn > 183) {
+    reason = 'Tag year ' + year + ' looks off for a scan in ' + scanYear + ' (4/6 and 0/6 look alike' +
+      (reason === CENTURY_NOTE ? '; a two-digit year is read as 20YY, verify the century' : '') + '); check the date on the tag';
   }
   return {dateIn:dateIn,dateOut:dateOut,reason:reason};
 }

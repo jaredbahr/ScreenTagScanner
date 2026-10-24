@@ -155,10 +155,11 @@ Window mapping is built from Kirsten's description and the first real October wi
 25. **Short last names** (2026-10-23): a last name of one or two letters keeps the name as written ("Ann B").
 26. **Look-alike ticket digits** (2026-10-23): when swapping confusable digits (2/7, 1/7, 3/8, 4/9, 5/6) in the first
     four digits gives the store's ticket series, the ticket cell gets a "likely …" note. Values are never changed. No note when the
-    ticket's own first four digits are already on the tab.
+    ticket's own first four digits are already an established series on the tab (2+ tickets).
 27. **Bill what the customer was charged** (Kirsten, 2026-10-23). A "measured wrong / balance due" slip's extra QTY
     of the standard screening SKUs is added to the tag QTY (row note). The shop's own marker re-measurement on a tag
-    is ignored. A written tag year more than 120 days behind the scan gets a Date in note.
+    is ignored. A written tag year more than half a year behind the scan is noted in the Scans log (not the sheet:
+    Kirsten doesn't use the year).
 
 ## Review display for 0.13.18
 
