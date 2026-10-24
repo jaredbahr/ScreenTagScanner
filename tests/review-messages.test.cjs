@@ -19,7 +19,9 @@ test('a ticket doubt that also raises a store, slip, window, quantity or group q
     'ticket_number: may be a rescan of an earlier ticket', 'ticket_number: may match a tag scanned earlier today',
     'ticket_number: balance due ticket 12.50 owed', 'ticket_number: may belong to Downers Grove', 'ticket_number: printed label says Lockport',
     'ticket_number: label from another Ace location (New Lenox)', 'ticket_number: ACE PRICE label reads 14.99, not a ticket number',
-    'ticket_number: covered by a red sticker']) assert.equal(T(s).tier, 'row', s);
+    'ticket_number: covered by a red sticker', 'ticket_number: Pay-Cashier ticket', 'ticket_number: ticket matches another customer',
+    'ticket_number: ticket from the work order, not the tag', 'ticket_number: number on both tags',
+    'ticket_number: Store # HOMER but the label is from a different store']) assert.equal(T(s).tier, 'row', s);
 });
 
 test('a plain ticket-reading doubt, price-gun label included, stays one cell', () => {
@@ -28,7 +30,11 @@ test('a plain ticket-reading doubt, price-gun label included, stays one cell', (
     'ticket_number: handwritten tag number has an extra leading digit overwritten', 'ticket_number: last digit could be 1 or 7',
     'ticket_number: read from the price tag sticker', 'ticket_number: price tag partly covers digits', 'ticket_number: a sticker over the number hides digit 3',
     'ticket_number: stickered over', 'ticket_number: the Ace sticker obscures digits', 'ticket_number: pricing label', 'ticket_number: barcode label',
-    'ticket_number: label covers the last digit', 'ticket_number: two digits unclear']) {
+    'ticket_number: label covers the last digit', 'ticket_number: two digits unclear',
+    'ticket_number: HOMER tag uses an ACE PRICE label; last digit smudged', 'ticket_number: Store # HOMER; ticket digits faint',
+    'ticket_number: Homer Glen tag; first digit obscured by staple', 'ticket_number: 7 or 1 (handwritten); DG ink smudge',
+    'ticket_number: digit 6 of 7 is smudged', 'ticket_number: last digit repeated or overwritten', 'ticket_number: digits share a stroke',
+    'ticket_number: scanned at an angle, last digit unclear', 'ticket_number: second number faded']) {
     const r = T(s); assert.deepEqual([r.tier, r.field], ['cell', 'TICKET'], s);
   }
 });

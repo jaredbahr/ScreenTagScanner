@@ -112,12 +112,16 @@ var FLAG_COLOR = '#fff3c4';
 var HINT_COLOR = '#fdf6dd';
 
 /** Words that make a ticket doubt a slip, quantity, other-job, rescan or money question (review of #19). */
-var TICKET_DOUBT_SERIOUS = new RegExp(['slip', 'pay cashier', 'balance', 'owed', '\\bqty\\b', 'quantit', '\\binch', '\\bscreen\\b',
-  '\\b\\d+ of \\d+\\b', '\\b(?:two|multiple|second) (?:tickets?|numbers?|jobs?|screens?|tags?)\\b',
-  '\\b(?:other|another|previous|earlier) (?:tags?|tickets?|jobs?|screens?|stores?|locations?)\\b', 'share', 'same ticket', 'repeat',
-  'rescan', 'scanned', 'location', 'not a ticket', '\\d\\.\\d\\d'].join('|'), 'i');
+var TICKET_DOUBT_SERIOUS = new RegExp(['slip', 'pay[- ]cashier', 'balance due', 'owed', '\\bqty\\b', 'quantit', '\\binch', '\\bscreen\\b',
+  '\\b(?:tag|screen|form) \\d+ of \\d+\\b', '\\b(?:two|multiple|second) (?:tickets?|jobs?|screens?|tags?)\\b', 'two numbers',
+  '\\b(?:other|another|previous|earlier) (?:tags?|tickets?|jobs?|screens?|stores?|locations?|customers?)\\b',
+  'share[sd]? (?:this|the|a) (?:ticket|number)', 'same ticket', '\\ba repeat\\b', 'repeat (?:job|order|customer|ticket)', 'rescan',
+  'scanned (?:earlier|before|twice|already)', 'work order', 'both tags', 'not a ticket', '\\d\\.\\d\\d'].join('|'), 'i');
 /** True when a reason names one of the stores (by name or alias), e.g. "printed label says Lockport". */
 function storeNamed_(r) {
+  // Only when the doubt contrasts it ("belongs to Lockport", "label says Lockport"): naming the tag's own store
+  // ("HOMER tag uses an ACE PRICE label") is a plain reading doubt.
+  if (!/different|another|other|\bnot\b|\bbut\b|\bvs\b|instead|belong|routed|\bbook\b|prefix|\bsays\b|\bfrom\b/i.test(r)) return false;
   return STORES.some(function (s) {
     return s.keys.concat([s.name]).some(function (k) { return /[a-z]/i.test(k) && new RegExp('\\b' + k + '\\b', 'i').test(r); });
   });
@@ -136,7 +140,7 @@ function reviewTier_(reason) {
   // A doubt about the ticket reading is one value, even when it mentions a price-gun label (Homer, 2026-10-23), but
   // not when it also raises a store, slip, window, quantity or money question (review 2026-10-23).
   if (/^ticket_number\b/i.test(r)) {
-    var rest = r.replace(/(?:ace )?price(?:[- ]gun| tag)? (?:label|sticker)s?|ace price|price[- ]gun|price tag|printed label|covered by (?:a |the )?(?:sticker|label)|(?:ace )?sticker (?:over|covers?|hides?|obscur\w*)|stickered|extra (?:\w+ )?digits?/ig, '');
+    var rest = r.replace(/(?:ace )?price(?:[- ]gun| tag)? (?:label|sticker)s?|ace price|price[- ]gun|price tag|printed label|covered by (?:a |the )?(?:sticker|label)|(?:ace )?sticker (?:over|covers?|hides?|obscur\w*)|stickered|extra (?:\w+ )?digits?|store\s*#\s*\w+/ig, ''); // "Store # HOMER" is the form's own field
     if (!serious.test(rest) && !TICKET_DOUBT_SERIOUS.test(rest) && !storeNamed_(rest)) return {tier:'cell',field:'TICKET'};
     return {tier:'row'}; // otherwise the generic "ticket" rule below would make it one cell again
   }
