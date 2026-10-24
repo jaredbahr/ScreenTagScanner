@@ -236,8 +236,8 @@ async function test(name,fn){await fn();passed++;console.log('PASS '+name);}
     assert.match(notes,/What's new/);
     assert.doesNotMatch(notes,/\d{6,}|\d{3}[-. ]\d{3}[-. ]\d{4}|@/,'no ticket numbers, phone numbers or emails');
     // Jared: What's new is always updated. The newest entry must match the current version.
-    const version=/EXTRACTION_VERSION = '([\d.]+)/.exec(require('node:fs').readFileSync(require('node:path').join(__dirname,'../apps-script/Extraction.gs'),'utf8'))[1];
-    assert.equal(/<h3>([\d.]+)/.exec(notes)[1],version,'newest What\'s new entry is the current version');
+    const ver=/EXTRACTION_VERSION\s*=\s*'([\d.]+)/.exec(fs.readFileSync(path.join(__dirname,'../apps-script/Extraction.gs'),'utf8')),hm=/<h3>([\d.]+)/.exec(notes);
+    assert.ok(ver&&hm,'version and a What\'s new heading are present');assert.equal(hm[1],ver[1],'newest What\'s new entry is the current version');
   });
   await test('Settings shows who the new month will be shared with',async()=>{
     const t=environment({storage:new Map([['scanner-token','remembered-synthetic']])});

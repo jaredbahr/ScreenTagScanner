@@ -101,18 +101,19 @@
   <div class="notes">
     <h3>0.13.26 &middot; Oct 24</h3>
     <ul>
-      <li>The tag year is no longer flagged on the sheet. If it looks off, it is only noted in the Scans tab.</li>
-      <li>A ticket question about a different store, a Pay Cashier slip, a second screen or a rescan turns the row yellow. A plain "hard to read" ticket question, including Homer's price-gun labels, is still one pale cell.</li>
-      <li>Group tags fill their own grey rows first, so two customers with the same last name don't swap rows.</li>
-      <li>Your own notes in column A are never covered by a grey row, and your colours stay when a group tag skips a row you typed in.</li>
-      <li>A balance-due slip on a form with several frames isn't added to every frame; the rows say to add it by hand. A slip amount the scanner can't read is flagged instead of dropped.</li>
-      <li>Short last names (like "Li") no longer block extra-labor earnings on that tab.</li>
+      <li>A tag year that only looks old (like 24 on a 2026 tag) no longer gets a note on the sheet; it is kept in the Scans tab. A missing date, or a date after the scan, still gets a note on Date in.</li>
+      <li>When the scanner isn't sure of a ticket because of another store, a Pay Cashier slip, a second screen or a rescan, the whole row turns yellow. If the ticket is just hard to read (Homer's price-gun labels included), only the ticket cell is coloured.</li>
+      <li>Group tags fill their own grey rows first, so two customers with the same last name don't take each other's grey rows. The same last name weeks later is no longer called a duplicate.</li>
+      <li>A row with your own note in column A is never turned grey. When a grey row is used, only the scanner's note is removed; anything you added stays, and so do your own colours on a row you typed in.</li>
+      <li>On a form with several frames, a balance-due slip isn't added automatically; the rows say to add it to the right frame by hand. A slip amount the scanner can't read turns the row yellow with a note to enter it.</li>
+      <li>Extra labor on a tag with a balance-due slip is left for you to check, so it isn't paid twice.</li>
+      <li>If a tag mentions a slip, a balance due, a wrong measurement or another screen, its inches are left for you to check, even when its numbers agree.</li>
+      <li>Extra labor and group parts are credited normally for very short last names (like "Li").</li>
     </ul>
     <h3>0.13.25 &middot; Oct 23</h3>
     <ul>
       <li>A "measured wrong, balance due" slip adds its inches to the tag (for example 75 + 20 = 95), with a note to check.</li>
       <li>Your own re-measurement written on a tag is ignored; the tag is billed as the customer was charged.</li>
-      <li>A tag year that looks wrong (like 24 instead of 26) gets a note on Date in.</li>
       <li>Price math written next to the rows (like 20 x .19) is no longer mistaken for a second size.</li>
     </ul>
     <h3>0.13.24</h3>
