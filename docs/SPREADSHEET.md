@@ -143,17 +143,23 @@ Window mapping is built from Kirsten's description and the first real October wi
     accepts a name off by a letter or two and a ticket off by one digit. Since 0.13.23 an exact name and N with an
     "x of N" not yet on the tab also match (misprinted tickets), and the hold data sits in hidden row metadata; the
     visible note is plain text and deleting it still frees the row. A close name with the same N, filling a gap, also
-    matches when the hold was made the same scanning day.
+    matches when the hold was made the same scanning day. Since 0.13.26 the best hold wins (same ticket, then within
+    50, then one digit off, then loose), a loose exact-name match also needs the same day or the same 4-digit ticket
+    book, a row with any note in column A is never held, only the scanner's own note lines are removed when a hold is
+    filled, and if the hidden hold data can't be read every hold note counts as held.
+24. **Group check** (2026-10-23, from the October 22 scans). A group tag is compared with its group's tags already
+    on the tab (same N, close name, ticket close or within 1000). Disagreeing name, ticket or "x of N" gets a note on
+    that one cell (pale, not yellow). Values are never changed. Since 0.13.26 a looser match (ticket
+    within 1000, the exact same name, or a close name the same day) only counts when that row's Date out is within 14
+    days, and only for the name and "far from the rest" notes, never "already on row" or a shared-ticket note.
+25. **Short last names** (2026-10-23): a last name of one or two letters keeps the name as written ("Ann B").
+26. **Look-alike ticket digits** (2026-10-23): when swapping confusable digits (2/7, 1/7, 3/8, 4/9, 5/6) in the first
+    four digits gives the store's ticket series, the ticket cell gets a "likely …" note. Values are never changed. No note when the
+    ticket's own first four digits are already an established series on the tab (2+ tickets).
 27. **Bill what the customer was charged** (Kirsten, 2026-10-23). A "measured wrong / balance due" slip's extra QTY
     of the standard screening SKUs is added to the tag QTY (row note). The shop's own marker re-measurement on a tag
     is ignored. A written tag year more than half a year behind the scan is noted in the Scans log (not the sheet:
     Kirsten doesn't use the year).
-26. **Look-alike ticket digits** (2026-10-23): when swapping confusable digits (2/7, 1/7, 3/8, 4/9, 5/6) in the first
-    four digits gives the store's ticket series, the ticket cell gets a "likely …" note. Values are never changed.
-24. **Group check** (2026-10-23, from the October 22 scans). A group tag is compared with its group's tags already
-    on the tab (same N, close name, ticket close or within 1000). Disagreeing name, ticket or "x of N" gets a note on
-    that one cell (pale, not yellow). Values are never changed.
-25. **Short last names** (2026-10-23): a last name of one or two letters keeps the name as written ("Ann B").
 
 ## Review display for 0.13.18
 

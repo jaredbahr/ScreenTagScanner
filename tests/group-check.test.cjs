@@ -35,12 +35,12 @@ test('same-ticket group (Homer style): a name or ticket read differently gets a 
 
 test('sequential-ticket group (Joliet style): a ticket far from the others and a misread name are noted', () => {
   const t = load(), { sh, c } = modern(t, '18650 (60)');
-  t.scan(tag('Joliet', 'Synthsur', '6475356', 3, 4));
-  t.scan(tag('Joliet', 'Synthsur', '6475357', 4, 4));
-  t.scan(tag('Joliet', 'Synthsur', '6475450', 2, 4));
-  assert.match(note(sh, rowOf(sh, c, '6475450'), c.TICKET), /Group check \(ticket\): 6475450 is far from the rest of this group \(6475356–6475357, rows 2, 3\)/);
-  t.scan(tag('Joliet', 'Synthsurm', '6475358', 1, 4));
-  assert.match(note(sh, rowOf(sh, c, '6475358'), c.NAME), /Group check \(name\): this tag reads "synthsurm"; other tags in this group read "synthsur"/);
+  t.scan(tag('Joliet', 'Synthsur', '6471156', 3, 4));
+  t.scan(tag('Joliet', 'Synthsur', '6471157', 4, 4));
+  t.scan(tag('Joliet', 'Synthsur', '6471250', 2, 4));
+  assert.match(note(sh, rowOf(sh, c, '6471250'), c.TICKET), /Group check \(ticket\): 6471250 is far from the rest of this group \(6471156–6471157, rows 2, 3\)/);
+  t.scan(tag('Joliet', 'Synthsurm', '6471158', 1, 4));
+  assert.match(note(sh, rowOf(sh, c, '6471158'), c.NAME), /Group check \(name\): this tag reads "synthsurm"; other tags in this group read "synthsur"/);
 });
 
 test('the same "x of N" twice: noted with what is still missing', () => {

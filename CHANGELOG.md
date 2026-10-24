@@ -16,11 +16,27 @@ Found by the pre-deploy review (CONTRIBUTING: triple check). Nothing here was li
   credit on that tab for the month, and tag 2 of a group-wide part was held as "edited by hand". Receipts now accept
   the full name the Name cell holds; older receipts (both kinds) still read.
 - Empty-looking slip values ("00", "-", "None.") count as no slip, not as unreadable.
+- Notes: a slip on a tag with missing inches says "missing", not "held"; a slip on a window tag gets a note.
+
+Group placement fixes (same review; the group check and looser matching have been live since 0.13.22):
+- **Best hold wins:** a tag fills its own group's held row first (same ticket, then within 50, then one digit off,
+  then a loose match). Before, two customers with one surname could fill each other's rows and leave a grey row.
+- A loose exact-name match (misprinted ticket) also needs the same day or the same 4-digit ticket book.
+- **Group check:** a loose match (ticket within 1000, exact name, or close name the same day) only counts within 14
+  days and never gives "already on row" or a shared-ticket note; the same surname weeks later is no longer called a
+  duplicate.
+- **Kirsten's notes are kept:** a row with any note in column A is never held, and filling a hold removes only the
+  scanner's own lines.
+- If the hidden hold data can't be read, held rows are not reused and no new holds are written; old hidden entries on
+  a row are cleared. A hold note still counts when Kirsten adds a line above it.
+- Test and comment ticket numbers that matched real October tickets were replaced with made-up ones.
+- No look-alike ticket hint when the ticket's own book is already an established series on the tab (2+ tickets).
+- October replay (170 scans, read-only): identical placements and notes to before.
 
 Review levels and messages (same review):
 - A **ticket doubt** that also raises a store, slip, window, quantity, group or money question keeps the yellow row
   (0.13.25 had made every "ticket_number" doubt one pale cell). A plain reading doubt, price-gun label included,
-  stays one cell. October replay: all 154 reasons keep their level.
+  stays one cell. October replay: all 154 reasons keep their level except the two year-only notes (now Scans log).
 - **Tag year:** Kirsten (2026-10-23) doesn't use the year, so a year doubt alone now goes to the Scans log only, not
   her sheet. It is flagged only when more than half a year behind the scan (a tag left over the winter is not), with
   one note instead of two for a two-digit year. A date after the scan, or an unreadable date, still gets a cell note.
@@ -29,7 +45,6 @@ Review levels and messages (same review):
 - **Phone topics:** "reconcile before crediting" is prices, not a correction; "extra 20 inches" is inches, not parts;
   "store" and "pins" must be whole words.
 - The phone summary uses the last "→", so a name holding one can't garble it.
-- Notes: a slip on a tag with missing inches says "missing", not "held"; a slip on a window tag gets a note.
 
 ## 0.13.25-draft — balance-due slips, shop re-measurements, tag years (October 23 audit)
 
