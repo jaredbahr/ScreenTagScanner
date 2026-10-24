@@ -12,6 +12,13 @@ Patio Screen Doors" order.
   out even if a QTY or conflict was read), no $9 build labor and no $1.50 Earning base. A size outside 20-60" by
   60-100" (a handle height read as the door height) leaves the inches blank on a yellow row. Never routed to
   windows ("Glass" is in the supplier's name). The inches note goes on the Uni/In cell, not a yellow row.
+- Independent review of #25: a conflict Claude reported, a different QTY read, or QTY/total rows (a sign of a
+  repair tag) still get the worked-out inches but turn the row yellow and say what was read. Width and height
+  either way round bill the same. "Quantity this size 2" is one held row. Two customers with the same number and
+  door size are not taken for a rescan (patio rescans also need the same last name). A glass SKU on a patio form
+  is noted. A patio door's phone never keys a group hold (a supplier form may carry the shop's phone). The
+  prompt says a patio order form is never new_build, a patio-door repair tag is a repair, and the Quantity box is
+  screens_on_tag.
 
 ## 0.13.27-draft — group holds match on the phone and survive a changed tag count
 

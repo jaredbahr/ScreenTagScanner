@@ -143,8 +143,8 @@ synthetic tags were 100% on all models. Hosting: $0 (Apps Script).
 
 - [x] Sticker = tab color (from template). Mapped: yellow DG, red Lockport, blue Manhattan, purple Homer, black New Lenox
 - [x] Kirsten: green = Plainfield, orange = Joliet, pink = Willowbrook (pink not used: too close to Homer magenta)
-- [x] Patio-door builds: inches = sides rounded up, then added → computed when no QTY
-- [ ] A real patio-door build form photo
+- [x] Patio doors (0.13.28, rule 28): sides rounded up, then added; fiberglass; no build labor or earning base
+- [x] Real patio-door form photos (Kirsten, 2026-10-24: the shop's order form and the supplier's)
 
 ## Risks
 

@@ -20,10 +20,49 @@ test('Kirsten\'s example: 75.5 x 48 is 76 + 48 = 124", billed at fiberglass rate
   assert.notEqual(sh.bg.get('2,' + c.DATE_IN), t.ctx.FLAG_COLOR, 'a note on the inches cell, not a yellow row');
 });
 
-test('the inches are worked out from the size even when a QTY or a conflict was read', () => {
-  const t = load(); t.scan(patio({ billable_inches: 123, quantity_conflict: true, quantity_conflict_details: 'two sizes' }));
+test('review of #25: a conflict Claude reported is never dropped: inches worked out, row yellow with its words', () => {
+  const t = load(); t.scan(patio({ billable_inches: 123, quantity_conflict: true, quantity_conflict_details: 'second door 36x80 also listed' }));
   const { sh, c } = sheet(t); assert.equal(sh.get(2, c.UNI_IN), 124);
-  assert.doesNotMatch(notes(sh, 2), /Inches disagree|left blank/);
+  assert.match(notes(sh, 2), /Claude also noted: second door 36x80 also listed; check the inches/);
+  assert.match(notes(sh, 2), /a QTY of 123 was read; billed 124 from the size/);
+  assert.equal(sh.bg.get('2,' + c.DATE_IN), t.ctx.FLAG_COLOR);
+});
+
+test('review of #25: QTY rows on a "patio door" are a sign of a repair tag: row yellow, asked', () => {
+  const t = load(); t.scan(patio({ width_in: 36, height_in: 80, billable_inches: 130, qty_rows: '130, 130, 130', material: 'pet' }));
+  const { sh, c } = sheet(t);
+  assert.match(notes(sh, 2), /the form has QTY or total rows \(130, 130, 130\); patio door order forms have none\. Is this a repair tag/);
+  assert.equal(sh.bg.get('2,' + c.DATE_IN), t.ctx.FLAG_COLOR);
+});
+
+test('review of #25: width and height read the other way round still bill (W + H is the same)', () => {
+  const t = load(); t.scan(patio({ width_in: 75.5, height_in: 48 }));
+  const { sh, c } = sheet(t); assert.equal(sh.get(2, c.UNI_IN), 124);
+});
+
+test('review of #25: "Quantity this size 2" is one held row for her, with no "inches =" note', () => {
+  const t = load(); t.scan(patio({ screens_on_tag: 2 }));
+  const { sh, c } = sheet(t);
+  assert.equal(sh.get(2, c.UNI_IN) || '', ''); assert.equal(sh.bg.get('2,' + c.DATE_IN), t.ctx.FLAG_COLOR);
+  assert.doesNotMatch(notes(sh, 2), /inches = width/); assert.match(notes(sh, 2), /Form lists 2 screens/);
+});
+
+test('review of #25: two customers with the same number and door size are two rows; the same tag again is a rescan', () => {
+  const t = load(), { sh, c } = sheet(t);
+  t.scan(patio({ customer_name: 'Pat Synthone', last_name: 'Synthone' }));
+  const r2 = t.scan(patio({ customer_name: 'Lee Synthtwo', last_name: 'Synthtwo' }));
+  assert.equal(r2.status, 'ok'); assert.equal(sh.get(3, c.UNI_IN), 124);
+  const r3 = t.scan(patio({ customer_name: 'Lee Synthtwo', last_name: 'Synthtwo' }));
+  assert.match(r3.message, /Already scanned/);
+});
+
+test('review of #25: a glass SKU on a patio door form is noted; the phone never keys a patio group', () => {
+  const t = load(); t.scan(patio({ job_evidence: '1 11562 Glass $37.99' }));
+  const { sh } = sheet(t); assert.match(notes(sh, 2), /Patio door form lists a glass SKU/);
+  const ctx = load().ctx, c = { SEQUENCE: 4 };
+  const x = { form_type: 'patio_door', phone: '6305550142', tag_index: 1, tag_count: 2, customer_name: 'Pat Synthone', last_name: 'Synthone', ticket_number: '7770601' };
+  const key = ctx.groupKey_(x, c); assert.ok(key); assert.equal(key.phone, undefined);
+  assert.equal(ctx.groupKey_({ ...x, form_type: 'repair' }, c).phone, '5550142', 'other tags still match on the phone');
 });
 
 test('a handle height read as the door height leaves the inches blank and turns the row yellow', () => {

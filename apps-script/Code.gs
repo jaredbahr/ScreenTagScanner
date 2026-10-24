@@ -38,7 +38,8 @@ var COL = {
   TICKET: HEADERS.indexOf('Ticket #') + 1, STORE: HEADERS.indexOf('Store') + 1,
   PHONE: HEADERS.indexOf('Phone') + 1, DATE: HEADERS.indexOf('Tag Date') + 1,
   WIDTH: HEADERS.indexOf('Width (in)') + 1, HEIGHT: HEADERS.indexOf('Height (in)') + 1,
-  TAG_OF: HEADERS.indexOf('Tag x of N') + 1, WRITTEN_TO: HEADERS.indexOf('Written To') + 1
+  TAG_OF: HEADERS.indexOf('Tag x of N') + 1, WRITTEN_TO: HEADERS.indexOf('Written To') + 1,
+  LAST: HEADERS.indexOf('Last Name') + 1
 };
 
 function doPost(e) {
@@ -493,6 +494,8 @@ function isExactRescan_(log, x, reasons) {
       String(r[COL.TAG_OF - 1]) === tagOf_(x) &&
       Number(r[COL.WIDTH - 1]) === Number(x.width_in) &&
       Number(r[COL.HEIGHT - 1]) === Number(x.height_in) &&
+      // Patio doors come in standard sizes and a supplier P.O. # can be read as the ticket: also the same name (review of #25).
+      (x.form_type !== 'patio_door' || String(r[COL.LAST - 1]).toLowerCase() === String(x.last_name || '').toLowerCase()) &&
       String(r[COL.WRITTEN_TO - 1]) !== 'NOT PLACED';
     if (match && reasons && ['PENDING', 'INTERRUPTED'].indexOf(String(r[COL.WRITTEN_TO - 1])) >= 0) {
       reasons.push('An earlier save of this tag was interrupted; check the store tab before entering it');

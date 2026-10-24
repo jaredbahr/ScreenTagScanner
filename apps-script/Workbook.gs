@@ -404,7 +404,7 @@ function groupKey_(x, c) {
   var n = Number(x.tag_count), name = sequenceIdentity_(sheetName_(x));
   if (!(n >= 2 && n <= GROUP_HOLD_MAX) || !name) return null;
   var key = { name: name, of: n, ticket: String(x.ticket_number || '').trim(), index: Number(x.tag_index) };
-  var phone = phoneKey_(x.phone);
+  var phone = x.form_type === 'patio_door' ? '' : phoneKey_(x.phone); // a supplier form may carry the shop's own phone
   if (phone) key.phone = phone;
   return key;
 }

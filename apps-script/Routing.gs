@@ -33,11 +33,13 @@ function resolveJobRouting_(x) {
   var glassWords = glassWordEvidence_(actualJobEvidence_({ job_evidence: x.job_evidence }));
   // A patio screen door form is never a window, even with "Glass" in the supplier's name (Circle Glass, 2026-10-24).
   var windowEvidence = x.form_type !== 'patio_door' && (skus.length > 0 || glassWords);
+  var patioGlass = x.form_type === 'patio_door' && skus.length > 0;
   var flags = [], type = x.form_type === 'patio_door' ? 'screen' : x.item_type === 'screen' || x.item_type === 'window' ? x.item_type : null;
   if (windowEvidence) {
     if (type !== 'window') flags.push('Glass/acrylic or window-labor job evidence: routed to windows, check the tag');
     type = 'window';
   }
+  if (patioGlass) flags.push('Patio door form lists a glass SKU: placed as a screen door; check the tag');
   var thermopaneEvidence = /\bthermopane\b|\binsulated\b|\bdouble[- ]pane\b/i.test(text) || skus.some(function (s) { return s.sku === '580500'; });
   var thermopane = x.thermopane === true;
   if (thermopaneEvidence) thermopane = true;
@@ -104,7 +106,7 @@ function normalizeJobInput_(original) {
  * rounded up (75.5 x 48 -> 76 + 48 = 124"), and no build labor or earning base. The handle height on the form is
  * never billed. The forms have no QTY rows, so the inches are worked out here. Safe to run twice (rescans).
  */
-var PATIO_DOOR_SIZE = { minWidth: 20, maxWidth: 60, minHeight: 60, maxHeight: 100 };
+var PATIO_DOOR_SIZE = { minShort: 20, maxShort: 60, minLong: 60, maxLong: 100 }; // either way round: W + H is the same
 function patioDoor_(x, original) {
   var note = function (t) { if (x.routing_review.indexOf(t) < 0) x.routing_review.push(t); };
   if (original.item_type === 'window') note('Patio door form: placed as a screen door; check the tag');
@@ -114,9 +116,22 @@ function patioDoor_(x, original) {
   }
   x.material = 'fiberglass';
   var w = x.width_in, h = x.height_in, s = PATIO_DOOR_SIZE;
-  x.quantity_conflict = false; x.qty_rows = ''; x.line_totals = '';
-  if (typeof w === 'number' && typeof h === 'number' && w >= s.minWidth && w <= s.maxWidth && h >= s.minHeight && h <= s.maxHeight) {
+  var lo = Math.min(w, h), hi = Math.max(w, h);
+  // What Claude read that the worked-out inches replace: never dropped silently (review of #25).
+  if (original.quantity_conflict || String(original.quantity_conflict_details || '').trim()) {
+    note('Patio door: Claude also noted: ' + String(original.quantity_conflict_details || 'a second size').slice(0, 160).replace(/[.\s]+$/, '') + '; check the inches');
+  }
+  var qtyRead = typeof original.billable_inches === 'number' ? original.billable_inches : null;
+  if (String(original.qty_rows || '').trim() || String(original.line_totals || '').trim()) {
+    note('Patio door: the form has QTY or total rows (' + String(original.qty_rows || original.line_totals).slice(0, 80) +
+      '); patio door order forms have none. Is this a repair tag? Check the inches');
+  }
+  x.quantity_conflict = false; x.quantity_conflict_details = ''; x.qty_rows = ''; x.line_totals = '';
+  if (x.screens_on_tag > 1) { // "Quantity this size 2": one row, held for her (the multi-screen rule in Workbook.gs)
+    x.billable_inches = null;
+  } else if (typeof w === 'number' && typeof h === 'number' && lo >= s.minShort && lo <= s.maxShort && hi >= s.minLong && hi <= s.maxLong) {
     x.billable_inches = Math.ceil(w) + Math.ceil(h);
+    if (qtyRead !== null && qtyRead !== x.billable_inches) note('Patio door: a QTY of ' + qtyRead + ' was read; billed ' + x.billable_inches + ' from the size. Check the inches');
     note('Patio door: inches = width + height, each rounded up (' + Math.ceil(w) + ' + ' + Math.ceil(h) + ' = ' +
       x.billable_inches + '"); no build labor or earning added');
   } else {

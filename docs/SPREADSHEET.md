@@ -88,7 +88,7 @@ Window mapping is built from Kirsten's description and the first real October wi
    Every tag gets its own row. Only an **exact rescan** (same store, ticket, "Qty x of N" and size) is skipped,
    with a calm "Already scanned" on the phone and no email. Same ticket with no "x of N" and a different size
    is written and flagged.
-10. **Measurement-only forms** (e.g. new-build patio doors, per Kirsten): when no QTY is written, inches =
+10. **Measurement-only forms** (per Kirsten; patio doors have their own rule 28): when no QTY is written, inches =
    each side rounded **up**, then added (35¼ + 79½ → 36 + 80 = 116"), and the row notes it was calculated.
 11. **Conflicting quantities are never billed silently.** For a numeric size/QTY disagreement, literal written
    totals may settle inches only when all filled total rows imply the same whole inches at the existing rates,
@@ -169,8 +169,9 @@ Window mapping is built from Kirsten's description and the first real October wi
 28. **Patio screen doors** (Kirsten, 2026-10-24). Patio door order forms (the shop's "Custom Patio Door Order" and
     the supplier's "Custom Size Patio Screen Doors") are screens, always fiberglass. Inches = width + height, each
     rounded up (75.5 x 48 -> 76 + 48 = 124"), billed at the fiberglass rates with **no** build labor and **no**
-    Earning base; Kirsten adds any earning. The handle height is never billed; a size outside 20-60" wide or
-    60-100" high leaves the inches blank on a yellow row. On the supplier form the printed company, contact,
+    Earning base; Kirsten adds any earning. The handle height is never billed; a size whose short side is outside
+    20-60" or long side outside 60-100" leaves the inches blank on a yellow row. A reported conflict, a different
+    QTY read, QTY rows or "Quantity 2" turn the row yellow and say so. On the supplier form the printed company, contact,
     phone, address, Store # and P.O. are the shop's own; the customer comes from handwritten notes.
 
 ## Review display for 0.13.18
