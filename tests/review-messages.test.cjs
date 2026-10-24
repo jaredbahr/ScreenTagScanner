@@ -73,6 +73,9 @@ test('a ticket doubt naming a store other than the one the tag went to is a yell
   for (const [u, flagged] of [['ticket_number: HOMER tag uses an ACE PRICE label; last digit smudged', false], ['ticket_number: may be a Lockport ticket', true]]) {
     const v = load(), r = v.scan({ store: 'Homer Glen', unclear: [u] }), log = v.ss.tabs.Scans, h = v.ctx.HEADERS;
     assert.equal(/Check on the sheet/.test(r.message), flagged, u); assert.equal(log.get(2, h.indexOf('Needs Review') + 1) === 'YES', flagged, u);
+    const again = v.scan({ store: 'Homer Glen', unclear: [u] });
+    assert.match(again.message, /Already scanned/, u);
+    assert.equal(/still needs/.test(again.message), flagged, u + ': a rescan agrees with the first scan');
   }
 });
 

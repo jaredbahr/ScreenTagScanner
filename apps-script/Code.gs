@@ -311,14 +311,14 @@ function saveScan_(x, user, reasons, photoUrl, scanId, admittedId, leaseId) {
         formatPhone_(x.phone), x.date || '', x.width_in, x.height_in, x.billable_inches,
         x.form_type, x.material, x.screen_color, tagOf_(x), x.screens_on_tag,
         x.extras || '', [escapePartsReceiptText_([x.notes || '', groupNote].filter(Boolean).join('\n')), x._parts_plan.posted.length ? PARTS_RECEIPT + JSON.stringify(x._parts_plan.posted) : ''].filter(Boolean).join('\n'), x.has_corrections ? (x.correction_details || 'YES') : '', writtenTo,
-        needsReview_(why,writtenTo) ? 'YES' : '', why.concat(logOnly).join('; '), photoUrl, scanId
+        needsReview_(why,writtenTo,writtenTo==='RESCAN'?resolveStore_(x).store:null) ? 'YES' : '', why.concat(logOnly).join('; '), photoUrl, scanId
       ]);
     }
     var placed, row = 0;
     if (PropertiesService.getScriptProperties().getProperty('TAG_SEQUENCE_MIGRATION_ACTIVE')) {
       placed = { ok: false, problem: 'workbook upgrade in progress; scan kept in Scans for manual placement' };
     } else if (isExactRescan_(log, x, reasons)) {
-      placed = { ok: false, rescan: true, needsReview: needsReview_(reasons,'RESCAN'), problem: 'this exact tag was already scanned' };
+      placed = { ok: false, rescan: true, needsReview: needsReview_(reasons,'RESCAN',resolveStore_(x).store), problem: 'this exact tag was already scanned' };
     } else {
       var dup = possibleDoubleScan_(log, x);
       if (dup) reasons.push(dup);
@@ -355,7 +355,7 @@ function saveScan_(x, user, reasons, photoUrl, scanId, admittedId, leaseId) {
     [COL.TICKET, COL.STORE, COL.PHONE, COL.DATE, COL.TAG_OF].forEach(function (c) {
       log.getRange(row, c).setNumberFormat('@');
     });
-    log.getRange(row, 1, 1, HEADERS.length).setBackground(needsReview_(reasons,writtenTo) ? (placed.ok || placed.rescan ? '#fff3c4' : UNPLACED_COLOR) : null);
+    log.getRange(row, 1, 1, HEADERS.length).setBackground(needsReview_(reasons,writtenTo,writtenTo==='RESCAN'?resolveStore_(x).store:null) ? (placed.ok || placed.rescan ? '#fff3c4' : UNPLACED_COLOR) : null);
     // Advisory only: store and completion log writes have already succeeded.
     try { placed.waitingList = unplacedRows_(log, row); placed.waiting = placed.waitingList.length; }
     catch (err) { placed.waiting = 0; placed.waitingList = []; placed.waitingUnavailable = true; }
@@ -367,10 +367,11 @@ function saveScan_(x, user, reasons, photoUrl, scanId, admittedId, leaseId) {
 }
 
 /** Only completed placement/controlled RESCAN may suppress row review; unresolved states always need it. */
-function needsReview_(reasons, writtenTo) {
+function needsReview_(reasons, writtenTo, routedStore) {
   if (!Array.isArray(reasons)) return true;
   if (writtenTo !== 'RESCAN' && !/ (screens|windows) row \d+(?:,\s*\d+)*$/.test(String(writtenTo))) return true;
-  var routed = STORES.filter(function (s) { return String(writtenTo).indexOf(s.name + ' ') === 0; })[0] || null;
+  // The store the tag went to (a rescan passes the store its tag resolves to), so a doubt naming it isn't a false alarm.
+  var routed = routedStore || STORES.filter(function (s) { return String(writtenTo).indexOf(s.name + ' ') === 0; })[0] || null;
   return reasons.some(function(r) { return reviewTier_(r, routed).tier === 'row'; });
 }
 
