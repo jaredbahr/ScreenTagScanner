@@ -500,12 +500,16 @@ function clearHoldMeta_(meta, row) {
   delete meta[row];
 }
 /** Frees a held row. Only the scanner's own note lines are removed; anything else in the note is kept. */
-function releaseGroupHold_(sh, row, c, meta) {
+function releaseGroupHold_(sh, row, c, meta, keepColors) {
   var cell = sh.getRange(row, COUNTER_COL);
   cell.setNote(String(cell.getNote() || '').split('\n').filter(function (l) {
     return l.indexOf(HOLD_NOTE) !== 0 && l.indexOf(GROUP_HOLD) !== 0;
   }).join('\n'));
-  sh.getRange(row, c.DATE_IN, 1, c.EARNING - c.DATE_IN + 1).setBackground(null);
+  var block = sh.getRange(row, c.DATE_IN, 1, c.EARNING - c.DATE_IN + 1);
+  if (!keepColors) block.setBackground(null);
+  else block.setBackgrounds(block.getBackgrounds().map(function (r) { // a typed-in row keeps its own colours; only the hold grey goes
+    return r.map(function (b) { return String(b).toLowerCase() === HOLD_COLOR ? null : b; });
+  }));
   clearHoldMeta_(meta, row);
 }
 /** Writes one hold: visible note + hidden row metadata, or the old visible-data note if metadata fails. */
@@ -544,8 +548,9 @@ function takeGroupHold_(sh, c, key, endRow) {
   }
   found.sort(function (a, b) { return a.rank - b.rank || a.row - b.row; });
   for (var k = 0; k < found.length; k++) {
-    releaseGroupHold_(sh, found[k].row, c, meta);
-    if (rowBlank_(sh, found[k].row, c)) return found[k].row; // a held row someone typed into is dropped
+    var blank = rowBlank_(sh, found[k].row, c);
+    releaseGroupHold_(sh, found[k].row, c, meta, !blank);
+    if (blank) return found[k].row; // a held row someone typed into is dropped, its colours kept
   }
   return -1;
 }

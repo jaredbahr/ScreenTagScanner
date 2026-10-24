@@ -130,6 +130,16 @@ test('a hold note with a line Kirsten added above it still counts as held', () =
   assert.equal(sh.get(3, c.NAME), 'Synthm'); assert.equal(sh.notes.get('3,1'), 'Kirsten: customer called');
 });
 
+test('a held row someone typed into keeps its colours when its group\'s next tag arrives', () => {
+  const t = load(), { sh, c } = modern(t);
+  t.scan(job('Synthm', '7707100', 1, 2));
+  sh.set(3, c.NAME, 'Typed'); sh.bg.set('3,' + c.TICKET, t.ctx.HINT_COLOR);
+  t.scan(job('Synthm', '7707100', 2, 2));
+  assert.equal(sh.get(3, c.NAME), 'Typed'); assert.equal(sh.bg.get('3,' + c.TICKET), t.ctx.HINT_COLOR);
+  assert.notEqual(sh.bg.get('3,' + c.NAME), t.ctx.HOLD_COLOR, 'the hold grey is removed');
+  assert.equal(sh.get(4, c.NAME), 'Synthm');
+});
+
 test('hold ranking: same ticket beats one digit off beats a loose match', () => {
   const r = load().ctx.groupHoldRank_, key = { name: 'smith', of: 2, ticket: '7707100' };
   assert.equal(r({ name: 'smith', of: 2, ticket: '7707100', day: 5 }, key, 9), 1);

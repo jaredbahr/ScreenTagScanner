@@ -99,7 +99,7 @@
     "tests/group-check.test.cjs": 10,
     "tests/audit-fixes.test.cjs": 6,
     "tests/review-money.test.cjs": 12,
-    "tests/group-review.test.cjs": 13
+    "tests/group-review.test.cjs": 14
   },
   "allowWorkflowDefinitions": true
 }
