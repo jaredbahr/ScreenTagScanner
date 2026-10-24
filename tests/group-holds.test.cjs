@@ -56,6 +56,7 @@ test('a misprinted ticket still fills the group when name and N match exactly an
   const w = load(), n = modern(w);
   w.scan(job('Synthmcn', '7041933', 1, 3)); w.scan(job('Synthmcn', '1041934', 1, 3, { bump: 2 }));
   assert.equal(n.sh.get(3, n.c.TICKET), '1041934'); assert.match(n.sh.notes.get('3,' + n.c.TICKET) || '', /Group check \(ticket\): 1041934 is far from the rest of this group/);
+  assert.match(n.sh.notes.get('3,' + n.c.SEQUENCE) || '', /Group check \(tag\): 1 of 3 is already on the tab for this customer/);
 });
 
 test('holds expire after 14 days and the row is used normally', () => {

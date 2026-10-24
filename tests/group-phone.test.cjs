@@ -54,7 +54,7 @@ test('Downers Grove pattern: "1 of 6", then the order grows to 7: the saved rows
   assert.deepEqual(row(sh, c, 3), ['Synthani', '7 of 7', '7779128'], 'fills the first saved row');
   assert.deepEqual(heldRows(t, sh), [4, 5, 6, 7, 8], 'still one row per missing tag (2-6)');
   assert.match(sh.notes.get('4,1'), /Synthani group \(7 tags\)/);
-  assert.match(sh.notes.get('3,' + c.SEQUENCE) || '', /Group check \(tag\): this tag says 7 of 7; an earlier tag of this group says of 6\. Rows saved for the group now cover 7 tags/);
+  assert.match(sh.notes.get('3,' + c.SEQUENCE) || '', /Group check \(tag\): this tag says 7 of 7; an earlier tag of this group says of 6\. One more row saved for the group\. Check the tag count/);
   t.scan(d('777913', 4, 7, { form_type: 'new_build' })); // a 6-digit read, same customer
   assert.deepEqual(row(sh, c, 4), ['Synthani', '4 of 7', '777913']);
   for (const [tk, i] of [['7779123', 2], ['7779124', 3], ['7779126', 5], ['7779127', 6]]) t.scan(d(tk, i, 7));
@@ -107,6 +107,59 @@ test('the phone stays in the hidden row data; the visible fallback note never sh
   const u = load(), m = modern(u, '18650 (60)'); m.sh.failMetadata = true;
   u.scan(tag('Joliet', 'Gary S', 'S', '815-555-0142', '7771350', 1, 2));
   assert.match(m.sh.notes.get('3,1'), /GROUP_HOLD_V1/); assert.doesNotMatch(m.sh.notes.get('3,1'), /555/);
+});
+
+test('review of #23: growing a group never re-greys rows Kirsten typed into, and keeps her colours', () => {
+  const t = load(), { sh, c } = modern(t, '18559-(500)');
+  const d = (tk, i, n) => tag('Downers Grove', 'Synthani', 'Synthani', '773-555-0177', tk, i, n);
+  t.scan(d('7779122', 1, 4)); // holds 3-5
+  sh.set(3, c.NAME, 'Typed'); sh.bg.set('3,' + c.TICKET, t.ctx.HINT_COLOR);
+  sh.set(5, c.NAME, 'Typed too'); sh.bg.set('5,' + c.TICKET, t.ctx.FLAG_COLOR);
+  t.scan(d('7779126', 5, 5));
+  assert.equal(sh.get(4, c.SEQUENCE), '5 of 5', 'the blank held row is used');
+  assert.ok(!held(t, sh, 3) && !held(t, sh, 5), 'typed-in rows are released, not re-held');
+  assert.equal(sh.bg.get('3,' + c.TICKET), t.ctx.HINT_COLOR); assert.equal(sh.bg.get('5,' + c.TICKET), t.ctx.FLAG_COLOR);
+  assert.notEqual(sh.bg.get('3,' + c.NAME), t.ctx.HOLD_COLOR);
+  assert.deepEqual(heldRows(t, sh), [], 'no row saved past a typed-in row');
+  assert.match(sh.notes.get('4,' + c.SEQUENCE) || '', /Only 0 of 1 more rows could be saved right after the group/);
+});
+
+test('review of #23: close names with near tickets but different phones never cross a changed count', () => {
+  const t = load(), { sh, c } = modern(t, '18559-(500)');
+  t.scan(tag('Downers Grove', 'Ward', 'Ward', '773-555-0101', '7779100', 1, 3));
+  t.scan(tag('Downers Grove', 'Wood', 'Wood', '773-555-0202', '7779110', 1, 2));
+  assert.ok(held(t, sh, 3) && held(t, sh, 4), "Ward's rows stay saved"); assert.equal(sh.get(5, c.NAME), 'Wood');
+  assert.match(sh.notes.get('3,1'), /Ward group \(3 tags\)/);
+  const r = load().ctx; // one digit apart is a misread, not another customer
+  assert.equal(r.phonesDiffer_('5550142', '5550742'), false); assert.equal(r.phonesDiffer_('5550142', '5551742'), true);
+});
+
+test('review of #23: a placeholder phone or an unrelated name does not match on the phone', () => {
+  const r = load().ctx;
+  assert.equal(r.phoneKey_('000-000-0000'), ''); assert.equal(r.phoneKey_('555-5555'), ''); assert.equal(r.phoneKey_('815-555-0142'), '5550142');
+  const h = { name: 'ward', of: 3, ticket: '7779100', day: 9, phone: '5550142' };
+  assert.equal(r.groupHoldRank_(h, { name: 'synthzel', of: 3, ticket: '7779110', phone: '5550142' }, 9), 0, 'same phone, unrelated name');
+  assert.equal(r.groupHoldRank_(h, { name: 'synthzel', of: 3, ticket: '7779100', phone: '5550142' }, 9), 2, 'same phone and the same ticket');
+  assert.equal(r.namesFit_('gary s', 'synthmac'), true); assert.equal(r.namesFit_('pat synthel', 'synthel'), true);
+  assert.equal(r.namesFit_('ward', 'synthzel'), false);
+});
+
+test('review of #23: the same customer\'s next order gets its own saved rows', () => {
+  const t = load(), { sh, c } = modern(t, '18559-(500)');
+  const d = (tk, i, n) => tag('Downers Grove', 'Synthani', 'Synthani', '773-555-0177', tk, i, n);
+  t.scan(d('7779122', 1, 2)); t.scan(d('7779123', 2, 2));
+  t.scan(d('7779140', 1, 3));
+  assert.equal(sh.get(4, c.SEQUENCE), '1 of 3'); assert.deepEqual(heldRows(t, sh), [5, 6]);
+});
+
+test('review of #23: the count note says when there was no room to save every extra row', () => {
+  const t = load(), { sh, c } = modern(t, '18559-(500)');
+  const d = (tk, i, n) => tag('Downers Grove', 'Synthani', 'Synthani', '773-555-0177', tk, i, n);
+  t.scan(d('7779122', 1, 2)); // holds row 3
+  t.scan(tag('Downers Grove', 'Synthoth', 'Synthoth', '773-555-0300', '7779300', 1, 1)); // row 4
+  t.scan(d('7779124', 3, 4));
+  assert.equal(sh.get(3, c.SEQUENCE), '3 of 4');
+  assert.match(sh.notes.get('3,' + c.SEQUENCE) || '', /Only 0 of 2 more rows could be saved right after the group/);
 });
 
 console.log(`${passed} group phone tests passed`);

@@ -409,8 +409,22 @@ function groupKey_(x, c) {
 }
 /** Last 7 digits of a phone read, or '' if shorter. All tags of a group carry the customer's phone (Joliet, 2026-10-24). */
 function phoneKey_(v) {
-  var d = String(v || '').replace(/\D/g, '');
-  return d.length >= 7 ? d.slice(-7) : '';
+  var d = String(v || '').replace(/\D/g, '').slice(-7), seen = {};
+  for (var i = 0; i < d.length; i++) seen[d.charAt(i)] = true;
+  return d.length === 7 && Object.keys(seen).length > 2 ? d : ''; // "0000000", "5555555": a placeholder, not a customer
+}
+/**
+ * Names that can be one customer written two ways: close, a shared word, or a first name and initial against the
+ * surname ("gary s" / "synthmac"). Used only with the same phone and lined-up tickets.
+ */
+function namesFit_(a, b) {
+  if (namesClose_(a, b)) return true;
+  var words = function (v) { return String(v || '').toLowerCase().split(/[^a-z]+/).filter(Boolean); };
+  var wa = words(a), wb = words(b);
+  var initialOf = function (xs, ys) {
+    return xs.some(function (x) { return x.length === 1 && ys.some(function (y) { return y.length >= 2 && y.charAt(0) === x; }); });
+  };
+  return wa.some(function (x) { return x.length >= 3 && wb.indexOf(x) >= 0; }) || initialOf(wa, wb) || initialOf(wb, wa);
 }
 /** Tickets within 50 on their last 6 digits, so a 6-digit read or a misread first digit still lines up. */
 function ticketsNear6_(a, b) {
@@ -585,10 +599,8 @@ function takeGroupHold_(sh, c, key, endRow, flags) {
     if (!h || h.unknown || today - h.day > GROUP_HOLD_DAYS) continue;
     var hold = { row: i + 2, h: h, note: String(notes[i][0]) };
     holds.push(hold);
-    var rank = groupHoldRank_(h, key, today);
-    // A different tag count ("1 of 6", then "7 of 7" after the order changed; Downers Grove, 2026-10-24) only
-    // fills a hold on a strong match: the same ticket or within 50, or the same phone.
-    if (rank && (h.of === key.of || rank <= 2)) found.push({ row: hold.row, rank: rank, hold: hold, resized: h.of !== key.of });
+    var rank = holdFit_(h, key, today);
+    if (rank) found.push({ row: hold.row, rank: rank, hold: hold, resized: h.of !== key.of });
   }
   // Best match first (review 2026-10-23: a looser match must never take another customer's row while this
   // group's own hold exists). A loose match also needs this tag's "k of N" to be missing from the tab. A ticket
@@ -603,14 +615,36 @@ function takeGroupHold_(sh, c, key, endRow, flags) {
     var blank = rowBlank_(sh, found[k].row, c);
     releaseGroupHold_(sh, found[k].row, c, meta, !blank);
     if (!blank) continue; // a held row someone typed into is dropped, its colours kept
-    var hn = found[k].hold.h.name;
-    if (flags && !namesClose_(hn, key.name)) { // matched on the phone: the names disagree (Kirsten's first check is names)
-      flags.push('Group check (name): this tag reads "' + key.name + '"; the tag that saved this row reads "' + hn + '". Check which is right.');
+    var hh = found[k].hold.h;
+    if (flags && !(namesClose_(hh.name, key.name) && ticketsClose_(hh.ticket, key.ticket))) { // matched on the phone
+      if (!namesClose_(hh.name, key.name)) { // the names disagree (Kirsten's first check is names)
+        flags.push('Group check (name): this tag reads "' + key.name + '"; the tag that saved this row reads "' + hh.name + '". Check which is right.');
+      }
+      // The group check only sees tags with close names and tickets, so say it here when this "k of N" is taken.
+      if (!flags.some(function (f) { return /^Group check \(tag\)/.test(f); }) && closeNameIndexTaken_(sh, c, key, endRow)) {
+        flags.push('Group check (tag): ' + key.index + ' of ' + key.of + ' is already on the tab for this customer. Check the tag.');
+      }
     }
     if (found[k].resized) resizeGroupHolds_(sh, c, holds, found[k].hold, key, endRow, meta, flags);
     return found[k].row;
   }
   return -1;
+}
+/**
+ * The match rank of a hold for this tag, or 0. A different tag count ("1 of 6", then "7 of 7" after the order grew;
+ * Downers Grove, 2026-10-24) needs a strong match (same ticket, within 50, or the same phone) and no phone that says
+ * otherwise (review of #23: two customers with close names and near tickets).
+ */
+function holdFit_(h, key, today) {
+  var rank = groupHoldRank_(h, key, today);
+  if (!rank || h.of === key.of) return rank;
+  return rank <= 2 && !phonesDiffer_(h.phone, key.phone) ? rank : 0;
+}
+/** Two phone reads that can't be one customer: 2+ digits apart (one digit off is a common misread: 6 of 114 October groups). */
+function phonesDiffer_(a, b) {
+  if (!a || !b || a.length !== b.length) return false;
+  var diff = 0; for (var i = 0; i < a.length; i++) if (a.charAt(i) !== b.charAt(i)) diff++;
+  return diff >= 2;
 }
 /**
  * The tag count changed between tags of one group (an order grew from 6 to 7). The group's other held rows take
@@ -621,21 +655,26 @@ function resizeGroupHolds_(sh, c, holds, taken, key, endRow, meta, flags) {
   var old = taken.h, size = Math.max(old.of, key.of);
   var same = function (h) { return h.name === old.name && h.of === old.of && h.ticket === old.ticket && h.day === old.day; };
   var mine = holds.filter(function (o) { return o.row !== taken.row && same(o.h); });
-  if (flags) flags.push('Group check (tag): this tag says ' + key.index + ' of ' + key.of + '; an earlier tag of this group says of ' +
-    old.of + (size > old.of ? '. Rows saved for the group now cover ' + size + ' tags' : '') + '. Check the tag count.');
-  if (size === old.of) return;
+  var said = 'Group check (tag): this tag says ' + key.index + ' of ' + key.of + '; an earlier tag of this group says of ' + old.of;
+  if (size === old.of) { if (flags) flags.push(said + '. Check the tag count.'); return; }
   var data = { name: old.name, of: size, ticket: old.ticket, day: old.day };
-  if (old.phone) data.phone = old.phone;
+  if (old.phone || key.phone) data.phone = old.phone || key.phone; // an older hold picks up the phone
   var line = taken.note.split('\n').filter(function (l) { return l.indexOf(HOLD_NOTE) === 0; })[0] || '';
   var m = / group \(\d+ tags\)/.exec(line), label = m ? line.slice(HOLD_NOTE.length, m.index) : old.name;
   var last = taken.row;
-  mine.forEach(function (o) { writeGroupHold_(sh, o.row, c, data, label, meta); last = Math.max(last, o.row); });
-  var add = size - old.of;
-  for (var r = last + 1; r <= endRow && add > 0; r++) {
+  mine.forEach(function (o) {
+    // A held row someone typed into is released, its colours kept (review of #23); never re-greyed.
+    if (!rowBlank_(sh, o.row, c)) { releaseGroupHold_(sh, o.row, c, meta, true); return; }
+    writeGroupHold_(sh, o.row, c, data, label, meta); last = Math.max(last, o.row);
+  });
+  var want = size - old.of, added = 0;
+  for (var r = last + 1; r <= endRow && added < want; r++) {
     if (!rowBlank_(sh, r, c) || sh.getRange(r, COUNTER_COL).getNote()) break; // never a typed-in or noted row
     writeGroupHold_(sh, r, c, data, label, meta);
-    add--;
+    added++;
   }
+  if (flags) flags.push(said + '. ' + (added === want ? (added === 1 ? 'One more row' : added + ' more rows') + ' saved for the group' :
+    'Only ' + added + ' of ' + want + ' more rows could be saved right after the group') + '. Check the tag count.');
 }
 /**
  * How well a hold matches this tag's group (N is checked by the caller): 1 same ticket, 2 within 50 or the same phone, 3 one digit off,
@@ -647,7 +686,7 @@ function groupHoldRank_(h, key, today) {
   var a = String(h.ticket || ''), b = String(key.ticket || '');
   // Same phone and tickets that line up on their last 6 digits: the same customer even when the name is written two
   // ways (Joliet, 2026-10-24: first name and initial on two tags, the full name on the third, and a 6 read as 0).
-  var phone = !!h.phone && h.phone === key.phone && ticketsNear6_(a, b);
+  var phone = !!h.phone && h.phone === key.phone && ticketsNear6_(a, b) && (a === b || namesFit_(h.name, key.name));
   if (namesClose_(h.name, key.name) && ticketsClose_(a, b)) {
     if (a === b) return 1;
     return /^\d{7}$/.test(a) && /^\d{7}$/.test(b) && Math.abs(Number(a) - Number(b)) <= 50 ? 2 : (phone ? 2 : 3);
@@ -681,9 +720,11 @@ function holdGroupRows_(sh, c, key, row, endRow, x) {
   for (var i = 0; i < vals.length; i++) {
     if (i + 2 === row) continue;
     var m = /^\d+ of (\d+)$/.exec(String(seqs[i][0]).trim());
-    // Any tag count: a group whose count changed is still started (Downers Grove, 2026-10-24).
-    var sibling = m && namesClose_(sequenceIdentity_(vals[i][0]), key.name) && ticketsClose_(String(tickets[i][0]).trim(), key.ticket);
-    var h = holdAt_(notes[i][0], meta, i + 2), rank = h && !h.unknown ? groupHoldRank_(h, key, scanDateSerial_()) : 0;
+    // A different count only counts as started when this tag is past it ("7 of 7" after "1 of 6"; Downers Grove,
+    // 2026-10-24); the same customer's next order ("1 of 3" after "2 of 2") gets its own rows (review of #23).
+    var sibling = m && namesClose_(sequenceIdentity_(vals[i][0]), key.name) && ticketsClose_(String(tickets[i][0]).trim(), key.ticket) &&
+      (Number(m[1]) === key.of || key.index > Number(m[1]));
+    var h = holdAt_(notes[i][0], meta, i + 2), rank = h && !h.unknown ? holdFit_(h, key, scanDateSerial_()) : 0;
     if (sibling || sameGroup_(h, key) || (rank && rank <= 2)) return 0; // group already started here: no new holds
   }
   var label = String(sheetName_(x)).replace(/[\r\n]+/g, ' ').slice(0, 60), held = 0, day = scanDateSerial_();
