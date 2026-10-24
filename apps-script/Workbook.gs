@@ -202,6 +202,7 @@ function ticketBookHint_(sh, layout, ticket) {
 var LOOK_ALIKE = { '2': '7', '7': '21', '1': '7', '3': '8', '8': '3', '4': '9', '9': '4', '5': '6', '6': '50', '0': '6' };
 function lookAlikeTicket_(t, known, near) {
   var books = {}; known.forEach(function (k) { var p = String(k).slice(0, 4); books[p] = (books[p] || 0) + 1; });
+  if (books[t.slice(0, 4)] >= 2) return null; // its own book is an established series on the tab: not a misread
   var found = Object.keys(books).filter(function (p) {
     if (p === t.slice(0, 4) || books[p] < 2) return false;
     for (var i = 0; i < 4; i++) if (p.charAt(i) !== t.charAt(i) && (LOOK_ALIKE[t.charAt(i)] || '').indexOf(p.charAt(i)) < 0) return false;
@@ -382,7 +383,7 @@ function namesClose_(a, b) {
   if (a === b) return true;
   return Math.min(a.length, b.length) >= 4 && editDistance_(a, b) <= 2;
 }
-/** Same ticket, sequential tickets within 50, or one misread digit ("8169684"/"8169084"). */
+/** Same ticket, sequential tickets within 50, or one misread digit ("8160684"/"8160084"). */
 function ticketsClose_(a, b) {
   a = String(a || '').trim(); b = String(b || '').trim();
   if (!a || !b) return false;
@@ -412,13 +413,19 @@ function groupCheck_(sh, c, x, endRow) {
     var m = /^(\d+) of (\d+)$/.exec(String(seqs[i][0]).trim());
     if (!m || Number(m[2]) !== me.of) continue;
     var s = { row: i + 2, name: sequenceIdentity_(names[i][0]), ticket: String(tickets[i][0]).trim(), index: Number(m[1]) };
-    var near = ticketsClose_(s.ticket, me.ticket) ||
-      (namesClose_(s.name, me.name) && /^\d{7}$/.test(s.ticket) && /^\d{7}$/.test(me.ticket) && Math.abs(Number(s.ticket) - Number(me.ticket)) <= 1000);
+    // Strong: close name and a close ticket. Loose (only within GROUP_HOLD_DAYS of the scan, and never used for the
+    // "already on row" or shared-ticket notes): tickets within 1000, the exact same name, or a close name the same day.
+    // Two customers with one surname in a month must not read as one group (review 2026-10-23).
+    var out_ = outs[i] ? daySerial_(outs[i][0]) : NaN, recent = today - out_ >= 0 && today - out_ <= GROUP_HOLD_DAYS;
+    var strong = ticketsClose_(s.ticket, me.ticket) && namesClose_(s.name, me.name);
+    var near = namesClose_(s.name, me.name) && /^\d{7}$/.test(s.ticket) && /^\d{7}$/.test(me.ticket) && Math.abs(Number(s.ticket) - Number(me.ticket)) <= 1000;
     var exact = s.name === me.name && me.name.replace(/[^a-z]/g, '').length >= 4; // misprinted ticket, same customer
-    var sameDay = namesClose_(s.name, me.name) && s.index !== me.index && outs[i] && daySerial_(outs[i][0]) === today;
-    if ((near && namesClose_(s.name, me.name)) || exact || sameDay) sibs.push(s);
+    var sameDay = namesClose_(s.name, me.name) && s.index !== me.index && out_ === today;
+    s.strong = strong;
+    if (strong || (recent && (near || exact || sameDay))) sibs.push(s);
   }
   if (!sibs.length) return out;
+  var firm = sibs.filter(function (s) { return s.strong; });
   var rowsOf = function (list) { return list.map(function (s) { return s.row; }).join(', '); };
   var others = sibs.filter(function (s) { return s.name !== me.name; });
   if (others.length) {
@@ -426,22 +433,22 @@ function groupCheck_(sh, c, x, endRow) {
     out.push('Group check (name): this tag reads "' + me.name + '"; other tags in this group read "' + Object.keys(seen).join('", "') +
       '" (rows ' + rowsOf(others) + '). Check which is right.');
   }
-  var tks = {}; sibs.forEach(function (s) { tks[s.ticket] = (tks[s.ticket] || 0) + 1; });
+  var tks = {}; firm.forEach(function (s) { tks[s.ticket] = (tks[s.ticket] || 0) + 1; });
   // One ticket for the whole group (Homer) only counts when at least two other tags agree on it;
   // with a single earlier tag, sequential books (8159901, 8159903) are normal.
   var ranked = Object.keys(tks).sort(function (p, q) { return tks[q] - tks[p]; });
   var shared = ranked.length && tks[ranked[0]] >= 2 && (ranked.length === 1 || tks[ranked[0]] > tks[ranked[1]]) ? ranked[0] : null;
   var nearAny = sibs.some(function (s) { return s.ticket === me.ticket || (/^\d{7}$/.test(s.ticket) && /^\d{7}$/.test(me.ticket) && Math.abs(Number(s.ticket) - Number(me.ticket)) <= 50); });
   if (shared && shared !== me.ticket) {
-    var agree = sibs.filter(function (s) { return s.ticket === shared; });
+    var agree = firm.filter(function (s) { return s.ticket === shared; });
     out.push('Group check (ticket): this tag reads ' + me.ticket + '; ' + agree.length + ' other tags in this group read ' + shared + ' (rows ' + rowsOf(agree) + ').');
   } else if (!shared && me.ticket && !nearAny) {
     var nums = sibs.map(function (s) { return s.ticket; }).filter(Boolean).sort();
     out.push('Group check (ticket): ' + me.ticket + ' is far from the rest of this group (' + nums[0] + (nums.length > 1 ? '–' + nums[nums.length - 1] : '') + ', rows ' + rowsOf(sibs) + ').');
   }
-  var dup = sibs.filter(function (s) { return s.index === me.index; });
+  var dup = firm.filter(function (s) { return s.index === me.index; }); // a same-size rescan is caught by the possible-duplicate check
   if (dup.length) {
-    var have = {}; sibs.concat([me]).forEach(function (s) { have[s.index] = true; });
+    var have = {}; firm.concat([me]).forEach(function (s) { have[s.index] = true; });
     var missing = []; for (var k = 1; k <= me.of; k++) if (!have[k]) missing.push(k);
     out.push('Group check (tag): ' + me.index + ' of ' + me.of + ' is already on row ' + rowsOf(dup) +
       (missing.length && missing.length <= 4 ? '; not yet on the tab: ' + missing.join(', ') + ' of ' + me.of : '') + '.');
@@ -456,35 +463,58 @@ function readGroupHold_(note) {
     return h && typeof h.name === 'string' && Number.isInteger(h.of) && typeof h.ticket === 'string' && Number.isFinite(h.day) ? h : null;
   } catch (err) { return null; }
 }
-/** Hidden hold data by row: { row: { data, md } }. Any metadata failure reads as "no V2 holds". */
+/**
+ * Hidden hold data by row: { row: { data, md, all } } (all = every entry on the row, for cleanup). If the read
+ * itself fails, `failed` is set and every visible hold note counts as held, so no held row is reused (review 2026-10-23).
+ */
 function groupHoldMeta_(sh) {
   var out = {};
   try {
     sh.createDeveloperMetadataFinder().withKey(GROUP_HOLD_KEY).find().forEach(function (md) {
       try {
-        var d = JSON.parse(md.getValue()), row = md.getLocation().getRow().getRow();
+        var row = md.getLocation().getRow().getRow(), d = null;
+        try { d = JSON.parse(md.getValue()); } catch (err) {}
+        var slot = out[row] || (out[row] = { data: null, md: null, all: [] });
+        slot.all.push(md);
         if (d && typeof d.name === 'string' && Number.isInteger(d.of) && typeof d.ticket === 'string' && Number.isFinite(d.day)) {
-          // A row held again after its note was deleted can carry an old entry too: the newest hold wins.
-          if (!out[row] || d.day >= out[row].data.day) out[row] = { data: d, md: md };
+          if (!slot.data || d.day >= slot.data.day) { slot.data = d; slot.md = md; } // the newest hold wins
         }
       } catch (err) {}
     });
-  } catch (err) {}
+  } catch (err) { Object.defineProperty(out, 'failed', { value: true }); }
   return out;
 }
 /** The hold on a row: an old visible-data note, or the visible note plus hidden metadata. No note means no hold. */
 function holdAt_(note, meta, row) {
   var v1 = readGroupHold_(note);
   if (v1) return v1;
-  return String(note || '').indexOf(HOLD_NOTE) === 0 && meta[row] ? meta[row].data : null;
+  if (!String(note || '').split('\n').some(function (l) { return l.indexOf(HOLD_NOTE) === 0; })) return null; // any line: Kirsten may add one above
+  if (meta[row] && meta[row].data) return meta[row].data;
+  // Hidden data unreadable: treat the row as held (by no group, never expiring) rather than reuse it.
+  return meta.failed ? { name: '', of: 0, ticket: '', day: scanDateSerial_(), unknown: true } : null;
 }
-function releaseGroupHold_(sh, row, c, meta) {
-  sh.getRange(row, COUNTER_COL).setNote('');
-  sh.getRange(row, c.DATE_IN, 1, c.EARNING - c.DATE_IN + 1).setBackground(null);
-  if (meta && meta[row]) { try { meta[row].md.remove(); } catch (err) {} delete meta[row]; }
+/** Removes every hidden hold entry on a row (old entries from a hand-deleted note included). */
+function clearHoldMeta_(meta, row) {
+  if (!meta || !meta[row]) return;
+  meta[row].all.forEach(function (md) { try { md.remove(); } catch (err) {} });
+  delete meta[row];
+}
+/** Frees a held row. Only the scanner's own note lines are removed; anything else in the note is kept. */
+function releaseGroupHold_(sh, row, c, meta, keepColors) {
+  var cell = sh.getRange(row, COUNTER_COL);
+  cell.setNote(String(cell.getNote() || '').split('\n').filter(function (l) {
+    return l.indexOf(HOLD_NOTE) !== 0 && l.indexOf(GROUP_HOLD) !== 0;
+  }).join('\n'));
+  var block = sh.getRange(row, c.DATE_IN, 1, c.EARNING - c.DATE_IN + 1);
+  if (!keepColors) block.setBackground(null);
+  else block.setBackgrounds(block.getBackgrounds().map(function (r) { // a typed-in row keeps its own colours; only the hold grey goes
+    return r.map(function (b) { return String(b).toLowerCase() === HOLD_COLOR ? null : b; });
+  }));
+  clearHoldMeta_(meta, row);
 }
 /** Writes one hold: visible note + hidden row metadata, or the old visible-data note if metadata fails. */
-function writeGroupHold_(sh, row, c, data, label) {
+function writeGroupHold_(sh, row, c, data, label, meta) {
+  clearHoldMeta_(meta, row);
   var note = HOLD_NOTE + label + ' group (' + data.of + ' tags). The scanner fills it when another tag of that group is ' +
     'scanned; released after ' + GROUP_HOLD_DAYS + ' days. Delete this note to free the row.';
   try { sh.getRange(row + ':' + row).addDeveloperMetadata(GROUP_HOLD_KEY, JSON.stringify(data)); }
@@ -499,26 +529,47 @@ function rowBlank_(sh, row, c) {
 }
 /** A held row for this tag's group, released for its use; -1 if none. Stale holds (row typed in) are dropped. */
 function takeGroupHold_(sh, c, key, endRow) {
-  var notes = sh.getRange(2, COUNTER_COL, endRow - 1, 1).getNotes(), today = scanDateSerial_(), meta = null, gap = null;
+  var notes = sh.getRange(2, COUNTER_COL, endRow - 1, 1).getNotes(), today = scanDateSerial_(), meta = null, found = [];
   for (var i = 0; i < notes.length; i++) {
     if (!notes[i][0]) continue;
     meta = meta || groupHoldMeta_(sh);
     var h = holdAt_(notes[i][0], meta, i + 2);
-    if (!h || today - h.day > GROUP_HOLD_DAYS) continue;
-    // A misprinted ticket (Lockport, 2026-10-23: a ticket printed with a wrong first digit) still matches when the name and N
-    // are exactly the same and this tag fills a gap in the group; the group check notes the ticket difference.
-    // Also when the name is close and the hold was made today (New Lenox, 2026-10-23: a name read two letters apart with a
-    // 6-digit misread ticket): same N, a gap in the group, and the same scanning day are strong enough together.
-    if (!sameGroup_(h, key)) {
-      var exactName = h.name === key.name && key.name.replace(/[^a-z]/g, '').length >= 4;
-      if (h.of !== key.of || !(exactName || (namesClose_(h.name, key.name) && h.day === today))) continue;
-      if (gap === null) gap = !closeNameIndexTaken_(sh, c, key, endRow);
-      if (!gap) continue;
-    }
-    releaseGroupHold_(sh, i + 2, c, meta);
-    if (rowBlank_(sh, i + 2, c)) return i + 2;
+    if (!h || h.unknown || h.of !== key.of || today - h.day > GROUP_HOLD_DAYS) continue;
+    var rank = groupHoldRank_(h, key, today);
+    if (rank) found.push({ row: i + 2, rank: rank });
+  }
+  // Best match first (review 2026-10-23: a looser match must never take another customer's row while this
+  // group's own hold exists). A loose match also needs this tag's "k of N" to be missing from the tab. A ticket
+  // match fills its hold even when its "k of N" is taken: that is usually a misread index (New Lenox, October:
+  // two "4 of 12" with different tickets and no 8 of 12), and the group check notes it.
+  if (!found.length) return -1;
+  if (found.some(function (f) { return f.rank === 4; }) && closeNameIndexTaken_(sh, c, key, endRow)) {
+    found = found.filter(function (f) { return f.rank < 4; });
+  }
+  found.sort(function (a, b) { return a.rank - b.rank || a.row - b.row; });
+  for (var k = 0; k < found.length; k++) {
+    var blank = rowBlank_(sh, found[k].row, c);
+    releaseGroupHold_(sh, found[k].row, c, meta, !blank);
+    if (blank) return found[k].row; // a held row someone typed into is dropped, its colours kept
   }
   return -1;
+}
+/**
+ * How well a hold matches this tag's group (same N already checked): 1 same ticket, 2 within 50, 3 one digit off,
+ * 4 loose, 0 no match. Loose = a misprinted ticket (Lockport, 2026-10-23: wrong first digit) with exactly the same
+ * name, or a name read two letters apart (New Lenox, 2026-10-23); either only when the hold was made the same day,
+ * or for the exact name also when the ticket is from the same 4-digit book.
+ */
+function groupHoldRank_(h, key, today) {
+  var a = String(h.ticket || ''), b = String(key.ticket || '');
+  if (namesClose_(h.name, key.name) && ticketsClose_(a, b)) {
+    if (a === b) return 1;
+    return /^\d{7}$/.test(a) && /^\d{7}$/.test(b) && Math.abs(Number(a) - Number(b)) <= 50 ? 2 : 3;
+  }
+  var exactName = h.name === key.name && key.name.replace(/[^a-z]/g, '').length >= 4;
+  var sameBook = /^\d{7}$/.test(a) && /^\d{7}$/.test(b) && a.slice(0, 4) === b.slice(0, 4);
+  if ((exactName && (h.day === today || sameBook)) || (namesClose_(h.name, key.name) && h.day === today)) return 4;
+  return 0;
 }
 /** True when a row with this (or a close) name and N already has this tag's "k of N". */
 function closeNameIndexTaken_(sh, c, key, endRow) {
@@ -539,6 +590,7 @@ function holdGroupRows_(sh, c, key, row, endRow, x) {
   var vals = sh.getRange(2, c.NAME, endRow - 1, 1).getValues(), seqs = sh.getRange(2, c.SEQUENCE, endRow - 1, 1).getValues();
   var tickets = sh.getRange(2, c.TICKET, endRow - 1, 1).getValues(), notes = sh.getRange(2, COUNTER_COL, endRow - 1, 1).getNotes();
   var meta = groupHoldMeta_(sh);
+  if (meta.failed) return 0; // hidden data unreadable: a new hold could not be used, so don't grey rows
   for (var i = 0; i < vals.length; i++) {
     if (i + 2 === row) continue;
     var m = /^\d+ of (\d+)$/.exec(String(seqs[i][0]).trim());
@@ -547,8 +599,9 @@ function holdGroupRows_(sh, c, key, row, endRow, x) {
   }
   var label = String(sheetName_(x)).replace(/[\r\n]+/g, ' ').slice(0, 60), held = 0, day = scanDateSerial_();
   for (var r = row + 1; r <= endRow && held < key.of - 1; r++) {
-    if (!rowBlank_(sh, r, c) || holdAt_(sh.getRange(r, COUNTER_COL).getNote(), meta, r)) break; // only rows right after
-    writeGroupHold_(sh, r, c, { name: key.name, of: key.of, ticket: key.ticket, day: day }, label);
+    // Only blank rows right after, and never a row with any note in column A (Kirsten's own notes are kept).
+    if (!rowBlank_(sh, r, c) || sh.getRange(r, COUNTER_COL).getNote()) break;
+    writeGroupHold_(sh, r, c, { name: key.name, of: key.of, ticket: key.ticket, day: day }, label, meta);
     held++;
   }
   return held;

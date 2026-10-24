@@ -91,6 +91,8 @@ class Sheet {
       copyTo: (dest,opts) => {assert.equal(opts.formatOnly,true);dest.setNumberFormat('copied-format');return range;},
       setFontWeight: () => range,
       setBackground: b => { for (let i = 0; i < nr; i++) for (let j = 0; j < nc; j++) s.bg.set(s.key(r + i, c + j), b); return range; },
+      getBackgrounds: () => Array.from({ length: nr }, (_, i) => Array.from({ length: nc }, (_, j) => s.bg.get(s.key(r + i, c + j)) || '#ffffff')),
+      setBackgrounds: g => { g.forEach((row, i) => row.forEach((b, j) => s.bg.set(s.key(r + i, c + j), b))); return range; },
       setNote: n => { s.notes.set(s.key(r, c), n); return range; }
     };
     return range;
