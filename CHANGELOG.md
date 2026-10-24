@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.13.28-draft — patio screen doors
+
+Kirsten (2026-10-24), with two example forms: the shop's "Custom Patio Door Order" and the supplier's "Custom Size
+Patio Screen Doors" order.
+- New `form_type` value `patio_door` (schema enum only; no new field). Prompt: width and height are the door's;
+  the handle height is never a dimension; the circled door size/price line and frame color are not extras; on the
+  supplier form the printed company/contact/phone/address/Store #/P.O. are the shop's, and the customer, store,
+  phone and ticket come from handwritten notes.
+- Script: always fiberglass (another material read gets a note), inches = width + height each rounded up (worked
+  out even if a QTY or conflict was read), no $9 build labor and no $1.50 Earning base. A size outside 20-60" by
+  60-100" (a handle height read as the door height) leaves the inches blank on a yellow row. Never routed to
+  windows ("Glass" is in the supplier's name). The inches note goes on the Uni/In cell, not a yellow row.
+
 ## 0.13.27-draft — group holds match on the phone and survive a changed tag count
 
 From Kirsten's first scans on version 15 (2026-10-24). Both left extra blank lines; no amounts were wrong.

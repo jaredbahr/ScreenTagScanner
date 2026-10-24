@@ -141,6 +141,7 @@ function reviewTier_(reason, routed) {
   if (/^(?:Tag year \d{4} looks off|Two-digit tag year)/.test(r) && !/after the scan date|left blank|invalid|unreadable/i.test(r)) return {tier:'log'};
   if (/^Group check \(ticket\)/.test(r)) return {tier:'cell',field:'TICKET'};
   if (/^Group check \(tag\)/.test(r)) return {tier:'cell',field:'SEQUENCE'};
+  if (/^Patio door: inches = /.test(r)) return {tier:'cell',field:'UNI_IN'}; // the worked-out inches; any doubt elsewhere stays a row
   var sequence = /tag_count|tag_index|tag x of n|x of n|\bqty( box)?\b[^.]*\b\d+ of \d+|\bqty box\b|'of n'|\bof n\b|\btotal n\b/i;
   var serious = /(?:^|[^a-z])(?:amount|cost|charge|fee)s?(?:[^a-z]|$)|inches|\$|price|earning|\bbill(?:ed|able|ing)\b|screening|lb earn|\bparts\b|part sku|unrecognized part|\blabor\b|\bextras?\b|group|receipt|reserved|unposted|unit needs|window|pane|thermopane|build|frame|screens|store|sticker|\bfull\b|duplicate|already scanned|material|glass|acrylic|routed|layout|type is unknown|not a tag|refund|credit|redo|warranty|cancel|no charge|no record|spline-reference|literal (?:qty|row)|pending|interrupted|not placed|unplaced|reconcil|\bpartial\b|original scan/i; // "partially uncertain" OCR is not a partial save
   // A doubt about the ticket reading is one value, even when it mentions a price-gun label (Homer, 2026-10-23), but
@@ -931,6 +932,9 @@ function writeToStoreTab_(ss, x, reasons) {
   var rate = RATES[x.material];
   var ui = x.billable_inches;
   var holdBilling = null; // reason billing is left blank for review
+  // A patio door whose size looked off has no inches on purpose (Routing.gs patioDoor_): never round its
+  // measurements here, which may include the handle height.
+  if (x.form_type === 'patio_door' && typeof ui !== 'number') holdBilling = 'Inches left blank: check the patio door size';
   var dueRead = balanceDueQty_(x), due = dueRead.qty;
   if (dueRead.bad) flags.push('Inches: balance-due slip QTY "' + dueRead.bad + '" unreadable, not added; enter the total by hand');
   var conflict = quantityConflict_(x), agreed = conflict && x.quantity_conflict ? unanimousInches_(x) : null;

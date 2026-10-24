@@ -31,8 +31,9 @@ function resolveJobRouting_(x) {
   // Glass words count only in job_evidence (the written material), never free-text notes: patio
   // screens are routinely noted "for sliding glass door", which is a screen job.
   var glassWords = glassWordEvidence_(actualJobEvidence_({ job_evidence: x.job_evidence }));
-  var windowEvidence = skus.length > 0 || glassWords;
-  var flags = [], type = x.item_type === 'screen' || x.item_type === 'window' ? x.item_type : null;
+  // A patio screen door form is never a window, even with "Glass" in the supplier's name (Circle Glass, 2026-10-24).
+  var windowEvidence = x.form_type !== 'patio_door' && (skus.length > 0 || glassWords);
+  var flags = [], type = x.form_type === 'patio_door' ? 'screen' : x.item_type === 'screen' || x.item_type === 'window' ? x.item_type : null;
   if (windowEvidence) {
     if (type !== 'window') flags.push('Glass/acrylic or window-labor job evidence: routed to windows, check the tag');
     type = 'window';
@@ -76,6 +77,7 @@ function normalizeJobInput_(original) {
   var routing = resolveJobRouting_(x);
   x.item_type = routing.type || 'unknown'; x.thermopane = routing.thermopane;
   x.routing_review = Array.isArray(original.routing_review) ? original.routing_review.slice() : [];
+  if (x.form_type === 'patio_door') patioDoor_(x, original);
   if (x.item_type === 'window' && !(Number.isInteger(x.panes) && x.panes >= 1)) {
     var wp = windowPanes_(x);
     if (wp.panes) {
@@ -96,6 +98,32 @@ function normalizeJobInput_(original) {
     x.notes = (x.notes ? x.notes + '\n' : '') + 'Filled job evidence: ' + evidence;
   }
   return x;
+}
+/**
+ * Patio screen doors (Kirsten, 2026-10-24): always fiberglass, billed like a repair on width + height with each side
+ * rounded up (75.5 x 48 -> 76 + 48 = 124"), and no build labor or earning base. The handle height on the form is
+ * never billed. The forms have no QTY rows, so the inches are worked out here. Safe to run twice (rescans).
+ */
+var PATIO_DOOR_SIZE = { minWidth: 20, maxWidth: 60, minHeight: 60, maxHeight: 100 };
+function patioDoor_(x, original) {
+  var note = function (t) { if (x.routing_review.indexOf(t) < 0) x.routing_review.push(t); };
+  if (original.item_type === 'window') note('Patio door form: placed as a screen door; check the tag');
+  x.item_type = 'screen'; x.thermopane = false;
+  if (x.material && x.material !== 'fiberglass' && x.material !== 'unknown') {
+    note('Patio door: the tag was read as ' + x.material + '; billed as fiberglass (patio doors are always fiberglass)');
+  }
+  x.material = 'fiberglass';
+  var w = x.width_in, h = x.height_in, s = PATIO_DOOR_SIZE;
+  x.quantity_conflict = false; x.qty_rows = ''; x.line_totals = '';
+  if (typeof w === 'number' && typeof h === 'number' && w >= s.minWidth && w <= s.maxWidth && h >= s.minHeight && h <= s.maxHeight) {
+    x.billable_inches = Math.ceil(w) + Math.ceil(h);
+    note('Patio door: inches = width + height, each rounded up (' + Math.ceil(w) + ' + ' + Math.ceil(h) + ' = ' +
+      x.billable_inches + '"); no build labor or earning added');
+  } else {
+    x.billable_inches = null;
+    note('Patio door: size ' + (typeof w === 'number' ? formatInches_(w) : '?') + ' x ' + (typeof h === 'number' ? formatInches_(h) : '?') +
+      ' looks off (the handle height is never billed): inches left blank, enter them by hand');
+  }
 }
 function storeExtrasText_(x) {
   return escapePartsReceiptText_([x.extras || '', x._store_group_extras ? 'Group extras (whole group; do not multiply by tag/frame count):\n' + x._store_group_extras : ''].filter(Boolean).join('\n'));

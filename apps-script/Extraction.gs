@@ -16,7 +16,7 @@
  * Column mapping to the real spreadsheet is still pending. See TODO(fields).
  */
 
-var EXTRACTION_VERSION = '0.13.27-draft';
+var EXTRACTION_VERSION = '0.13.28-draft';
 
 var SYSTEM_PROMPT = [
   'You read Ace Hardware screen tags for a small screen repair shop. Each photo shows one paper form',
@@ -35,7 +35,16 @@ var SYSTEM_PROMPT = [
   '- Ignore crossed-out text, stamps, staples, highlighter, and colored stickers.',
   '',
   'Field rules:',
-  '- form_type: "repair" for repair tags, "new_build" for build-a-new-screen forms, else "unknown".',
+  '- form_type: "repair" for repair tags, "new_build" for build-a-new-screen forms, "patio_door" for patio screen',
+  '  door order forms ("Custom Patio Door Order", Circle Glass "Custom Size Patio Screen Doors"), else "unknown".',
+  '  Patio door forms: item_type "screen" (a screen door, even though "Glass" is in a company name); width_in and',
+  '  height_in are the door\'s Width and Height. Never use "Height to bottom of handle" (or a number written beside',
+  '  it) as a dimension. billable_inches null (the script works it out). The circled door size/price line',
+  '  (596001, 596048) and frame color are not extras. "Page 1 of 1" is not tag_index/tag_count.',
+  '  Circle Glass forms are the shop\'s own order to the supplier: the printed Company, Contact, Phone, Fax,',
+  '  Ship To, Email, Store # and P.O. # are the shop\'s, NOT the customer\'s. Take store, customer, phone and',
+  '  ticket only from handwritten notes for the customer (e.g. "DG Smith 1234567" in a margin). If a handwritten',
+  '  7-digit number could be a phone or a ticket, use it as the ticket and list "ticket_number" in unclear.',
   '- item_type: "window" if the form is for a window / glass repair (glass, panes, glazing), "screen" for',
   '  screen repairs and builds, else "unknown".',
   '  Glass (including tempered, double-strength, obscure, gas-light panels and mirrors), PLEXIGLAS and',
@@ -177,7 +186,7 @@ var TAG_SCHEMA = {
     job_evidence: { type: 'string' },
     group_extras: { type: 'string' },
     is_tag:          { type: 'boolean' },
-    form_type:       { type: 'string', enum: ['repair', 'new_build', 'unknown'] },
+    form_type:       { type: 'string', enum: ['repair', 'new_build', 'patio_door', 'unknown'] },
     item_type:       { type: 'string', enum: ['screen', 'window', 'unknown'] },
     panes:           { anyOf: [{ type: 'integer' }, { type: 'null' }] },
     glass_price:     NULLABLE_NUMBER,

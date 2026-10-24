@@ -166,6 +166,12 @@ Window mapping is built from Kirsten's description and the first real October wi
     of the standard screening SKUs is added to the tag QTY (row note). The shop's own marker re-measurement on a tag
     is ignored. A written tag year more than half a year behind the scan is noted in the Scans log (not the sheet:
     Kirsten doesn't use the year).
+28. **Patio screen doors** (Kirsten, 2026-10-24). Patio door order forms (the shop's "Custom Patio Door Order" and
+    the supplier's "Custom Size Patio Screen Doors") are screens, always fiberglass. Inches = width + height, each
+    rounded up (75.5 x 48 -> 76 + 48 = 124"), billed at the fiberglass rates with **no** build labor and **no**
+    Earning base; Kirsten adds any earning. The handle height is never billed; a size outside 20-60" wide or
+    60-100" high leaves the inches blank on a yellow row. On the supplier form the printed company, contact,
+    phone, address, Store # and P.O. are the shop's own; the customer comes from handwritten notes.
 
 ## Review display for 0.13.18
 
