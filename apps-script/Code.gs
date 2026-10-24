@@ -145,7 +145,7 @@ function processAuthenticatedScan_(req, props) {
     }
     var where = String(placed.row || ''), msg = confirmationText_(x) + ' → ' + placed.store.name +
       (where ? (where.indexOf(',') >= 0 ? ', rows ' : ', row ') + where : '');
-    var rowReasons = reasons.filter(function(r) { return reviewTier_(r).tier === 'row'; });
+    var rowReasons = reasons.filter(function(r) { return reviewTier_(r, placed.store).tier === 'row'; });
     if (rowReasons.length) msg += '\n⚠️ Check on the sheet: ' + reviewTopics_(rowReasons).join(', ') + '.';
     msg += waitingText_(placed.waiting, placed.waitingUnavailable, placed.waitingList);
     return scanResult_(true, msg, spokenText_(x, rowReasons.length > 0), scanId, rowReasons.length > 0);
@@ -370,7 +370,8 @@ function saveScan_(x, user, reasons, photoUrl, scanId, admittedId, leaseId) {
 function needsReview_(reasons, writtenTo) {
   if (!Array.isArray(reasons)) return true;
   if (writtenTo !== 'RESCAN' && !/ (screens|windows) row \d+(?:,\s*\d+)*$/.test(String(writtenTo))) return true;
-  return reasons.some(function(r) { return reviewTier_(r).tier === 'row'; });
+  var routed = STORES.filter(function (s) { return String(writtenTo).indexOf(s.name + ' ') === 0; })[0] || null;
+  return reasons.some(function(r) { return reviewTier_(r, routed).tier === 'row'; });
 }
 
 var UNPLACED_COLOR = '#f6c7a8'; // orange: reconcile existing/partial store rows before adding anything

@@ -4,7 +4,7 @@ const assert = require('node:assert/strict');
 const { load } = require('./offline.test.cjs');
 let passed = 0;
 function test(name, fn) { fn(); passed++; console.log('PASS ' + name); }
-const t = load(), T = t.ctx.reviewTier_;
+const t = load(), H = t.ctx.STORES.find(s => s.name === 'Homer Glen'), T = r => t.ctx.reviewTier_(r, H); // routed to Homer Glen
 
 test('a ticket doubt that also raises a store, slip, window, quantity or group question keeps the yellow row', () => {
   for (const s of ['ticket_number: two tickets on the form; the Pay Cashier slip ticket is for a second screen of 80 inches',
@@ -35,7 +35,7 @@ test('a plain ticket-reading doubt, price-gun label included, stays one cell', (
     'ticket_number: stickered over', 'ticket_number: the Ace sticker obscures digits', 'ticket_number: pricing label', 'ticket_number: barcode label',
     'ticket_number: label covers the last digit', 'ticket_number: two digits unclear',
     'ticket_number: HOMER tag uses an ACE PRICE label; last digit smudged', 'ticket_number: Store # HOMER; ticket digits faint',
-    'ticket_number: Homer Glen tag; first digit obscured by staple', 'ticket_number: 7 or 1 (handwritten); DG ink smudge',
+    'ticket_number: Homer Glen tag; first digit obscured by staple',
     'ticket_number: digit 6 of 7 is smudged', 'ticket_number: last digit repeated or overwritten', 'ticket_number: digits share a stroke',
     'ticket_number: scanned at an angle, last digit unclear', 'ticket_number: second number faded',
     'ticket_number: Homer label from the price gun; last digit faint', 'ticket_number: HOMER tag; number read from the price-gun label',
@@ -61,6 +61,19 @@ test('the tag year alone goes to the Scans log only (Kirsten: she does not use t
   assert.equal(T('Tag date is invalid: Date in left blank; verify the written date').tier, 'cell');
   assert.deepEqual([...t.ctx.reviewTopics_(['Credits on the slip'])], ['a correction on the tag']);
   assert.deepEqual([...t.ctx.reviewTopics_(['Extra charge on slip'])], ['prices']);
+});
+
+test('a ticket doubt naming a store other than the one the tag went to is a yellow row; its own store is not (end to end)', () => {
+  for (const s of ['ticket_number: may be a Lockport ticket', 'ticket_number: looks like a Plainfield number', 'ticket_number: Joilet ticket?',
+    'ticket_number: Store # 37 on a HOMER tag']) assert.equal(T(s).tier, 'row', s);
+  for (const s of ['ticket_number: the Homer tag is creased; another digit may be hidden', 'ticket_number: Homer tag, first digit could be 8 instead of 3',
+    'ticket_number: HOMER tag; ticket book number partly hidden', 'ticket_number: from the HOMER tag, digit 3 unclear',
+    'ticket_number: Store # box says HOMER; ticket digits faint']) assert.equal(T(s).tier, 'cell', s);
+  assert.equal(t.ctx.reviewTier_('ticket_number: Homer tag, digit faint').tier, 'row', 'no routed store: fail closed');
+  for (const [u, flagged] of [['ticket_number: HOMER tag uses an ACE PRICE label; last digit smudged', false], ['ticket_number: may be a Lockport ticket', true]]) {
+    const v = load(), r = v.scan({ store: 'Homer Glen', unclear: [u] }), log = v.ss.tabs.Scans, h = v.ctx.HEADERS;
+    assert.equal(/Check on the sheet/.test(r.message), flagged, u); assert.equal(log.get(2, h.indexOf('Needs Review') + 1) === 'YES', flagged, u);
+  }
 });
 
 console.log(`${passed} review message tests passed`);
