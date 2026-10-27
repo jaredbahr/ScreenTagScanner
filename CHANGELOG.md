@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.13.29-draft — assembly / cuts in LB Earn
+
+Kirsten (2026-10-27), after the first live Willowbrook tag with a pay-cashier slip for 2 cuts: "I need this sku to be
+added to the LB earn amount." SKU 580625 (Assembly, $2.25 per side) is now added to LB Earn on screen rows instead of
+Earning (62" rescreen + 2 cuts: $10.54 + $4.50 = $15.04; Earning blank). The parts receipt (`column: "lb"`) lives in
+the LB Earn note, is written before the value (as for additional labor), and is checked on later scans so a rescan
+never adds it twice; a receipt moved by hand between columns counts as edited. Not added when LB Earn is blank, a
+formula or changed, or when the tag also has written-in additional labor (one receipt chain per cell); the row says
+so. Builds still get none; windows keep it in Other Earn. Rows written before this keep their Earning amount.
+
 ## 0.13.28-draft — patio screen doors
 
 Kirsten (2026-10-24), with the shop's "Custom Patio Door Order" form as the example.

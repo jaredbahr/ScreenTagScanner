@@ -1021,7 +1021,7 @@ function writeToStoreTab_(ss, x, reasons) {
       var size = typeof ui === 'number' ? ' ' + formatInches_(x.width_in) + ' x ' + formatInches_(x.height_in) : ''; // a doubtful size stays out
       sh.getRange(row, c.EXTRAS).setValue(safeCell_('new patio door' + size));
     }
-    applyPartsEarnings_(sh, row, c, x, i === 0, isBuild ? NEW_BUILD.earningBase : 0);
+    applyPartsEarnings_(sh, row, c, x, i === 0, isBuild ? NEW_BUILD.earningBase : 0, labor, flags);
     applyExtraLabor_(sh, row, c, x, i === 0, labor, flags);
     showReview_(sh,row,c,flags);
   });
