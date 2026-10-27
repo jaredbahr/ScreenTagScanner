@@ -14,6 +14,7 @@
       gap: 10px; padding: 12px 14px calc(12px + env(safe-area-inset-bottom)); }
     header { display: flex; align-items: center; justify-content: space-between; }
     h1 { font-size: 20px; margin: 0; }
+    .today { font-size: 15px; font-weight: normal; opacity: .75; white-space: nowrap; }
     .link { background: none; border: 0; color: #17654e; font: inherit; font-size: 15px; text-decoration: underline;
       padding: 6px 2px; min-height: 0; width: auto; }
     #frame { flex: 1; min-height: 100px; position: relative; display: flex; align-items: center; justify-content: center;
@@ -62,7 +63,7 @@
 <main>
 <div id="scanner-view">
   <header>
-    <h1>Scan Tag</h1>
+    <h1>Scan Tag <span id="today-count" class="today" hidden></span></h1>
     <div class="header-links"><button id="reset-photo" type="button" class="link" hidden>Clear photo</button>
     <button id="settings-open" type="button" class="link">Settings</button></div>
   </header>
@@ -99,6 +100,10 @@
   <header><h2 id="notes-title">What's new</h2><button id="notes-back" type="button" class="link">Back</button></header>
   <!-- Release notes: plain language, no customer names, tickets, phones or photos. Newest first. -->
   <div class="notes">
+    <h3>0.13.30 &middot; Oct 27</h3>
+    <ul>
+      <li>Daily count: after each scan the phone says how many tags were saved today, and the top of this page shows "Today: N". It counts tags placed on the sheet (not rescans or scans that weren't placed) and starts again each day.</li>
+    </ul>
     <h3>0.13.29 &middot; Oct 27</h3>
     <ul>
       <li>Assembly / cuts on a Pay Cashier slip are now added to LB Earn instead of Earning: 2 cuts on a 62" rescreen is $10.54 + $4.50 = $15.04. Other parts still go in Earning.</li>
@@ -275,6 +280,14 @@ function say(message) {
   status.textContent = message; review.hidden = true;
   resultDetails.hidden = true; resultDetails.open = false; resultText.textContent = '';
 }
+// Daily count (0.13.30): the last count the scanner sent, kept on this phone for today only.
+const todayCount = document.getElementById('today-count');
+function localDay() { const d = new Date(); return d.getFullYear() + '-' + (d.getMonth() + 1) + '-' + d.getDate(); }
+function showToday(n, keep) {
+  todayCount.textContent = '· Today: ' + n; todayCount.hidden = false;
+  if (keep) { try { const s = store(); if (s) s.setItem('scanner.today', JSON.stringify({ day: localDay(), n })); } catch (err) {} }
+}
+try { const s = store(), kept = s && JSON.parse(s.getItem('scanner.today') || 'null'); if (kept && kept.day === localDay() && Number.isInteger(kept.n)) showToday(kept.n, false); } catch (err) {}
 function showResult(result, storageNotice) {
   const needsReview = result.needsReview === true || /Flagged for a double check|Check on the sheet:|Saved, but|^Not added to the sheet/.test(result.message);
   const where = /^[^\n]*→ ([^\n]+?), (rows? [\d, ]+)\s*(?:\n|$)/.exec(result.message); // last arrow: a name may hold one
@@ -293,6 +306,10 @@ function showResult(result, storageNotice) {
   else if (waiting) summary += '\n' + (waiting[1] === '1' ? '1 earlier tag' : waiting[1] + ' earlier tags') + " didn't save. See the orange rows in the Scans tab.";
   if (/Could not check for earlier tags|Earlier scan review status could not be checked/.test(result.message)) summary += "\nCouldn't check for earlier tags that didn't save. Look for orange rows in the Scans tab.";
   if (storageNotice) summary += '\nPhone password storage needs attention. Open Details.';
+  if (result.status === 'ok' && Number.isInteger(result.today) && result.today >= 0) {
+    summary += '\nToday: ' + result.today + ' tag' + (result.today === 1 ? '' : 's') + ' saved.';
+    showToday(result.today, true);
+  }
   say(summary);
   const check = /Check on the sheet: ([^\n]+)/.exec(result.message);
   review.textContent = check ? 'Check on the sheet: ' + check[1].replace(/\.$/, '') : 'Needs review — check the workbook.';

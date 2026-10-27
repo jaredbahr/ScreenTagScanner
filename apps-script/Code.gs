@@ -132,24 +132,25 @@ function processAuthenticatedScan_(req, props) {
       catch (photoErr) { scannerDiagnostic_('photo-save-failed', scanId); }
     }
     var placed = saveScan_(x, user, reasons, photoUrl, scanId, admitted.sheetId, admitted.leaseId);
+    var withToday = function (result) { if (typeof placed.today === 'number') result.today = placed.today; return result; };
 
     if (placed.rescan) {
-      return scanResult_(true, 'Already scanned: ' + confirmationText_(x).replace(/^Added: /, '') +
+      return withToday(scanResult_(true, 'Already scanned: ' + confirmationText_(x).replace(/^Added: /, '') +
         '. Nothing new added.' + (placed.needsReview ? '\n⚠️ The first scan still needs checking: its row and earnings.' : '') + waitingText_(placed.waiting, placed.waitingUnavailable, placed.waitingList),
-        'Already scanned. Nothing new added.' + (placed.needsReview ? ' It still needs review.' : ''), scanId, placed.needsReview);
+        'Already scanned. Nothing new added.' + (placed.needsReview ? ' It still needs review.' : ''), scanId, placed.needsReview));
     }
     if (!placed.ok) {
       // Saved to the Scans log but not to a store tab: needs a person.
       notice_(props, user, scanId, placed.problem, x);
-      return scanResult_(true, 'Not added to the sheet: ' + placed.problem + '. It is an orange row in the Scans tab; add it by hand or scan it again.' + waitingText_(placed.waiting, placed.waitingUnavailable, placed.waitingList),
-        'Saved to the scan log only. It needs manual review.', scanId, true);
+      return withToday(scanResult_(true, 'Not added to the sheet: ' + placed.problem + '. It is an orange row in the Scans tab; add it by hand or scan it again.' + waitingText_(placed.waiting, placed.waitingUnavailable, placed.waitingList),
+        'Saved to the scan log only. It needs manual review.', scanId, true));
     }
     var where = String(placed.row || ''), msg = confirmationText_(x) + ' → ' + placed.store.name +
       (where ? (where.indexOf(',') >= 0 ? ', rows ' : ', row ') + where : '');
     var rowReasons = reasons.filter(function(r) { return reviewTier_(r, placed.store).tier === 'row'; });
     if (rowReasons.length) msg += '\n⚠️ Check on the sheet: ' + reviewTopics_(rowReasons).join(', ') + '.';
     msg += waitingText_(placed.waiting, placed.waitingUnavailable, placed.waitingList);
-    return scanResult_(true, msg, spokenText_(x, rowReasons.length > 0), scanId, rowReasons.length > 0);
+    return withToday(scanResult_(true, msg, spokenText_(x, rowReasons.length > 0), scanId, rowReasons.length > 0));
   } catch (err) {
     alert_(props, user, scanId, err, req.image);
     return scanResult_(false, err.userMessage || 'Save could not be confirmed. Check the active workbook in Settings before retrying.');
@@ -360,6 +361,7 @@ function saveScan_(x, user, reasons, photoUrl, scanId, admittedId, leaseId) {
     // Advisory only: store and completion log writes have already succeeded.
     try { placed.waitingList = unplacedRows_(log, row); placed.waiting = placed.waitingList.length; }
     catch (err) { placed.waiting = 0; placed.waitingList = []; placed.waitingUnavailable = true; }
+    try { placed.today = todayPlacedCount_(log); } catch (err) {} // the phone's daily count; never fails a saved scan
     return placed;
   } finally {
     // Complete buffered store/log writes before rollover can acquire this lock.
@@ -393,6 +395,21 @@ function unplacedCount_(log, exceptRow) {
     if (['NOT PLACED', 'PENDING', 'INTERRUPTED'].indexOf(String(r[COL.WRITTEN_TO - 1])) < 0) return;
     if (r[review] !== 'YES') return;
     n++;
+  });
+  return n;
+}
+
+/**
+ * Tags placed on a store tab today, Chicago time (Kirsten, 2026-10-27: "a daily scan count"). Read from the Scans
+ * log, so it needs no sheet change; rescans and scans that weren't placed don't count.
+ */
+function todayPlacedCount_(log) {
+  var last = log.getLastRow();
+  if (last < 2) return 0;
+  var today = Utilities.formatDate(new Date(), 'America/Chicago', 'yyyy-MM-dd'), n = 0;
+  log.getRange(2, 1, last - 1, HEADERS.length).getValues().forEach(function (r) {
+    var at = r[0] instanceof Date ? Utilities.formatDate(r[0], 'America/Chicago', 'yyyy-MM-dd') : String(r[0]).slice(0, 10);
+    if (at === today && / (screens|windows) row /.test(String(r[COL.WRITTEN_TO - 1]))) n++;
   });
   return n;
 }

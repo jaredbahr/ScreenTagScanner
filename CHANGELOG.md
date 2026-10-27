@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13.30-draft — daily scan count
+
+Kirsten (2026-10-27): "Is there a way to keep a daily scan count somewhere?" Each saved scan's reply to the phone page
+now carries `today`: the tags placed on a store tab today (Chicago), counted from the Scans log, so no sheet change.
+Rescans and scans that weren't placed don't count. The page adds "Today: N tags saved." under the result and keeps
+"Today: N" in the header (remembered on the phone for that day only). A failure reading the count never fails a
+saved scan. The Shortcut's JSON reply is unchanged.
+
 ## 0.13.29-draft — assembly / cuts in LB Earn; first-name group tags
 
 Kirsten (2026-10-27), after the first live Willowbrook tag with a pay-cashier slip for 2 cuts: "I need this sku to be

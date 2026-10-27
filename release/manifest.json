@@ -90,7 +90,7 @@
     "tests/sequence-migration.test.cjs": 19,
     "tests/store-alias.test.cjs": 8,
     "tests/store-rescan.test.cjs": 6,
-    "tests/upload-ui.test.cjs": 35,
+    "tests/upload-ui.test.cjs": 37,
     "tests/workbook-backup.test.cjs": 26,
     "tests/review-tiers.test.cjs": 19,
     "tests/release-guards.test.cjs": 8,
@@ -103,7 +103,8 @@
     "tests/review-messages.test.cjs": 5,
     "tests/group-phone.test.cjs": 17,
     "tests/patio-door.test.cjs": 14,
-    "tests/assembly-lb.test.cjs": 14
+    "tests/assembly-lb.test.cjs": 14,
+    "tests/daily-count.test.cjs": 5
   },
   "allowWorkflowDefinitions": true
 }
