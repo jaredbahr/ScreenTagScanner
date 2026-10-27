@@ -187,4 +187,21 @@ test('Plainfield pattern: first name only on three tags, full name on the fourth
   assert.ok(held(u, m.sh, 3), 'not taken: no shared name'); assert.equal(m.sh.get(6, m.c.NAME), 'Synthelder');
 });
 
+test('review of #27: the first-name fit is exact; a full-name hold keeps its full name when the group grows', () => {
+  const r = load().ctx.groupHoldRank_, ph = '5550187';
+  const hold = (name, full) => ({ name, full, of: 4, ticket: '7772772', day: 9, phone: ph });
+  const key = (name, full) => ({ name, full, of: 4, ticket: '7772770', phone: ph });
+  assert.equal(r(hold('rob'), key('synthelder', 'rob synthelder'), 9), 2, 'Plainfield');
+  assert.equal(r(hold('k', 'ann k'), key('synthmith', 'kevin synthmith'), 9), 0, 'an initial against a first name');
+  assert.equal(r(hold('synthjones', 'rob synthjones'), key('synthmith', 'rob synthmith'), 9), 0, 'same first name, other surnames');
+  assert.equal(r(hold('synthsmith', 'rob j synthsmith'), key('synthdoe', 'jane synthdoe'), 9), 0, 'a middle initial');
+  assert.equal(r(hold('ed'), key('synthsmith', 'ed synthsmith'), 9), 0, 'two-letter first names never fit');
+  const t = load(), { sh, c } = modern(t, '18556 (43)');
+  const p = (cust, last, tk, i, n) => tag('Plainfield', cust, last, '815-555-0187', tk, i, n);
+  t.scan(p('Rob Synthelder', 'Synthelder', '7772770', 1, 3));
+  t.scan(p('Rob', 'Rob', '7772773', 4, 4)); // the order grew: the hold is resized and must keep its full name
+  t.scan(p('Rob', 'Rob', '7772771', 2, 4));
+  assert.deepEqual([2, 3, 4].map(rw => sh.get(rw, c.SEQUENCE)), ['1 of 3', '4 of 4', '2 of 4']);
+});
+
 console.log(`${passed} group phone tests passed`);

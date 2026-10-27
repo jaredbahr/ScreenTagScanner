@@ -431,6 +431,15 @@ function namesFit_(a, b) {
   };
   return wa.some(function (x) { return x.length >= 3 && wb.indexOf(x) >= 0; }) || initialOf(wa, wb) || initialOf(wb, wa);
 }
+/**
+ * A first name alone on one tag is the first word of the full name on the other ("rob" / "rob <surname>"; Plainfield,
+ * 2026-10-27). Exact and 3+ letters only, so initials, middle initials and other surnames never fit (review of #27).
+ */
+function firstNameFit_(h, key) {
+  var first = function (g) { return String(g.full || '').split(' ')[0]; };
+  var fits = function (one, other) { return /^[a-z]{3,}$/.test(one.name) && first(other) === one.name; };
+  return fits(h, key) || fits(key, h);
+}
 /** Tickets within 50 on their last 6 digits, so a 6-digit read or a misread first digit still lines up. */
 function ticketsNear6_(a, b) {
   a = String(a || '').trim(); b = String(b || '').trim();
@@ -695,7 +704,7 @@ function groupHoldRank_(h, key, today) {
   // Same phone and tickets that line up on their last 6 digits: the same customer even when the name is written two
   // ways (Joliet, 2026-10-24: first name and initial on two tags, the full name on the third, and a 6 read as 0).
   var phone = !!h.phone && h.phone === key.phone && ticketsNear6_(a, b) &&
-    (a === b || namesFit_(h.name, key.name) || namesFit_([h.name, h.full].join(' '), [key.name, key.full].join(' ')));
+    (a === b || namesFit_(h.name, key.name) || firstNameFit_(h, key));
   if (namesClose_(h.name, key.name) && ticketsClose_(a, b)) {
     if (a === b) return 1;
     return /^\d{7}$/.test(a) && /^\d{7}$/.test(b) && Math.abs(Number(a) - Number(b)) <= 50 ? 2 : (phone ? 2 : 3);
