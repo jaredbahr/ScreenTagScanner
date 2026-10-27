@@ -171,4 +171,20 @@ test('review of #23: the count note says when there was no room to save every ex
   assert.match(sh.notes.get('3,' + c.SEQUENCE) || '', /No more rows could be saved right after the group/);
 });
 
+test('Plainfield pattern: first name only on three tags, full name on the fourth, same phone: fills the saved row', () => {
+  const t = load(), { sh, c } = modern(t, '18556 (43)');
+  const p = (cust, last, tk, i) => tag('Plainfield', cust, last, '815-555-0187', tk, i, 4);
+  t.scan(p('Rob', 'Rob', '7772772', 3)); t.scan(p('Rob', 'Rob', '7772771', 2)); t.scan(p('Rob', 'Rob', '7772773', 4));
+  assert.deepEqual(heldRows(t, sh), [5], 'one row saved for tag 1');
+  t.scan(p('Rob Synthelder', 'Synthelder', '7772770', 1));
+  assert.deepEqual(row(sh, c, 5), ['Synthelder', '1 of 4', '7772770']);
+  assert.deepEqual(heldRows(t, sh), []); assert.equal(sh.get(6, c.NAME), '', 'no extra line');
+  assert.match(sh.notes.get('5,' + c.NAME) || '', /Group check \(name\): this tag reads "synthelder"; the tag that saved this row reads "rob"/);
+  // A different first name on the same phone (another person at the address) still needs the tickets and names to fit.
+  const u = load(), m = modern(u, '18556 (43)');
+  u.scan(tag('Plainfield', 'Rob', 'Rob', '815-555-0187', '7772772', 3, 4));
+  u.scan(tag('Plainfield', 'Ann Synthelder', 'Synthelder', '815-555-0187', '7772770', 1, 4));
+  assert.ok(held(u, m.sh, 3), 'not taken: no shared name'); assert.equal(m.sh.get(6, m.c.NAME), 'Synthelder');
+});
+
 console.log(`${passed} group phone tests passed`);

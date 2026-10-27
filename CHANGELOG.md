@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.13.29-draft — assembly / cuts in LB Earn
+## 0.13.29-draft — assembly / cuts in LB Earn; first-name group tags
 
 Kirsten (2026-10-27), after the first live Willowbrook tag with a pay-cashier slip for 2 cuts: "I need this sku to be
 added to the LB earn amount." SKU 580625 (Assembly, $2.25 per side) is now added to LB Earn on screen rows instead of
@@ -12,6 +12,11 @@ sibling, or held), assembly stays in Earning as before, with a note: LB Earn kee
 never sent into it (independent review of #27: a whole-group case could otherwise credit twice). The Earning note says
 when assembly went to LB Earn. Builds still get none; windows keep it in Other Earn. Rows written before this keep
 their Earning amount.
+
+Group holds (Kirsten, 2026-10-27, Plainfield): three tags of a group said only the first name, the fourth had the
+full name; same phone, sequential tickets. The phone match needs names that fit, and a first name never fit the
+surname, so the fourth tag missed its saved row. The hold now also keeps the full customer name (hidden metadata
+only) and the phone match lets full names fit; a different first name on the same phone still doesn't match.
 
 ## 0.13.28-draft — patio screen doors
 
