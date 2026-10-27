@@ -113,8 +113,9 @@ Window mapping is built from Kirsten's description and the first real October wi
    flagged note for her. Rates are flat: 3D-printed corners earning more is still hers to adjust. See [PARTS_EARNINGS.md](PARTS_EARNINGS.md).
    Since 0.13.29 assembly / cuts (580625, $2.25 per side) is labor and is **added to LB Earn** on screen rows
    (Kirsten, 2026-10-27: 2 cuts on a 62" rescreen: $10.54 + $4.50 = $15.04), with its receipt in the LB Earn note.
-   Builds still get none (covered by the build labor); windows keep it in Other Earn. With written-in additional
-   labor on the same tag, or an LB Earn that is blank, a formula or changed, it is left for her with a note.
+   Builds still get none (covered by the build labor); windows keep it in Other Earn. With any written-in additional
+   labor line on the tag it stays in Earning (as before) with a note; an LB Earn that is blank, a formula or changed
+   leaves it for her with a note. The Earning note says when assembly went to LB Earn.
 16. **Unresolved scans require reconciliation.** NOT PLACED/PENDING/INTERRUPTED rows are marked **orange**, and later phone replies report that earlier scans need reconciliation. Existing or partial store rows may already be present. Check them first; add a row only after confirming it is missing. Clear Needs Review "YES" only after reconciliation. Controlled RESCAN rows are excluded from the advisory count; OCR review text never decides whether a row counts. If this optional count read fails after a completed save, the phone retains confirmed success and reports that earlier review status is unavailable.
 17. **Interrupted saves don't duplicate.** The `Scans` row is written first (PENDING) and finished after the store
    write, so a retry after a timeout says "Already scanned" and points at the store tab instead of adding a second row.

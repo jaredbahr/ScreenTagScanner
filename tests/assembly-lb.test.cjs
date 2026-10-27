@@ -37,18 +37,57 @@ test('other parts still go to Earning; assembly on a build still adds nothing (c
   assert.equal(b.sh.get(2, b.c.LB_EARN), cents(62 * 0.17 + 9)); assert.equal(b.sh.get(2, b.c.EARNING), 1.5);
 });
 
-test('assembly with written-in additional labor on the same tag is left for her, never stacked', () => {
+test('with written-in additional labor, assembly stays in Earning (old behavior) and LB Earn keeps one receipt', () => {
   const t = load(); write(t, { extras: '2 580625 cuts 3.00 = 6.00\nLB $8' });
   const { sh, c } = sheet(t);
-  assert.equal(sh.get(2, c.LB_EARN), 18.54, 'the written-in $8 is credited; the assembly is not stacked on it');
-  assert.match(sh.notes.get(sh.key(2, c.NAME)) || '', /assembly and additional labor on one tag: enter LB Earn by hand/);
+  assert.equal(sh.get(2, c.LB_EARN), 18.54, 'the written-in $8 only');
+  assert.equal(sh.get(2, c.EARNING), 4.5, 'assembly in Earning, as before');
+  assert.match(sh.notes.get(sh.key(2, c.NAME)) || '', /assembly kept in Earning because this tag also has additional labor/);
+  assert.doesNotMatch(sh.notes.get(sh.key(2, c.NAME)) || '', /enter LB Earn by hand/, 'never sends her into LB Earn');
 });
 
-test('a hand-moved receipt (LB receipt found in Earning) is treated as edited, so nothing is double-credited', () => {
+test('review of #27: whole-group cuts + whole-group labor: the second tag never adds the cuts again', () => {
+  const t = load(), g = { sku: '580625', quantity: 2, unit: 'side', group_wide: true, raw: '2 580625 cuts all frames' };
+  const x = i => ({ ticket_number: '7770810', tag_index: i, tag_count: 2, width_in: 29 + i, billable_inches: 62 + i, extras: '',
+    group_extras: '2 580625 cuts all frames\nLB $8 both', parts: [g] });
+  write(t, x(1)); write(t, x(2)); const { sh, c } = sheet(t);
+  const lb = [2, 3].map(r => sh.get(r, c.LB_EARN)), earn = [2, 3].map(r => sh.get(r, c.EARNING) || 0);
+  assert.equal(earn[0] + earn[1], 4.5, 'the $4.50 once, in Earning');
+  assert.equal(lb[0], cents(63 * 0.17 + 8)); assert.equal(lb[1], cents(64 * 0.17), 'no cuts or labor added on tag 2');
+});
+
+test('review of #27: whole-group cuts alone: once on tag 1 in LB Earn, a reference on tag 2', () => {
+  const t = load(), g = { sku: '580625', quantity: 2, unit: 'side', group_wide: true, raw: '2 580625 cuts all frames' };
+  const x = i => ({ ticket_number: '7770811', tag_index: i, tag_count: 2, width_in: 29 + i, billable_inches: 62 + i, extras: '', group_extras: '2 580625 cuts all frames', parts: [g] });
+  write(t, x(1)); write(t, x(2)); const { sh, c } = sheet(t);
+  assert.equal(sh.get(2, c.LB_EARN), cents(63 * 0.17 + 4.5)); assert.equal(sh.get(3, c.LB_EARN), cents(64 * 0.17));
+  assert.match(sh.notes.get(sh.key(3, c.EARNING)) || '', /already recorded on Homer Glen screens row 2 \(LB Earn\)/);
+});
+
+test('review of #27: the Earning note says the cuts went to LB Earn, so they are not entered twice', () => {
   const t = load(); write(t); const { sh, c } = sheet(t);
-  sh.notes.set(sh.key(2, c.EARNING), sh.notes.get(sh.key(2, c.LB_EARN))); // copied by hand into Earning
-  const plan = t.ctx.preparePartsEarnings_(t.ss, { ...tag(), item_type: 'screen' });
+  assert.match(sh.notes.get(sh.key(2, c.EARNING)) || '', /SKU 580625 Assembly: \$4\.50 added to LB Earn on this row; do not enter it here/);
+});
+
+test('review of #27: a later (non-exact) scan of the same ticket finds the LB receipt: no second credit', () => {
+  const t = load(); write(t);
+  const plan = t.ctx.preparePartsEarnings_(t.ss, t.ctx.normalizeJobInput_(tag({ notes: 'different photo' })));
+  assert.equal(plan.items.length, 0); assert.equal(plan.references.length, 1); assert.equal(plan.references[0].prior.column, 'lb');
+});
+
+test('review of #27: an interrupted save (receipt reserved, value not yet written) holds, never adds', () => {
+  const t = load(); write(t); const { sh, c } = sheet(t);
+  sh.notes.set(sh.key(2, c.LB_EARN), sh.notes.get(sh.key(2, c.LB_EARN)).replace('"status":"posted"', '"status":"reserved"'));
+  sh.set(2, c.LB_EARN, 10.54);
+  const plan = t.ctx.preparePartsEarnings_(t.ss, t.ctx.normalizeJobInput_(tag()));
   assert.equal(plan.items.length, 0);
+});
+
+test('a receipt moved by hand from LB Earn to Earning holds the ticket (no second credit)', () => {
+  const t = load(); write(t); const { sh, c } = sheet(t);
+  sh.notes.set(sh.key(2, c.EARNING), sh.notes.get(sh.key(2, c.LB_EARN))); sh.notes.set(sh.key(2, c.LB_EARN), '');
+  const plan = t.ctx.preparePartsEarnings_(t.ss, t.ctx.normalizeJobInput_(tag()));
+  assert.equal(plan.items.length, 0); assert.match(plan.flags.join('\n'), /changed by hand/);
 });
 
 test('windows keep assembly in Other Earn (unchanged)', () => {

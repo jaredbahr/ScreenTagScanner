@@ -66,6 +66,8 @@ function pinQuantityFromPrice_(raw, literalText) {
   return amount===null?null:{quantity:amount/unitCents,amount:amount/100};
 }
 function calculateParts_(x) {
+  // Checked on the tag as read, before recognized labor lines are taken out below.
+  var laborLine=[x.extras||'',x.group_extras||''].join('\n').split('\n').some(function(l){return !!extraLaborLine_(l);});
   var laborLines=x._extra_labor_plan ? x._extra_labor_plan.recognized : [];
   if(laborLines && laborLines.length) {
     x=Object.assign({},x);
@@ -131,9 +133,10 @@ function calculateParts_(x) {
     var group=p.group_wide===true||groupPartsLine_(String(p.raw||'')),scope=partsScope_(x,group);
     if(group&&Array.isArray(x.unclear)&&x.unclear.some(function(f){return /tag_count|tag_index|sequence/i.test(String(f));}))scope='';
     if(!scope){plan.flags.push('Group/part identity is uncertain: allocate earnings manually');return;}
-    var toLb=ref.column==='lb'&&x.item_type!=='window';
-    // LB Earn holds one receipt chain at a time: written-in additional labor and assembly are reconciled by hand.
-    if(toLb&&x._extra_labor_plan&&x._extra_labor_plan.items.length){plan.flags.push('SKU '+sku+' assembly and additional labor on one tag: enter LB Earn by hand');return;}
+    // LB Earn carries one receipt chain: with ANY written-in additional labor line on the tag (credited, already
+    // credited on a sibling, or held), assembly stays in Earning as before (review of #27: group double credit).
+    var toLb=ref.column==='lb'&&x.item_type!=='window'&&!laborLine;
+    if(ref.column==='lb'&&x.item_type!=='window'&&laborLine)plan.flags.push('SKU '+sku+' assembly kept in Earning because this tag also has additional labor');
     var item={sku:sku,name:ref.name,quantity:p.quantity,rate:ref.rate,unit:ref.unit,group:group,scope:scope,amount:cents_(p.quantity*ref.rate)};
     if(toLb)item.column='lb';
     if(p.derived)item.derived=p.derived;
@@ -212,12 +215,15 @@ function preparePartsEarnings_(ss,x) {
 function applyPartsEarnings_(sh,row,c,x,firstRow,base,laborBase,flags) {
   var plan=x._parts_plan;if(!plan)return;
   var lbItems=plan.items.filter(function(item){return item.column==='lb';});
+  var lbBefore=plan.posted.length;
   if(lbItems.length)applyLbParts_(sh,row,c,x,firstRow,lbItems,laborBase,flags||[]);
   var items=plan.items.filter(function(item){return item.column!=='lb';});
   var earning=x.item_type==='window'?c.OTHER_EARN:c.EARNING,range=sh.getRange(row,earning),note=range.getNote(),lines=[];
+  // The Earning note lists the tag's extras "to enter": say where assembly went so it is never entered twice.
+  plan.posted.slice(lbBefore).forEach(function(r){lines.push('SKU '+r.sku+' '+r.name+': $'+r.amount.toFixed(2)+' added to LB Earn on this row; do not enter it here.');});
   items.forEach(function(item){lines.push('SKU '+item.sku+' '+item.name+': '+item.quantity+' '+item.unit+(item.derived?' (from '+item.derived+')':'')+' × $'+item.rate.toFixed(2)+' = $'+item.amount.toFixed(2)+(item.group?' total for the whole group; credit once':' total for this tag/form; credit once'));});
   plan.references.forEach(function(ref){lines.push(ref.sameClient===false?'SKU '+ref.prior.sku+': customer identity conflicts with an earlier group receipt; earnings held for manual allocation.':
-    'SKU '+ref.prior.sku+': $'+ref.prior.amount.toFixed(2)+' whole-group/tag total '+(ref.prior.paid?'already recorded':'PENDING review')+' on '+ref.prior.tab+' '+ref.prior.block+' row '+ref.prior.row+'. No duplicate amount added.');});
+    'SKU '+ref.prior.sku+': $'+ref.prior.amount.toFixed(2)+' whole-group/tag total '+(ref.prior.paid?'already recorded':'PENDING review')+' on '+ref.prior.tab+' '+ref.prior.block+' row '+ref.prior.row+(ref.prior.column==='lb'?' (LB Earn)':'')+'. No duplicate amount added.');});
   if(!firstRow&&plan.posted.length)lines.push('Parts total is recorded on the first row of this form; no duplicate amount added.');
   if(!lines.length)return;
   var receipts=firstRow?items.map(function(item){return Object.assign({},item,{status:'reserved',tab:storeByTabName_(sh.getName()).tab,block:x.item_type==='window'?'windows':'screens',row:row,

@@ -7,8 +7,11 @@ added to the LB earn amount." SKU 580625 (Assembly, $2.25 per side) is now added
 Earning (62" rescreen + 2 cuts: $10.54 + $4.50 = $15.04; Earning blank). The parts receipt (`column: "lb"`) lives in
 the LB Earn note, is written before the value (as for additional labor), and is checked on later scans so a rescan
 never adds it twice; a receipt moved by hand between columns counts as edited. Not added when LB Earn is blank, a
-formula or changed, or when the tag also has written-in additional labor (one receipt chain per cell); the row says
-so. Builds still get none; windows keep it in Other Earn. Rows written before this keep their Earning amount.
+formula or changed (the row says so). With any written-in additional labor line on the tag (credited, credited on a
+sibling, or held), assembly stays in Earning as before, with a note: LB Earn keeps one receipt chain and Kirsten is
+never sent into it (independent review of #27: a whole-group case could otherwise credit twice). The Earning note says
+when assembly went to LB Earn. Builds still get none; windows keep it in Other Earn. Rows written before this keep
+their Earning amount.
 
 ## 0.13.28-draft — patio screen doors
 
