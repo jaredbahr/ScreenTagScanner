@@ -157,7 +157,8 @@ Window mapping is built from Kirsten's description and the first real October wi
     ticket. A strong match (same ticket or within 50 with a close name, or the phone) fills a hold even when N
     changed, unless the phones differ by 2+ digits: the group's other blank holds take the larger N, one more blank
     row is saved per extra tag right after the group, typed-in held rows are released, a smaller N frees nothing,
-    and the Tag x of N cell gets a note.
+    and the Tag x of N cell gets a note. Since 0.13.29 the hold also keeps the full customer name, so a first name
+    only on some tags fits the full name on another for the phone match.
 24. **Group check** (2026-10-23, from the October 22 scans). A group tag is compared with its group's tags already
     on the tab (same N, close name, ticket close or within 1000). Disagreeing name, ticket or "x of N" gets a note on
     that one cell (pale, not yellow). Values are never changed. Since 0.13.26 a looser match (ticket
