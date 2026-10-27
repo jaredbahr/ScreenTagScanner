@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.13.29-draft — assembly / cuts in LB Earn; first-name group tags
+
+Kirsten (2026-10-27), after the first live Willowbrook tag with a pay-cashier slip for 2 cuts: "I need this sku to be
+added to the LB earn amount." SKU 580625 (Assembly, $2.25 per side) is now added to LB Earn on screen rows instead of
+Earning (62" rescreen + 2 cuts: $10.54 + $4.50 = $15.04; Earning blank). The parts receipt (`column: "lb"`) lives in
+the LB Earn note, is written before the value (as for additional labor), and is checked on later scans so a rescan
+never adds it twice; a receipt moved by hand between columns counts as edited. Not added when LB Earn is blank, a
+formula or changed (the row says so). With any written-in additional labor line on the tag (credited, credited on a
+sibling, or held), assembly stays in Earning as before, with a note: LB Earn keeps one receipt chain and Kirsten is
+never sent into it (independent review of #27: a whole-group case could otherwise credit twice). The Earning note says
+when assembly went to LB Earn. Builds still get none; windows keep it in Other Earn. Rows written before this keep
+their Earning amount.
+
+Group holds (Kirsten, 2026-10-27, Plainfield): three tags of a group said only the first name, the fourth had the
+full name; same phone, sequential tickets. The phone match needs names that fit, and a first name never fit the
+surname, so the fourth tag missed its saved row. The hold now also keeps the full customer name (hidden metadata
+only) and the phone match lets full names fit; a different first name on the same phone still doesn't match.
+
 ## 0.13.28-draft — patio screen doors
 
 Kirsten (2026-10-24), with the shop's "Custom Patio Door Order" form as the example.

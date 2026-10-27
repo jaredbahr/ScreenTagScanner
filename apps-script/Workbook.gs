@@ -406,6 +406,10 @@ function groupKey_(x, c) {
   var key = { name: name, of: n, ticket: String(x.ticket_number || '').trim(), index: Number(x.tag_index) };
   var phone = x.form_type === 'patio_door' ? '' : phoneKey_(x.phone); // a supplier form may carry the shop's own phone
   if (phone) key.phone = phone;
+  // The full name too: "Rob" on three tags and "Rob Pekelder"-style full names on the fourth share the first name
+  // (Plainfield, 2026-10-27). Used only with the phone match.
+  var full = sequenceIdentity_(x.customer_name);
+  if (full && full !== name) key.full = full;
   return key;
 }
 /** Last 7 digits of a phone read, or '' if shorter. All tags of a group carry the customer's phone (Joliet, 2026-10-24). */
@@ -426,6 +430,15 @@ function namesFit_(a, b) {
     return xs.some(function (x) { return x.length === 1 && ys.some(function (y) { return y.length >= 2 && y.charAt(0) === x; }); });
   };
   return wa.some(function (x) { return x.length >= 3 && wb.indexOf(x) >= 0; }) || initialOf(wa, wb) || initialOf(wb, wa);
+}
+/**
+ * A first name alone on one tag is the first word of the full name on the other ("rob" / "rob <surname>"; Plainfield,
+ * 2026-10-27). Exact and 3+ letters only, so initials, middle initials and other surnames never fit (review of #27).
+ */
+function firstNameFit_(h, key) {
+  var first = function (g) { return String(g.full || '').split(' ')[0]; };
+  var fits = function (one, other) { return /^[a-z]{3,}$/.test(one.name) && first(other) === one.name; };
+  return fits(h, key) || fits(key, h);
 }
 /** Tickets within 50 on their last 6 digits, so a 6-digit read or a misread first digit still lines up. */
 function ticketsNear6_(a, b) {
@@ -660,6 +673,7 @@ function resizeGroupHolds_(sh, c, holds, taken, key, endRow, meta, flags) {
   if (size === old.of) { if (flags) flags.push(said + '. Check the tag count.'); return; }
   var data = { name: old.name, of: size, ticket: old.ticket, day: old.day };
   if (old.phone || key.phone) data.phone = old.phone || key.phone; // an older hold picks up the phone
+  if (old.full) data.full = old.full;
   var line = taken.note.split('\n').filter(function (l) { return l.indexOf(HOLD_NOTE) === 0; })[0] || '';
   var m = / group \(\d+ tags\)/.exec(line), label = m ? line.slice(HOLD_NOTE.length, m.index) : old.name;
   var last = taken.row;
@@ -689,7 +703,8 @@ function groupHoldRank_(h, key, today) {
   var a = String(h.ticket || ''), b = String(key.ticket || '');
   // Same phone and tickets that line up on their last 6 digits: the same customer even when the name is written two
   // ways (Joliet, 2026-10-24: first name and initial on two tags, the full name on the third, and a 6 read as 0).
-  var phone = !!h.phone && h.phone === key.phone && ticketsNear6_(a, b) && (a === b || namesFit_(h.name, key.name));
+  var phone = !!h.phone && h.phone === key.phone && ticketsNear6_(a, b) &&
+    (a === b || namesFit_(h.name, key.name) || firstNameFit_(h, key));
   if (namesClose_(h.name, key.name) && ticketsClose_(a, b)) {
     if (a === b) return 1;
     return /^\d{7}$/.test(a) && /^\d{7}$/.test(b) && Math.abs(Number(a) - Number(b)) <= 50 ? 2 : (phone ? 2 : 3);
@@ -737,6 +752,7 @@ function holdGroupRows_(sh, c, key, row, endRow, x) {
     if (!rowBlank_(sh, r, c) || sh.getRange(r, COUNTER_COL).getNote()) break;
     var data = { name: key.name, of: key.of, ticket: key.ticket, day: day };
     if (key.phone) data.phone = key.phone; // hidden row data in the sheet only, to match the group's other tags
+    if (key.full) data.full = key.full;
     writeGroupHold_(sh, r, c, data, label, meta);
     held++;
   }
@@ -1021,7 +1037,7 @@ function writeToStoreTab_(ss, x, reasons) {
       var size = typeof ui === 'number' ? ' ' + formatInches_(x.width_in) + ' x ' + formatInches_(x.height_in) : ''; // a doubtful size stays out
       sh.getRange(row, c.EXTRAS).setValue(safeCell_('new patio door' + size));
     }
-    applyPartsEarnings_(sh, row, c, x, i === 0, isBuild ? NEW_BUILD.earningBase : 0);
+    applyPartsEarnings_(sh, row, c, x, i === 0, isBuild ? NEW_BUILD.earningBase : 0, labor, flags);
     applyExtraLabor_(sh, row, c, x, i === 0, labor, flags);
     showReview_(sh,row,c,flags);
   });

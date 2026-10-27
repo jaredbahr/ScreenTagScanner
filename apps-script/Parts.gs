@@ -7,7 +7,8 @@ var PART_EARNINGS = {
   '580406':{name:'Pella corners',rate:2,unit:'each'},'580407':{name:'Sears corners/latches',rate:3,unit:'each'},
   '580414':{name:'Anderson rollers',rate:9,unit:'each'},'580605':{name:'Frame spreaders',rate:2,unit:'each'},
   '580601':{name:'New-screen corners',rate:1.50,unit:'set4',buildOverlap:true},
-  '580625':{name:'Assembly',rate:2.25,unit:'side',buildOverlap:true},
+  // Kirsten (2026-10-27): assembly ("cuts") is labor, so it is added to LB Earn on screen rows, not Earning.
+  '580625':{name:'Assembly',rate:2.25,unit:'side',buildOverlap:true,column:'lb'},
   '580408':{name:'Pet grille installation',rate:8,unit:'job'},'580301':{name:'Wood-frame extra labor',rate:11,unit:'job'}
 };
 var ZERO_PK_MATERIALS = ['575001','575003','575006','54249','54398','54429'];
@@ -65,6 +66,8 @@ function pinQuantityFromPrice_(raw, literalText) {
   return amount===null?null:{quantity:amount/unitCents,amount:amount/100};
 }
 function calculateParts_(x) {
+  // Checked on the tag as read, before recognized labor lines are taken out below.
+  var laborLine=[x.extras||'',x.group_extras||''].join('\n').split('\n').some(function(l){return !!extraLaborLine_(l);});
   var laborLines=x._extra_labor_plan ? x._extra_labor_plan.recognized : [];
   if(laborLines && laborLines.length) {
     x=Object.assign({},x);
@@ -130,7 +133,12 @@ function calculateParts_(x) {
     var group=p.group_wide===true||groupPartsLine_(String(p.raw||'')),scope=partsScope_(x,group);
     if(group&&Array.isArray(x.unclear)&&x.unclear.some(function(f){return /tag_count|tag_index|sequence/i.test(String(f));}))scope='';
     if(!scope){plan.flags.push('Group/part identity is uncertain: allocate earnings manually');return;}
+    // LB Earn carries one receipt chain: with ANY written-in additional labor line on the tag (credited, already
+    // credited on a sibling, or held), assembly stays in Earning as before (review of #27: group double credit).
+    var toLb=ref.column==='lb'&&x.item_type!=='window'&&!laborLine;
+    if(ref.column==='lb'&&x.item_type!=='window'&&laborLine)plan.flags.push('SKU '+sku+' assembly kept in Earning because this tag also has additional labor');
     var item={sku:sku,name:ref.name,quantity:p.quantity,rate:ref.rate,unit:ref.unit,group:group,scope:scope,amount:cents_(p.quantity*ref.rate)};
+    if(toLb)item.column='lb';
     if(p.derived)item.derived=p.derived;
     plan.items.push(item);
   });
@@ -155,7 +163,7 @@ function partsReceipts_(text) {
           Number.isFinite(r.amount)&&r.amount===cents_(r.quantity*r.rate)&&typeof r.group==='boolean'&&
           ['reserved','posted'].indexOf(r.status)>=0&&typeof r.tab==='string'&&!!r.tab&&
           ['screens','windows'].indexOf(r.block)>=0&&Number.isInteger(r.row)&&r.row>=2&&
-          Number.isFinite(r.expectedTotal)&&r.expectedTotal>=r.amount;
+          Number.isFinite(r.expectedTotal)&&r.expectedTotal>=r.amount&&(r.column===undefined||r.column==='lb');
         out.push(valid?r:{invalid:true});
       });
     }
@@ -166,12 +174,14 @@ function preparePartsEarnings_(ss,x) {
   var plan=calculateParts_(x),st=resolveStore_(x).store;if(!st||!plan.items.length)return plan;
   var sh=storeSheet_(ss,st),layout;try{layout=storeLayout_(sh);}catch(err){plan.flags.push('Layout must be reviewed before parts earnings');plan.items=[];return plan;}
   var found=[],held=[];
-  ['screens','windows'].forEach(function(block){
-    var c=layout[block],earning=block==='screens'?c.EARNING:c.OTHER_EARN,end=block==='screens'?screenBlockEnd_(sh):WINDOW_LAST_ROW;
+  // Receipts live on Earning (Other Earn for windows) and, for assembly, on the screens LB Earn cell.
+  [['screens','earning'],['screens','lb'],['windows','earning']].forEach(function(where){
+    var block=where[0],c=layout[block],earning=where[1]==='lb'?c.LB_EARN:block==='screens'?c.EARNING:c.OTHER_EARN,end=block==='screens'?screenBlockEnd_(sh):WINDOW_LAST_ROW;
     var notes=sh.getRange(2,earning,end-1,1).getNotes(),ticket=sequenceIdentity_(x.ticket_number);
     notes.forEach(function(r,i){
       var row=i+2;
       partsReceipts_(r[0]).forEach(function(receipt){
+        if(!receipt.invalid&&(receipt.column==='lb')!==(where[1]==='lb'))receipt=Object.assign({},receipt,{invalid:true}); // moved by hand
         // A receipt only matters to this scan when it is about the same ticket. Kirsten correcting a
         // name, ticket or amount on another row is her call and never blocks the rest of the tab
         // (2026-10-21: one edited Downers Grove row had silently stopped every later parts earning).
@@ -192,7 +202,8 @@ function preparePartsEarnings_(ss,x) {
   plan.items=plan.items.filter(function(item){
     var prior=found.filter(function(r){return r.scope===item.scope&&r.sku===item.sku;})[0];
     if(!prior)return true;
-    if(prior.edited){plan.flags.push('Earlier row for this part was edited by hand ('+prior.block+' row '+prior.row+'); add these earnings manually');return false;}
+    if(prior.edited){plan.flags.push(prior.column==='lb'?'Earlier LB Earn for this part was edited by hand ('+prior.block+' row '+prior.row+'): check that row; the assembly may already be included':
+      'Earlier row for this part was edited by hand ('+prior.block+' row '+prior.row+'); add these earnings manually');return false;}
     var sameClient=prior.client===partsClient_(x);plan.references.push({item:item,prior:prior,sameClient:sameClient});
     if(!sameClient)plan.flags.push('Parts group customer identity differs from the earlier receipt; earnings held for manual review');
     if(!prior.paid)plan.flags.push('Parts allocation is pending on an earlier row; reconcile it before adding earnings');
@@ -202,15 +213,21 @@ function preparePartsEarnings_(ss,x) {
   if(held.length){plan.flags.push(held[0]);plan.items=[];}
   return plan;
 }
-function applyPartsEarnings_(sh,row,c,x,firstRow,base) {
+function applyPartsEarnings_(sh,row,c,x,firstRow,base,laborBase,flags) {
   var plan=x._parts_plan;if(!plan)return;
+  var lbItems=plan.items.filter(function(item){return item.column==='lb';});
+  var lbBefore=plan.posted.length;
+  if(lbItems.length)applyLbParts_(sh,row,c,x,firstRow,lbItems,laborBase,flags||[]);
+  var items=plan.items.filter(function(item){return item.column!=='lb';});
   var earning=x.item_type==='window'?c.OTHER_EARN:c.EARNING,range=sh.getRange(row,earning),note=range.getNote(),lines=[];
-  plan.items.forEach(function(item){lines.push('SKU '+item.sku+' '+item.name+': '+item.quantity+' '+item.unit+(item.derived?' (from '+item.derived+')':'')+' × $'+item.rate.toFixed(2)+' = $'+item.amount.toFixed(2)+(item.group?' total for the whole group; credit once':' total for this tag/form; credit once'));});
+  // The Earning note lists the tag's extras "to enter": say where assembly went so it is never entered twice.
+  plan.posted.slice(lbBefore).forEach(function(r){lines.push('SKU '+r.sku+' '+r.name+': $'+r.amount.toFixed(2)+' added to LB Earn on this row; do not enter it here.');});
+  items.forEach(function(item){lines.push('SKU '+item.sku+' '+item.name+': '+item.quantity+' '+item.unit+(item.derived?' (from '+item.derived+')':'')+' × $'+item.rate.toFixed(2)+' = $'+item.amount.toFixed(2)+(item.group?' total for the whole group; credit once':' total for this tag/form; credit once'));});
   plan.references.forEach(function(ref){lines.push(ref.sameClient===false?'SKU '+ref.prior.sku+': customer identity conflicts with an earlier group receipt; earnings held for manual allocation.':
-    'SKU '+ref.prior.sku+': $'+ref.prior.amount.toFixed(2)+' whole-group/tag total '+(ref.prior.paid?'already recorded':'PENDING review')+' on '+ref.prior.tab+' '+ref.prior.block+' row '+ref.prior.row+'. No duplicate amount added.');});
+    'SKU '+ref.prior.sku+': $'+ref.prior.amount.toFixed(2)+' whole-group/tag total '+(ref.prior.paid?'already recorded':'PENDING review')+' on '+ref.prior.tab+' '+ref.prior.block+' row '+ref.prior.row+(ref.prior.column==='lb'?' (LB Earn)':'')+'. No duplicate amount added.');});
   if(!firstRow&&plan.posted.length)lines.push('Parts total is recorded on the first row of this form; no duplicate amount added.');
   if(!lines.length)return;
-  var receipts=firstRow?plan.items.map(function(item){return Object.assign({},item,{status:'reserved',tab:storeByTabName_(sh.getName()).tab,block:x.item_type==='window'?'windows':'screens',row:row,
+  var receipts=firstRow?items.map(function(item){return Object.assign({},item,{status:'reserved',tab:storeByTabName_(sh.getName()).tab,block:x.item_type==='window'?'windows':'screens',row:row,
     client:partsClient_(x),customer:sequenceIdentity_(sheetName_(x)),ticket:sequenceIdentity_(x.ticket_number)});}):[];
   var extra=receipts.reduce(function(n,item){return n+item.amount;},0),total=cents_((base||0)+extra);
   receipts.forEach(function(r){r.expectedTotal=total;});
@@ -220,4 +237,26 @@ function applyPartsEarnings_(sh,row,c,x,firstRow,base) {
   if(receipts.length){range.setNumberFormat('$0.00').setValue(total);receipts.forEach(function(r){r.status='posted';});
     range.setNote(human+'\n'+PARTS_RECEIPT+JSON.stringify(receipts));plan.posted.push.apply(plan.posted,receipts);}
   range.setBackground(FLAG_COLOR);
+}
+/**
+ * Assembly (580625) is added to LB Earn (Kirsten, 2026-10-27): only on the first row, only when LB Earn still holds
+ * exactly the labor just written (no formula), with a receipt reserved in the LB note before the value changes.
+ */
+function applyLbParts_(sh,row,c,x,firstRow,items,laborBase,flags) {
+  var range=sh.getRange(row,c.LB_EARN),note=range.getNote();
+  if(!firstRow){if(x._parts_plan.posted.some(function(r){return r.column==='lb';}))range.setNote([note,'Assembly is added to LB Earn on the first row of this form only.'].filter(Boolean).join('\n'));return;}
+  var raw=items.map(function(i){return 'SKU '+i.sku+' '+i.name+': '+i.quantity+' '+i.unit+' × $'+i.rate.toFixed(2)+' = $'+i.amount.toFixed(2);}).join('\n');
+  if(typeof laborBase!=='number'||!Number.isFinite(laborBase)||laborBase<0||range.getFormulas()[0][0]||range.getValues()[0][0]!==laborBase){
+    flags.push('Assembly not added to LB Earn: LB Earn is blank, a formula or changed; add it by hand');
+    range.setNote([note,'Pending assembly (not added):\n'+raw].filter(Boolean).join('\n'));return;
+  }
+  var extra=items.reduce(function(n,i){return n+i.amount;},0),total=cents_(laborBase+extra),st=storeByTabName_(sh.getName());
+  var receipts=items.map(function(item){return Object.assign({},item,{status:'reserved',tab:st.tab,block:'screens',row:row,
+    client:partsClient_(x),customer:sequenceIdentity_(sheetName_(x)),ticket:sequenceIdentity_(x.ticket_number),expectedTotal:total});});
+  var human=escapePartsReceiptText_([note,raw+'\nAdded to LB Earn: $'+laborBase.toFixed(2)+' + $'+cents_(extra).toFixed(2)+' = $'+total.toFixed(2)+'; credit once'].filter(Boolean).join('\n'));
+  range.setNote(human+'\n'+PARTS_RECEIPT+JSON.stringify(receipts));
+  range.setNumberFormat('$0.00').setValue(total);
+  receipts.forEach(function(r){r.status='posted';});
+  range.setNote(human+'\n'+PARTS_RECEIPT+JSON.stringify(receipts));
+  x._parts_plan.posted.push.apply(x._parts_plan.posted,receipts);
 }

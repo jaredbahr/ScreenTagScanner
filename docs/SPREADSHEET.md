@@ -111,6 +111,11 @@ Window mapping is built from Kirsten's description and the first real October wi
 15. **Parts earnings** (approved 2026-10-13, Kirsten OK for now): parts with a known SKU and an explicit quantity are
    earned from the 2024 rate list into Earning (L) / Other Earn, once per tag or group; anything uncertain stays a
    flagged note for her. Rates are flat: 3D-printed corners earning more is still hers to adjust. See [PARTS_EARNINGS.md](PARTS_EARNINGS.md).
+   Since 0.13.29 assembly / cuts (580625, $2.25 per side) is labor and is **added to LB Earn** on screen rows
+   (Kirsten, 2026-10-27: 2 cuts on a 62" rescreen: $10.54 + $4.50 = $15.04), with its receipt in the LB Earn note.
+   Builds still get none (covered by the build labor); windows keep it in Other Earn. With any written-in additional
+   labor line on the tag it stays in Earning (as before) with a note; an LB Earn that is blank, a formula or changed
+   leaves it for her with a note. The Earning note says when assembly went to LB Earn.
 16. **Unresolved scans require reconciliation.** NOT PLACED/PENDING/INTERRUPTED rows are marked **orange**, and later phone replies report that earlier scans need reconciliation. Existing or partial store rows may already be present. Check them first; add a row only after confirming it is missing. Clear Needs Review "YES" only after reconciliation. Controlled RESCAN rows are excluded from the advisory count; OCR review text never decides whether a row counts. If this optional count read fails after a completed save, the phone retains confirmed success and reports that earlier review status is unavailable.
 17. **Interrupted saves don't duplicate.** The `Scans` row is written first (PENDING) and finished after the store
    write, so a retry after a timeout says "Already scanned" and points at the store tab instead of adding a second row.
@@ -152,7 +157,8 @@ Window mapping is built from Kirsten's description and the first real October wi
     ticket. A strong match (same ticket or within 50 with a close name, or the phone) fills a hold even when N
     changed, unless the phones differ by 2+ digits: the group's other blank holds take the larger N, one more blank
     row is saved per extra tag right after the group, typed-in held rows are released, a smaller N frees nothing,
-    and the Tag x of N cell gets a note.
+    and the Tag x of N cell gets a note. Since 0.13.29 the hold also keeps the full customer name, so a first name
+    only on some tags fits the full name on another for the phone match.
 24. **Group check** (2026-10-23, from the October 22 scans). A group tag is compared with its group's tags already
     on the tab (same N, close name, ticket close or within 1000). Disagreeing name, ticket or "x of N" gets a note on
     that one cell (pale, not yellow). Values are never changed. Since 0.13.26 a looser match (ticket

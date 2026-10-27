@@ -101,8 +101,9 @@
     "tests/review-money.test.cjs": 12,
     "tests/group-review.test.cjs": 14,
     "tests/review-messages.test.cjs": 5,
-    "tests/group-phone.test.cjs": 15,
-    "tests/patio-door.test.cjs": 14
+    "tests/group-phone.test.cjs": 17,
+    "tests/patio-door.test.cjs": 14,
+    "tests/assembly-lb.test.cjs": 14
   },
   "allowWorkflowDefinitions": true
 }
