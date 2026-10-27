@@ -103,7 +103,7 @@
     "tests/review-messages.test.cjs": 5,
     "tests/group-phone.test.cjs": 15,
     "tests/patio-door.test.cjs": 14,
-    "tests/assembly-lb.test.cjs": 11
+    "tests/assembly-lb.test.cjs": 14
   },
   "allowWorkflowDefinitions": true
 }

@@ -90,6 +90,35 @@ test('a receipt moved by hand from LB Earn to Earning holds the ticket (no secon
   assert.equal(plan.items.length, 0); assert.match(plan.flags.join('\n'), /changed by hand/);
 });
 
+test('review of #27 round 2: a held labor line (two LB lines) still keeps assembly in Earning', () => {
+  const t = load(); write(t, { extras: '2 580625 cuts 3.00 = 6.00\nLB $8\nLB $5' }); const { sh, c } = sheet(t);
+  assert.equal(sh.get(2, c.LB_EARN), 10.54, 'no labor credited and no assembly added'); assert.equal(sh.get(2, c.EARNING), 4.5);
+});
+
+test('review of #27 round 2: the LB receipt is reserved in the note before the value is written', () => {
+  const t = load(), seen = [];
+  const sh = t.ss.tabs['Homer Glen'], c = t.ctx.storeLayout_(sh).screens, orig = sh.getRange.bind(sh);
+  sh.getRange = function (r, col, ...rest) {
+    const range = orig(r, col, ...rest);
+    if (col === c.LB_EARN && rest.length === 0) {
+      const set = range.setValue.bind(range);
+      range.setValue = v => { if (v === 15.04) seen.push(sh.notes.get(sh.key(r, col)) || ''); return set(v); };
+    }
+    return range;
+  };
+  write(t);
+  assert.equal(seen.length, 1); assert.match(seen[0], /"column":"lb".*"status":"reserved"/);
+});
+
+test('review of #27 round 2: a hand-edited LB Earn on the earlier row says the assembly may already be in it', () => {
+  const t = load(), g = { sku: '580625', quantity: 2, unit: 'side', group_wide: true, raw: '2 580625 cuts all frames' };
+  const x = i => ({ ticket_number: '7770812', tag_index: i, tag_count: 2, width_in: 29 + i, billable_inches: 62 + i, extras: '', group_extras: '2 580625 cuts all frames', parts: [g] });
+  write(t, x(1)); const { sh, c } = sheet(t); sh.set(2, c.LB_EARN, 20);
+  write(t, x(2));
+  assert.equal(sh.get(3, c.LB_EARN), cents(64 * 0.17));
+  assert.match(sh.notes.get(sh.key(3, c.NAME)) || '', /Earlier LB Earn for this part was edited by hand \(screens row 2\): check that row; the assembly may already be included/);
+});
+
 test('windows keep assembly in Other Earn (unchanged)', () => {
   const ctx = load().ctx, plan = ctx.calculateParts_({ ...tag(), item_type: 'window' });
   assert.equal(plan.items.find(i => i.sku === '580625').column, undefined);

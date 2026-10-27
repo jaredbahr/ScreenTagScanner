@@ -202,7 +202,8 @@ function preparePartsEarnings_(ss,x) {
   plan.items=plan.items.filter(function(item){
     var prior=found.filter(function(r){return r.scope===item.scope&&r.sku===item.sku;})[0];
     if(!prior)return true;
-    if(prior.edited){plan.flags.push('Earlier row for this part was edited by hand ('+prior.block+' row '+prior.row+'); add these earnings manually');return false;}
+    if(prior.edited){plan.flags.push(prior.column==='lb'?'Earlier LB Earn for this part was edited by hand ('+prior.block+' row '+prior.row+'): check that row; the assembly may already be included':
+      'Earlier row for this part was edited by hand ('+prior.block+' row '+prior.row+'); add these earnings manually');return false;}
     var sameClient=prior.client===partsClient_(x);plan.references.push({item:item,prior:prior,sameClient:sameClient});
     if(!sameClient)plan.flags.push('Parts group customer identity differs from the earlier receipt; earnings held for manual review');
     if(!prior.paid)plan.flags.push('Parts allocation is pending on an earlier row; reconcile it before adding earnings');
