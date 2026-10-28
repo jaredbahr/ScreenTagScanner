@@ -4,12 +4,12 @@
   "reconciliationBranch": "main",
   "requiredUpstreamCommit": "5ebceb692142a7968f628b4cf841e0179e27b8cf",
   "lastVerifiedDeployment": {
-    "sourceCommit": "832f80b4a896b0ed24e8422961a41d10b371eba9",
-    "version": "0.13.28-draft",
-    "appsScriptVersion": 16,
-    "deployedAtUtc": "2026-10-24T18:05:00Z",
-    "verifiedAtUtc": "2026-10-24T18:07:46.406Z",
-    "evidence": "Sole Google browser worker pasted exactly five changed files and created one immutable version 16 on the existing deployment. Google displayed 13:05 America/Chicago; deployedAtUtc has minute precision. Deployment action observed at 2026-10-24T18:05:40.532Z; success observed at 18:05:58.938Z, not claimed as exact Google creation time. Eleven saved code/HTML baseline files matched raw version-15 Git blobs; the unchanged saved-editor manifest omitted only one final LF. Jared explicitly approved that saved-editor serialization exception at 18:00 UTC; the manifest was left untouched. All eleven target code/HTML files, including immutable version 16 readback, matched raw Git blobs. The unchanged manifest raw blob was 1209f928704010a313ed09d80f84a8eeb507b483 (488 bytes); adding exactly one terminal LF in memory matched canonical af507c4c66583975efc63b989fea75ceb033c1f8 (489 bytes). No trimming or other normalization. This saved-editor exception is distinct from the prior version-15 immutable-history-copy normalization. Health returned 0.13.28-draft and What's new began 0.13.28 · Oct 24. Existing deployment preserved; no permission prompt, Script Properties, sharing, trigger or sheet changes, or scans. No private target identifiers recorded."
+    "sourceCommit": "ac5a18907ea9ff0f2adc0d94543ac51fa97e7cee",
+    "version": "0.13.30-draft",
+    "appsScriptVersion": 17,
+    "deployedAtUtc": "2026-10-28T01:44:00Z",
+    "verifiedAtUtc": "2026-10-28T01:45:13.407Z",
+    "evidence": "Sole cloud browser writer submitted one deployment at 2026-10-28T01:44:04.627Z; version 17 was confirmed at 01:44:27.130Z on the same existing deployment/endpoint. Google displayed October 27, 20:44 America/Chicago; deployedAtUtc has minute precision, not an asserted exact Google creation timestamp. The initial five-file paste/save did not persist; Code.gs read back as the old baseline, so the writer stopped before deployment. Jared explicitly approved inspection/correction and repeated full readback. Explicit clipboard paste and visible Save corrected the failed saves. After explicit saves and browser reload, all twelve saved files were checked against the pin: eleven code/HTML SHA-256 hashes matched canonical source bytes, with only the known approved manifest missing-terminal-LF exception. The unchanged manifest raw blob 1209f928704010a313ed09d80f84a8eeb507b483 matches canonical af507c4c66583975efc63b989fea75ceb033c1f8 only after restoring one LF in memory; no trimming or other normalization. Only then was the single deployment submitted. Live health returned 0.13.30-draft; scanner loaded and What's new began 0.13.30 · Oct 27 then 0.13.29 · Oct 27. No scans, sheet writes, property/settings/access/trigger changes or permission prompts. No private target identifiers recorded."
   },
   "requiredProductionFiles": [
     "apps-script/Backup.gs",
@@ -27,16 +27,16 @@
   ],
   "baselineRuntimeBlobs": {
     "apps-script/Backup.gs": "ebb93e40165fdea0e509e40e8ca9e84edd7e85bf",
-    "apps-script/Code.gs": "5ba8e025ce2c735cc011c791d28a214162cc2a77",
+    "apps-script/Code.gs": "ac08722a5b6fe4a239695c40f56392e304bf1020",
     "apps-script/ExtraLabor.gs": "c486f353d9f637f0e74b69da12f40d4c2334015a",
-    "apps-script/Extraction.gs": "c3ff3e6d491b36641542913d163e21dc726e9e3a",
+    "apps-script/Extraction.gs": "939bb9b905ed61b388d28d9c86c69c1f50e1abe5",
     "apps-script/Layout.gs": "404068706c114dbfc678777af9c7d7a702c91e46",
     "apps-script/Month.gs": "313dbc09c372695495aaa36dadda07599ccff55b",
     "apps-script/MonthArchive.gs": "eb3a398ff452cb7c4ef208fc97582cddf2509e16",
-    "apps-script/Parts.gs": "025366583816fa0003977ddb7c41820a27d26dd1",
+    "apps-script/Parts.gs": "858bb5df922b939d397b4093480982d0c2e96653",
     "apps-script/Routing.gs": "095b77271cb5951bd18616867457618c50285def",
-    "apps-script/Upload.html": "15977f5059a56df81ab628440adc144d50c58db0",
-    "apps-script/Workbook.gs": "79dcea5f43d918fdb40a8e50f0a3dcfdb110a77a",
+    "apps-script/Upload.html": "2c779b1062f600d6999971e7c0abd12eb2243005",
+    "apps-script/Workbook.gs": "130dd4ce1551839f6de83b215011925bd8fed21f",
     "apps-script/appsscript.json": "af507c4c66583975efc63b989fea75ceb033c1f8"
   },
   "allowedPublicFunctions": [
