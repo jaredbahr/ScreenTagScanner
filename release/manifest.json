@@ -105,7 +105,7 @@
     "tests/patio-door.test.cjs": 14,
     "tests/assembly-lb.test.cjs": 14,
     "tests/daily-count.test.cjs": 6,
-    "tests/pins-per-frame.test.cjs": 25,
+    "tests/pins-per-frame.test.cjs": 27,
     "tests/group-names.test.cjs": 5,
     "tests/group-ticket-hints.test.cjs": 4,
     "tests/parts-shorthand.test.cjs": 4

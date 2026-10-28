@@ -227,4 +227,22 @@ test('review of #31 round 4: an older row with the same frame number never block
   assert.equal(rows.length, 2); assert.equal(sh.get(rows[0], c.EARNING) || '', '', 'the old row'); assert.equal(sh.get(rows[1], c.EARNING), 1, 'today\'s row');
 });
 
+test('review of #31 round 5: each same-day guard alone blocks a wrong match', () => {
+  const ctx = load({ now: new Date('2026-10-27T15:00:00Z') }).ctx, day = ctx.scanDateSerial_();
+  const split = { of: 2, name: 'synthward', ticket: '7770631', phone: '', day };
+  const x = (name, tk, phone = null) => ({ store: 'New Lenox', customer_name: name, last_name: name, ticket_number: tk, phone, tag_index: 2, tag_count: 2 });
+  assert.equal(ctx.splitMatches_(split, x('Synthwood', '777063 1')), false, 'misread ticket, close name, no phone: name/phone guard');
+  assert.equal(ctx.splitMatches_(split, x('Synthward', '7790000')), false, 'exact name, clean far ticket: ticket guard');
+  assert.equal(ctx.splitMatches_(split, x('Synthward', '777063 1')), true, 'exact name and a misread ticket the same day');
+  assert.equal(ctx.splitMatches_({ ...split, day: day - 3 }, x('Synthward', '777063 1')), false, 'three days later');
+});
+
+test('review of #31 round 5: a misread-ticket frame on the tab from another day is not paid by the same-day path', () => {
+  const t = load({ now: new Date('2026-10-20T15:00:00Z') }), { sh, c } = modern(t);
+  write(t, tag(3, 8, { ticket_number: '777063 4' }));
+  t.setNow(new Date('2026-10-27T15:00:00Z'));
+  write(t, tag(4, 8, { extras: '16 580602 pins', parts: [pins(16)] }));
+  assert.equal(earningBy(sh, c)['3 of 8'] || '', '');
+});
+
 console.log(`${passed} pins per frame tests passed`);
