@@ -297,6 +297,18 @@ function saveScan_(x, user, reasons, photoUrl, scanId, admittedId, leaseId) {
     x._store_group_extras = x.group_extras && !groupExtrasLogged_(log, x) ? x.group_extras : '';
     x._extra_labor_plan = prepareExtraLabor_(ss, x);
     x._extra_labor_plan.flags.forEach(function (f) { if (reasons.indexOf(f) < 0) reasons.push(f); });
+    var phonesByRow = null; // read once, only if a pins split needs it (review of #31: never pay another customer's frame)
+    x._row_phone = function (storeName, row) {
+      if (!phonesByRow) {
+        phonesByRow = {};
+        var last = log.getLastRow(), phoneCol = HEADERS.indexOf('Phone');
+        if (last >= 2) log.getRange(2, 1, last - 1, HEADERS.length).getValues().forEach(function (r) {
+          var m = /^(.*?) screens rows? ([\d, ]+)$/.exec(String(r[COL.WRITTEN_TO - 1]));
+          if (m) m[2].split(/\s*,\s*/).forEach(function (n) { phonesByRow[m[1] + '|' + n] = phoneKey_(r[phoneCol]); });
+        });
+      }
+      return phonesByRow[storeName + '|' + row] || '';
+    };
     x._parts_plan = preparePartsEarnings_(ss, x);
     x._parts_plan.flags.forEach(function (f) { if (reasons.indexOf(f) < 0) reasons.push(f); });
     // Dates are written as serial day numbers (correct in any time zone), but a mismatched

@@ -84,4 +84,61 @@ test('a hand-edited share holds that frame only', () => {
   const e = earningBy(sh, c); assert.equal(e['5 of 8'], 7); assert.equal(e['6 of 8'], 1);
 });
 
+const total = (sh, c) => { let n = 0; for (let r = 2; r < 25; r++) n += Number(sh.get(r, c.EARNING)) || 0; return Math.round(n * 100) / 100; };
+
+test('review of #31: the pins line on two tags pays each frame once (one split per group)', () => {
+  const t = load(), { sh, c } = modern(t);
+  write(t, tag(4, 8, { extras: '16 580602 pins', parts: [pins(16)] }));
+  write(t, tag(1, 8, { extras: '16 580602 pins', parts: [pins(16)] }));
+  write(t, tag(6, 8));
+  const e = earningBy(sh, c); assert.equal(e['4 of 8'], 1); assert.equal(e['1 of 8'], 1); assert.equal(e['6 of 8'], 1);
+  assert.equal(total(sh, c), 3);
+});
+
+test('review of #31: a rescan of the pins tag with another ticket reading pays nothing more', () => {
+  const t = load(), { sh, c } = modern(t);
+  write(t, tag(4, 8, { extras: '16 580602 pins', parts: [pins(16)] }));
+  write(t, tag(4, 8, { extras: '16 580602 pins', parts: [pins(16)], ticket_number: '7770684', notes: 'again' }));
+  write(t, tag(5, 8));
+  assert.equal(total(sh, c), 2, 'frame 4 once, frame 5 once');
+});
+
+test('review of #31: a group paid whole before 0.13.31 is never split on top', () => {
+  const t = load(), { sh, c } = modern(t);
+  write(t, tag(1, 2, { extras: '5 580602 pins all frames', parts: [pins(5, true)] })); // whole-group receipt, $2.50
+  write(t, tag(2, 2, { extras: '4 580602 pins all frames', parts: [pins(4, true)] }));
+  assert.equal(total(sh, c), 2.5);
+});
+
+test('review of #31: another customer (close name, near ticket, same N, other phone) is never paid, before or after', () => {
+  const t = load(), { sh, c } = modern(t), other = { customer_name: 'Ann Synthpaz', last_name: 'Synthpaz', phone: '8155551234' };
+  write(t, tag(2, 8, { ...other, ticket_number: '7770659' }));
+  write(t, tag(4, 8, { extras: '16 580602 pins', parts: [pins(16)] }));
+  write(t, tag(5, 8, { ...other, ticket_number: '7770660' }));
+  const rows = [...Array(20).keys()].map(k => k + 2).filter(r => /synthpaz/i.test(String(sh.get(r, c.NAME))));
+  assert.equal(rows.length, 2); for (const r of rows) assert.equal(sh.get(r, c.EARNING) || '', '', 'row ' + r);
+});
+
+test('review of #31: a plain group tag with nothing to pay gets no review flag from an edited receipt', () => {
+  const t = load(), { sh, c } = modern(t);
+  write(t, tag(1, 3, { extras: '4 580602 pins', parts: [pins(4)] })); sh.notes.set(sh.key(2, c.EARNING), 'PARTS_EARNINGS_V1: [{"broken":true}]');
+  const r = write(t, tag(2, 3, { ticket_number: '7770631' }));
+  assert.doesNotMatch(JSON.stringify(r.flags || []), /changed by hand/);
+});
+
+test('review of #31: a new-build frame gets its share on top of the $1.50 base; the pins row lists paid and owed frames', () => {
+  const t = load(), { sh, c } = modern(t);
+  write(t, tag(7, 8, { form_type: 'new_build' }));
+  write(t, tag(4, 8, { extras: '16 580602 pins', parts: [pins(16)] }));
+  const e = earningBy(sh, c); assert.equal(e['7 of 8'], 2.5);
+  const r4 = [...Array(20).keys()].map(k => k + 2).find(r => sh.get(r, c.SEQUENCE) === '4 of 8');
+  assert.match(sh.notes.get(sh.key(r4, c.EARNING)), /Split per frame: paid on frames 4, 7; frames 1, 2, 3, 5, 6, 8 get theirs when scanned\./);
+});
+
+test('review of #31: an unmarked 6 pins on a 2-frame group stays on its tag (only 2 per frame splits unmarked)', () => {
+  const t = load(), { sh, c } = modern(t);
+  write(t, tag(1, 2, { extras: '6 580602 pins', parts: [pins(6)] })); write(t, tag(2, 2));
+  const e = earningBy(sh, c); assert.equal(e['1 of 2'], 3); assert.equal(e['2 of 2'] || '', '');
+});
+
 console.log(`${passed} pins per frame tests passed`);

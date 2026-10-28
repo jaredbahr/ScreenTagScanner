@@ -10,6 +10,11 @@ From an audit of Kirsten's 10/27 edits (144 placed tags, about 60 hand fixes).
   frames scanned later pick theirs up from the receipts. Each share has its own receipt (scope [tab,"frames",id,k]),
   so a rescan never pays twice. Uneven counts keep the old once-for-the-group credit. October: the 10/22 24-over-12
   and 10/27 16-over-8 New Lenox groups qualify; single-frame "2 pins" tags don't.
+  Independent review of #31: one split per group and SKU (a second pins line or a rescan with another ticket reading
+  reuses it); a group paid whole before 0.13.31 is never split on top; the phone (split and Scans log) must not differ;
+  unmarked lines split only at 2 per frame; a new-build frame gets its share on top of the $1.50 base; the pins row
+  lists paid and owed frames and flags any skipped; a plain group tag never gets a review flag from another row's
+  receipt; receipt columns are read once per block.
 
 ## 0.13.30-draft — daily scan count
 
