@@ -141,4 +141,53 @@ test('review of #31: an unmarked 6 pins on a 2-frame group stays on its tag (onl
   const e = earningBy(sh, c); assert.equal(e['1 of 2'], 3); assert.equal(e['2 of 2'] || '', '');
 });
 
+test('review of #31 round 2: a pins tag paid on 0.13.30 (16 pins on one row, $8) is never split on top when rescanned', () => {
+  const t = load(), { sh, c } = modern(t), keep = t.ctx.splitPerFrame_;
+  t.ctx.splitPerFrame_ = () => null; // the deployed 0.13.30 behaviour: the whole count on the pins tag
+  write(t, tag(4, 8, { extras: '16 580602 pins', parts: [pins(16)] })); t.ctx.splitPerFrame_ = keep;
+  write(t, tag(7, 8));
+  write(t, tag(4, 8, { extras: '16 580602 pins', parts: [pins(16)], notes: 'again', width_in: 24.5 }));
+  write(t, tag(2, 8));
+  assert.equal(total(sh, c), 8);
+});
+
+test('review of #31 round 2: a rescan that reads another count on a split group is flagged, never paid', () => {
+  const t = load(), { sh, c } = modern(t);
+  write(t, tag(4, 8, { extras: '16 580602 pins', parts: [pins(16)] }));
+  const r = write(t, tag(4, 8, { extras: '24 580602 pins', parts: [pins(24)], ticket_number: '7770674', notes: 'again' })); // one digit misread
+  assert.equal(total(sh, c), 1); assert.match(JSON.stringify(r.flags), /pins were already split per frame/);
+});
+
+test('review of #31 round 2: a split reused from another ticket asks her to check it is the same group', () => {
+  const t = load(), { sh, c } = modern(t);
+  write(t, tag(4, 8, { extras: '16 580602 pins', parts: [pins(16)] }));
+  const r = write(t, tag(1, 8, { extras: '16 580602 pins', parts: [pins(16)] }));
+  assert.match(JSON.stringify(r.flags), /pins split reused from row \d+ \(ticket 7770634\); check it is the same group/);
+});
+
+test('review of #31 round 2: unmarked splits only at exactly 2 per frame (6 pins on 1 of 6 stays on its tag)', () => {
+  const t = load(), { sh, c } = modern(t);
+  write(t, tag(1, 6, { extras: '6 580602 pins', parts: [pins(6)] })); write(t, tag(2, 6));
+  const e = earningBy(sh, c); assert.equal(e['1 of 6'], 3); assert.equal(e['2 of 6'] || '', '');
+});
+
+test('review of #31 round 2: an old group receipt of another size or another customer does not block a split', () => {
+  const ctx = load().ctx, x = { ...tag(4, 8), item_type: 'screen' };
+  const old = (scope, customer, extra = {}) => ({ sku: '580602', group: true, scope: JSON.stringify(scope), customer, ...extra });
+  assert.equal(ctx.oldGroupPaid_(old(['New Lenox', '7770634', 'group', 8], 'synthpas'), '580602', x, 16), true);
+  assert.equal(ctx.oldGroupPaid_(old(['New Lenox', '7770634', 'group', 3], 'synthpas'), '580602', x, 16), false, 'another N');
+  assert.equal(ctx.oldGroupPaid_(old(['New Lenox', '7770634', 'group', 8], 'synthwick'), '580602', x, 16), false, 'another customer');
+  assert.equal(ctx.oldGroupPaid_(old(['New Lenox', '7770634', 'tag', '4 of 8'], 'synthpas', { group: false, quantity: 16 }), '580602', x, 16), true, '0.13.30 per-tag');
+  assert.equal(ctx.oldGroupPaid_(old(['New Lenox', '7770634', 'tag', '4 of 8'], 'synthpas', { group: false, quantity: 2 }), '580602', x, 16), false, 'a frame\'s own 2 pins');
+});
+
+test('review of #31 round 2: a $1.50 she typed (no "New build:" note) is her entry: skipped, flagged on the pins row', () => {
+  const t = load(), { sh, c } = modern(t);
+  write(t, tag(7, 8)); const r7 = [...Array(20).keys()].map(k => k + 2).find(r => sh.get(r, c.SEQUENCE) === '7 of 8');
+  sh.set(r7, c.EARNING, 1.5);
+  const r = write(t, tag(4, 8, { extras: '16 580602 pins', parts: [pins(16)] }));
+  assert.equal(sh.get(r7, c.EARNING), 1.5);
+  assert.match(JSON.stringify(r.flags), /Pins split per frame: frame 7 not added automatically/);
+});
+
 console.log(`${passed} pins per frame tests passed`);
