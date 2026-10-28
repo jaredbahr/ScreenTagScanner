@@ -105,7 +105,7 @@
     "tests/patio-door.test.cjs": 14,
     "tests/assembly-lb.test.cjs": 14,
     "tests/daily-count.test.cjs": 6,
-    "tests/pins-per-frame.test.cjs": 21
+    "tests/pins-per-frame.test.cjs": 22
   },
   "allowWorkflowDefinitions": true
 }

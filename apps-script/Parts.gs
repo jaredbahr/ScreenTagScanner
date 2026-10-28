@@ -161,12 +161,16 @@ function splitPerFrame_(x,sku,p,group) {
   var st=resolveStore_(x).store,name=sequenceIdentity_(sheetName_(x));if(!st||!x.ticket_number||!name)return null;
   var ref=PART_EARNINGS[sku],per=q/n,id=JSON.stringify([st.tab,String(x.ticket_number),sku,n]);
   return {sku:sku,name:ref.name,quantity:per,rate:ref.rate,unit:ref.unit,group:false,scope:JSON.stringify([st.tab,'frames',id,k]),amount:cents_(per*ref.rate),
-    split:{id:id,of:n,index:k,total:q,from:k,name:name,ticket:String(x.ticket_number),phone:phoneKey_(x.phone)}};
+    split:{id:id,of:n,index:k,total:q,from:k,name:name,ticket:String(x.ticket_number),phone:phoneKey_(x.phone),day:scanDateSerial_()}};
 }
-/** A split receipt's group is this tag's group: same N, a close name, a close ticket, and no phone that says otherwise. */
+/**
+ * A split receipt's group is this tag's group: same N, a close name, no phone that says otherwise, and a close ticket
+ * or a scan within a day of the split (the October replay: misread tickets like "770763 4" lost their frame's share).
+ */
 function splitMatches_(split,x) {
-  return split.of===Number(x.tag_count)&&namesClose_(split.name,sequenceIdentity_(sheetName_(x)))&&ticketsClose_(split.ticket,String(x.ticket_number||''))&&
-    !phonesDiffer_(split.phone||'',phoneKey_(x.phone));
+  var sameVisit=Number.isFinite(split.day)&&Math.abs(scanDateSerial_()-split.day)<=1;
+  return split.of===Number(x.tag_count)&&namesClose_(split.name,sequenceIdentity_(sheetName_(x)))&&
+    (ticketsClose_(split.ticket,String(x.ticket_number||''))||sameVisit)&&!phonesDiffer_(split.phone||'',phoneKey_(x.phone));
 }
 /**
  * A receipt from before 0.13.31 that already paid this group's pins: a whole-group receipt ([tab,ticket,'group',N]),
@@ -244,7 +248,7 @@ function preparePartsEarnings_(ss,x) {
   var mine=verifiedSequence_(tagOf_(x))?Number(x.tag_index):0,share=function(r){
     return {sku:r.sku,name:r.name,quantity:r.quantity,rate:r.rate,unit:r.unit,group:false,amount:r.amount,
       scope:JSON.stringify([JSON.parse(r.scope)[0],'frames',r.split.id,mine]),
-      split:{id:r.split.id,of:r.split.of,index:mine,total:r.split.total,from:r.split.from,name:r.split.name,ticket:r.split.ticket,phone:r.split.phone}};
+      split:{id:r.split.id,of:r.split.of,index:mine,total:r.split.total,from:r.split.from,name:r.split.name,ticket:r.split.ticket,phone:r.split.phone,day:r.split.day}};
   };
   plan.items=plan.items.filter(function(item){
     if(!item.split)return true;
@@ -329,11 +333,12 @@ function splitToSiblings_(sh,c,x,r,row,flags) {
     var at=i+2,m=/^(\d+) of (\d+)$/.exec(String(seqs[i][0]).trim());
     if(at===row||!m||Number(m[2])!==r.split.of||done[Number(m[1])])continue;
     var who=sequenceIdentity_(names[i][0]),tk=String(tickets[i][0]).trim(),day=outs[i]?daySerial_(outs[i][0]):NaN;
-    if(!namesClose_(who,r.split.name)||!ticketsClose_(tk,r.split.ticket))continue;
+    if(!namesClose_(who,r.split.name)||!(ticketsClose_(tk,r.split.ticket)||day===today))continue; // a misread ticket scanned today still counts
     var rowPhone=phoneAt(st.name,at);
     if(phonesDiffer_(rowPhone,r.split.phone||''))continue; // another customer with a close name
-    var k=Number(m[1]);done[k]=true;
-    if(!(today-day>=0&&today-day<=GROUP_HOLD_DAYS)){older.push(k);continue;} // on the tab but outside the group window
+    var k=Number(m[1]);
+    if(!(today-day>=0&&today-day<=GROUP_HOLD_DAYS)){if(older.indexOf(k)<0)older.push(k);continue;} // outside the group window
+    done[k]=true;older=older.filter(function(o){return o!==k;});
     var cell=sh.getRange(at,c.EARNING),note=cell.getNote(),value=cell.getValues()[0][0],own=partsReceipts_(note);
     if(own.some(function(o){return o.split&&o.split.id===r.split.id;})){paid.push(k);continue;} // already has this share
     var base=value===''||value===0?0:value===NEW_BUILD.earningBase&&/^New build:/.test(String(note))&&!own.length?NEW_BUILD.earningBase:null;
@@ -352,11 +357,11 @@ function splitToSiblings_(sh,c,x,r,row,flags) {
   var owed=[];for(var f=1;f<=r.split.of;f++)if(paid.indexOf(f)<0&&skipped.indexOf(f)<0&&older.indexOf(f)<0)owed.push(f);
   var fr=function(list){return (list.length===1?'frame ':'frames ')+list.join(', ');};
   var mine=sh.getRange(row,c.EARNING),line='Split per frame: paid on '+fr(paid.sort(function(a,b){return a-b;}))+
-    (owed.length?'; '+fr(owed)+' get'+(owed.length===1?'s':'')+' theirs when scanned':'')+(skipped.length?'; '+fr(skipped)+' not added (Earning already had an entry)':'')+
-    (older.length?'; '+fr(older)+' older than 14 days, add by hand if part of this group':'')+'.';
+    (owed.length?'; '+fr(owed)+(owed.length===1?' gets its':' get their')+' share when scanned':'')+(skipped.length?'; '+fr(skipped)+' not added (Earning already had an entry)':'')+
+    (older.length?'; '+fr(older)+' with Date out blank or older than 14 days, add by hand if part of this group':'')+'.';
   var n=mine.getNote(),cut=n.lastIndexOf('\n'+PARTS_RECEIPT);
   mine.setNote(cut>=0?n.slice(0,cut)+'\n'+line+n.slice(cut):[n,line].filter(Boolean).join('\n'));
-  if(skipped.length||older.length)flags.push('Pins split per frame: '+fr(skipped.concat(older))+' not added automatically (Earning already had an entry, or older than 14 days); add by hand if not already included');
+  if(skipped.length||older.length)flags.push('Pins split per frame: '+fr(skipped.concat(older))+' not added automatically (Earning already had an entry, or Date out blank or older than 14 days); add by hand if not already included');
 }
 /**
  * Assembly (580625) is added to LB Earn (Kirsten, 2026-10-27): only on the first row, only when LB Earn still holds

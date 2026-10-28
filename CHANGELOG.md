@@ -18,6 +18,10 @@ From an audit of Kirsten's 10/27 edits (144 placed tags, about 60 hand fixes).
   0.13.31 (as 0.13.30 did for the 10/27 group) is never split on top; a rescan reading another count on a split group is
   flagged, not paid; a split reused from another ticket gets a "check it is the same group" flag; unmarked lines split
   at exactly 2 per frame; frames older than 14 days are named in the note, and "phone not checked" is noted.
+  Real-data replay of the two New Lenox groups: frames whose tickets were misread ("770763 4", "1707635") missed their
+  share, so a frame scanned within a day of the split also matches on name, N and phone. Result: the 10/27 group gets
+  $1.00 on all 8 frames (what Kirsten typed); the 10/22 group 11 of 12 (its misread duplicate "4 of 12" is held and the
+  pins row lists frame 8 as owed).
 
 ## 0.13.30-draft — daily scan count
 

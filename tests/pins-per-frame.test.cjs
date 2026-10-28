@@ -132,7 +132,7 @@ test('review of #31: a new-build frame gets its share on top of the $1.50 base; 
   write(t, tag(4, 8, { extras: '16 580602 pins', parts: [pins(16)] }));
   const e = earningBy(sh, c); assert.equal(e['7 of 8'], 2.5);
   const r4 = [...Array(20).keys()].map(k => k + 2).find(r => sh.get(r, c.SEQUENCE) === '4 of 8');
-  assert.match(sh.notes.get(sh.key(r4, c.EARNING)), /Split per frame: paid on frames 4, 7; frames 1, 2, 3, 5, 6, 8 get theirs when scanned\./);
+  assert.match(sh.notes.get(sh.key(r4, c.EARNING)), /Split per frame: paid on frames 4, 7; frames 1, 2, 3, 5, 6, 8 get their share when scanned\./);
 });
 
 test('review of #31: an unmarked 6 pins on a 2-frame group stays on its tag (only 2 per frame splits unmarked)', () => {
@@ -188,6 +188,17 @@ test('review of #31 round 2: a $1.50 she typed (no "New build:" note) is her ent
   const r = write(t, tag(4, 8, { extras: '16 580602 pins', parts: [pins(16)] }));
   assert.equal(sh.get(r7, c.EARNING), 1.5);
   assert.match(JSON.stringify(r.flags), /Pins split per frame: frame 7 not added automatically/);
+});
+
+test('October replay: frames with misread tickets scanned the same day still get their share', () => {
+  const t = load(), { sh, c } = modern(t);
+  write(t, tag(7, 8)); write(t, tag(4, 8, { extras: '16 580602 pins', parts: [pins(16)] }));
+  write(t, tag(3, 8, { ticket_number: '777063 4' })); write(t, tag(6, 8, { ticket_number: '1770635' })); write(t, tag(1, 8, { ticket_number: '777063' }));
+  const e = earningBy(sh, c); for (const i of [7, 4, 3, 6, 1]) assert.equal(e[i + ' of 8'], 1, 'frame ' + i);
+  const u = load({ now: new Date('2026-10-27T15:00:00Z') }), m = modern(u);
+  write(u, tag(4, 8, { extras: '16 580602 pins', parts: [pins(16)] }));
+  u.setNow(new Date('2026-10-30T15:00:00Z')); write(u, tag(1, 8, { ticket_number: '777063' }));
+  assert.equal(earningBy(m.sh, m.c)['1 of 8'] || '', '', 'days later with a misread ticket: not matched');
 });
 
 console.log(`${passed} pins per frame tests passed`);
