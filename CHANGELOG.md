@@ -8,8 +8,39 @@ From an audit of Kirsten's 10/27 edits (144 placed tags, about 60 hand fixes).
   N and the line is for the group (marked group-wide, or over 4 at 4 or fewer per frame). The pins tag gets its share;
   frames already on the tab get theirs then (only into a blank Earning with no receipt or formula, otherwise a note);
   frames scanned later pick theirs up from the receipts. Each share has its own receipt (scope [tab,"frames",id,k]),
-  so a rescan never pays twice. Uneven counts keep the old once-for-the-group credit. October: the 10/22 24-over-12
+  so a rescan never pays twice. Uneven counts keep the old once-for-the-group credit.
+- **Names from the group** (8 hand entries on one 9-tag New Lenox group): a group tag with no name takes the name its
+  siblings agree on (scanned today, same N, same ticket or within 50; disagreeing names are left for her); a named tag
+  fills siblings whose Name is blank. Always "(?)" with a cell note; a name is never replaced. Replay of all October
+  scans: 7 of that group's 8 blank rows get the name (the 8th has a 6-digit ticket); nothing else changes.
+- **Ticket suggestions from the group** (6 fixes got only the store series, 1 got none): a 6-digit group tag uses its
+  siblings' tickets (inside the group's range, not already used): one is "likely", two or three are listed. An 8-digit
+  read drops one digit into the store's series. The generic 8-digit note says "it may have an extra digit".
+- **Parts shorthand in Extras** (about 15 rows typed "2pins", "3rollrs"): the first row's Extras gets the parts the
+  scanner credited or found credited ("2 pins, 3 rollers"; "(whole group)" for an unsplit group count), each split frame
+  its own share; after the patio text on a patio door; never over text already there. Kirsten adds her "ok" after it. October: the 10/22 24-over-12
   and 10/27 16-over-8 New Lenox groups qualify; single-frame "2 pins" tags don't.
+  Independent review of the names / tickets / Extras features: a sibling with another Scans-log phone, or a tag with
+  the same "x of N", is never a name source or target (two "1 of 2" tags are two jobs), and the "No customer name" flag
+  goes when a name is filled; a group ticket is "likely" only when one candidate remains in a group missing only this
+  tag (candidates inside the siblings' ticket cluster, not already on the tab), else "could be" 1–3; an 8-digit read is
+  "likely" only with one fitting reading; Extras lists only parts actually credited (posted now, or a paid earlier
+  receipt for the same client, labelled "(row N)"); the 8-digit note says "it may have an extra digit".
+  Real-data ticket replay (37 October fixes) after those changes: a one-ticket order (Homer Glen) names that ticket even
+  though it is on the tab, and gaps inside the group's range come first when they can hold every unscanned tag.
+  Result: 14 exact suggestions and 3 more with the right ticket in a short list (live: 13 exact); no wrong "likely"
+  beyond the two where Kirsten's typed ticket looks like the typo.
+  Round 2 of the review: with no phones on the tags, two rows with the same "x of N" (named or blank) mean two groups,
+  so nothing is borrowed or filled; a borrowed name takes the group's saved row only within 10 tickets of a named
+  tag; the one-ticket-order rule needs two different "x of N" on that ticket (one tag placed twice is not one); a
+  "likely" needs no other row with this tag's "x of N" and must fit the order when tickets rise with "x of N".
+  Every guard now has a test that fails without it.
+  Round 3: only a clearly read name (not "(?)", so never a name the scanner filled) counts for the within-10 rule, so
+  a chain of fills can't move another customer's tag into a saved row; the first or last tag of a complete group whose
+  tickets rise gets "could be" the ticket just outside the range (round 4: never "likely", another job's
+  ticket may sit between). Replay after round 3: the same 7 blank rows are named,
+  but the two tags in the group's second ticket book (32 tickets from the named tag) now go to the next free rows, as
+  they do live today, instead of the group's saved rows.
   Independent review of #31: one split per group and SKU (a second pins line or a rescan with another ticket reading
   reuses it); a group paid whole before 0.13.31 is never split on top; the phone (split and Scans log) must not differ;
   unmarked lines split only at 2 per frame; a new-build frame gets its share on top of the $1.50 base; the pins row
@@ -18,7 +49,7 @@ From an audit of Kirsten's 10/27 edits (144 placed tags, about 60 hand fixes).
   0.13.31 (as 0.13.30 did for the 10/27 group) is never split on top; a rescan reading another count on a split group is
   flagged, not paid; a split reused from another ticket gets a "check it is the same group" flag; unmarked lines split
   at exactly 2 per frame; frames older than 14 days are named in the note, and "phone not checked" is noted.
-  Real-data replay of the two New Lenox groups: frames whose tickets were misread ("770763 4", "1707635") missed their
+  Real-data replay of the two New Lenox groups: frames whose tickets were misread (a space inside, a wrong first digit) missed their
   share, so a frame scanned within a day of the split also matches on name, N and phone. Result: the 10/27 group gets
   $1.00 on all 8 frames (what Kirsten typed); the 10/22 group 11 of 12 (its misread duplicate "4 of 12" is held and the
   pins row lists frame 8 as owed). Round 4: the same-day match applies only to a ticket that looks misread (not a clean 7 digits,

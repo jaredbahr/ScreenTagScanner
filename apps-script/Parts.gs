@@ -165,7 +165,7 @@ function splitPerFrame_(x,sku,p,group) {
 }
 /**
  * A split receipt's group is this tag's group: same N, a close name, no phone that says otherwise, and a close ticket
- * or a scan within a day of the split (the October replay: misread tickets like "770763 4" lost their frame's share).
+ * or a scan within a day of the split (the October replay: misread tickets (a space inside, a digit missing) lost their frame's share).
  */
 function splitMatches_(split,x) {
   var name=sequenceIdentity_(sheetName_(x)),phone=phoneKey_(x.phone),t=String(x.ticket_number||'');
@@ -175,8 +175,8 @@ function splitMatches_(split,x) {
   return sameVisit&&misreadTicketMatch_(t,split.ticket)&&(name===split.name||!!(phone&&split.phone)); // review of #31: Ward / Wood
 }
 /**
- * A misread ticket of the same group: not a clean 7-digit read ("770763 4", "770763"), or sharing a run of 5 digits
- * with the group's ticket ("1707635" / "7707633"). Used only for tags scanned within a day of the split.
+ * A misread ticket of the same group: not a clean 7-digit read ("777763 4", "777763"), or sharing a run of 5 digits
+ * with the group's ticket ("1777635" / "7777633"). Used only for tags scanned within a day of the split.
  */
 function misreadTicketMatch_(t,groupTicket) {
   t=String(t||'');var g=String(groupTicket||'').replace(/\D/g,''),d=t.replace(/\D/g,'');
@@ -194,6 +194,31 @@ function oldGroupPaid_(r,sku,x,total) {
   if(r.split||r.sku!==sku||!ticketsClose_(String(scope[1]),String(x.ticket_number||''))||!namesClose_(r.customer,sequenceIdentity_(sheetName_(x))))return false;
   if(r.group&&scope[2]==='group')return scope[3]===Number(x.tag_count);
   return scope[2]==='tag'&&new RegExp('^\\d+ of '+Number(x.tag_count)+'$').test(String(scope[3]))&&r.quantity===total;
+}
+/**
+ * Short parts text for Extras, the way Kirsten types it there ("2 pins", "3 rollers"; 10/27 audit: about 15 rows). From
+ * what the scanner credited or found already credited, per frame for split pins. Empty when nothing is known.
+ */
+var PART_SHORT = { '580602':'pin','580603':'clip','580604':'tab','580607':'button','580401':'corner','580402':'latch','580404':'roller',
+  '580409':'patio corner','580406':'Pella corner','580407':'Sears corner/latch','580414':'Andersen roller','580605':'spreader',
+  '580601':'corner set','580625':'cut','580408':'pet grille','580301':'wood frame labor' };
+/**
+ * Only what was credited on this row (Earning or LB Earn), or already paid elsewhere for this customer and named so
+ * ("(whole group, row 2)"); parts held for review are not listed (review: Extras showed uncredited parts).
+ */
+function partsShorthand_(plan) {
+  if (!plan) return '';
+  var seen = {}, out = [];
+  var word = function (p) { var w = PART_SHORT[p.sku]; return p.unit === 'job' ? w : p.quantity + ' ' + w + (p.quantity === 1 ? '' : (/(ch|sh)$/.test(w) ? 'es' : 's')); };
+  plan.posted.forEach(function (p) {
+    if (!PART_SHORT[p.sku] || seen[p.sku] || !(p.quantity >= 1)) return; seen[p.sku] = true;
+    out.push(word(p) + (p.group && !p.split ? ' (whole group)' : ''));
+  });
+  plan.references.forEach(function (r) {
+    var p = r.prior; if (!p || !PART_SHORT[p.sku] || seen[p.sku] || r.sameClient === false || !p.paid || !(p.quantity >= 1)) return; seen[p.sku] = true;
+    out.push(word(p) + ' (' + (p.group && !p.split ? 'whole group, ' : '') + 'row ' + p.row + ')');
+  });
+  return out.join(', ');
 }
 function partsReceipts_(text) {
   var out=[];String(text||'').split('\n').forEach(function(line){
@@ -367,6 +392,7 @@ function splitToSiblings_(sh,c,x,r,row,flags) {
     cell.setNote(human+'\n'+PARTS_RECEIPT+JSON.stringify([rec]));
     cell.setNumberFormat('$0.00').setValue(rec.expectedTotal);rec.status='posted';
     cell.setNote(human+'\n'+PARTS_RECEIPT+JSON.stringify([rec]));cell.setBackground(FLAG_COLOR);paid.push(k);
+    if(c.EXTRAS&&PART_SHORT[r.sku]){var exc=sh.getRange(at,c.EXTRAS);if(exc.getValues()[0][0]==='')exc.setValue(safeCell_(partsShorthand_({posted:[rec],references:[]})));}
   }
   var owed=[];for(var f=1;f<=r.split.of;f++)if(paid.indexOf(f)<0&&skipped.indexOf(f)<0&&older.indexOf(f)<0)owed.push(f);
   var fr=function(list){return (list.length===1?'frame ':'frames ')+list.join(', ');};

@@ -48,7 +48,7 @@ Each store tab holds **two side-by-side tables**:
 | H | LB Earn | $ | – | **Filled:** UI × labor rate ($0.17 / $0.20 / $0.22 pet). What they earn ✅ (pet rate from tag, unconfirmed) |
 | I | Spline | $ | `=F*0.07` | automatic |
 | J | Spl Earn | $ | `=F*0.01` | automatic |
-| K | Extras | text | – | Kirsten's notes. Patio doors only (0.13.28): "new patio door W x H" on the new row |
+| K | Extras | text | – | Kirsten's notes. On a new row the scanner writes the parts it read ("2 pins, 3 rollers", 0.13.31) and, for patio doors, "new patio door W x H" first; never over text already there |
 | L | Earning | $ | – | Kirsten enters her extras earnings + notes. Script adds a **cell note listing the tag's extras** and highlights it |
 
 Store total (K752 etc.) = SUM(H) + SUM(J) + SUM(L). `Totals` pulls H, J, L per store.
@@ -144,6 +144,15 @@ Window mapping is built from Kirsten's description and the first real October wi
     digits readable). The scanner prefers the full printed number. A 4–5 digit reading keeps its value and gets a
     ticket-cell note with the likely 7-digit number from that store's series, or both numbers when two series
     share those last digits. Notes stay on the cell until someone clears them; correcting the value doesn't remove them.
+    Since 0.13.31 a 6-digit group tag uses its group's tickets. When siblings with at least two different "x of N"
+    all read one ticket (one ticket per order, as at Homer Glen) that ticket is "likely". Otherwise candidates sit inside the siblings' ticket clusters (gap
+    10 or less), widened by the number of tags still missing only when the open tickets inside can't hold them, and
+    are not already on the tab. One candidate in a group with only this tag missing (and no
+    other row with this tag's "x of N") is "likely", unless the siblings' tickets rise with "x of N" and the candidate
+    is out of that order; otherwise 1–3
+    candidates are listed as "could be"; the first or last tag of a complete group whose tickets rise with "x of N"
+    gets "could be" the ticket just outside the range; more gives no group hint (the store hint stays). An 8-digit reading is
+    "likely" only when exactly one dropped digit lands near the store's series, else "could be A or B" (up to 3).
 
 23. **Group rows stay together** (Kirsten's request, approved by Jared 2026-10-22). The first tag of an "x of N" group
     (N = 2–12) holds the empty rows right after it, grey with a column-A note. Later tags of the same group (same
@@ -164,6 +173,13 @@ Window mapping is built from Kirsten's description and the first real October wi
     row is saved per extra tag right after the group, typed-in held rows are released, a smaller N frees nothing,
     and the Tag x of N cell gets a note. Since 0.13.29 the hold also keeps the full customer name, so a first name
     only on some tags fits the full name on another for the phone match.
+23b. **Names from the group** (0.13.31, Kirsten 2026-10-27): a group tag with no name takes the name its siblings
+    (scanned today, same N, same ticket or within 50) agree on; a named tag fills siblings whose Name is blank. Always
+    "(?)" with a note; a name is never replaced; disagreeing names are left for her. A sibling whose Scans-log phone
+    differs (both have one) is another customer and is ignored. Two rows with the same "x of N" in the window (named or
+    blank, this tag included) mean two groups: nothing is borrowed or filled. A borrowed name takes the group's saved
+    row only when the ticket is within 10 of a clearly read name's (not "(?)"); otherwise the tag goes to the next free row. The "No
+    customer name" flag is dropped when a name is filled.
 24. **Group check** (2026-10-23, from the October 22 scans). A group tag is compared with its group's tags already
     on the tab (same N, close name, ticket close or within 1000). Disagreeing name, ticket or "x of N" gets a note on
     that one cell (pale, not yellow). Values are never changed. Since 0.13.26 a looser match (ticket

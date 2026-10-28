@@ -103,6 +103,9 @@
     <h3>0.13.31 &middot; Oct 28</h3>
     <ul>
       <li>Pins written once for a whole group (like "16 pins" on one of 8 tags) are split per frame: each frame's row gets its share ($1.00 for 2 pins), whichever order the tags are scanned. An Earning you already typed on a frame is never changed; that row gets a note instead.</li>
+      <li>A group tag with no name takes the name the group's other tags read (same day, same "of N", tickets close), marked (?) with a note. When the named tag comes later, it fills the blank names already on the sheet. A name is never replaced.</li>
+      <li>Better ticket suggestions: a ticket missing a digit uses the group's other tickets to name the likely one (or two or three choices), and a ticket with an extra digit gets the likely 7-digit one (or the choices).</li>
+      <li>Extras is filled with the parts the scanner credited ("2 pins", "3 rollers", "2 cuts"), on each frame for split pins. Add your "ok" after it. If Extras already has text, it's left alone.</li>
     </ul>
     <h3>0.13.30 &middot; Oct 27</h3>
     <ul>
