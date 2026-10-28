@@ -13,7 +13,14 @@ From an audit of Kirsten's 10/27 edits (144 placed tags, about 60 hand fixes).
   siblings agree on (scanned today, same N, same ticket or within 50; disagreeing names are left for her); a named tag
   fills siblings whose Name is blank. Always "(?)" with a cell note; a name is never replaced. Replay of all October
   scans: 7 of that group's 8 blank rows get the name (the 8th has a 6-digit ticket), and the last two blank tags now
-  land in the group's held rows (fewer blank lines); nothing else changes. October: the 10/22 24-over-12
+  land in the group's held rows (fewer blank lines); nothing else changes.
+- **Ticket suggestions from the group** (6 fixes got only "7707xxx", 1 got none): a 6-digit group tag uses its
+  siblings' tickets (inside the group's range, not already used): one is "likely", two or three are listed. An 8-digit
+  read drops one digit into the store's series (closest to a ticket on the tab wins). The generic 8-digit note says "a
+  digit may be written twice".
+- **Parts shorthand in Extras** (about 15 rows typed "2pins", "3rollrs"): the first row's Extras gets the parts the
+  scanner credited or found credited ("2 pins, 3 rollers"; "(whole group)" for an unsplit group count), each split frame
+  its own share; after the patio text on a patio door; never over text already there. Kirsten adds her "ok" after it. October: the 10/22 24-over-12
   and 10/27 16-over-8 New Lenox groups qualify; single-frame "2 pins" tags don't.
   Independent review of #31: one split per group and SKU (a second pins line or a rescan with another ticket reading
   reuses it); a group paid whole before 0.13.31 is never split on top; the phone (split and Scans log) must not differ;

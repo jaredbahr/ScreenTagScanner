@@ -384,6 +384,7 @@ function splitToSiblings_(sh,c,x,r,row,flags) {
     cell.setNote(human+'\n'+PARTS_RECEIPT+JSON.stringify([rec]));
     cell.setNumberFormat('$0.00').setValue(rec.expectedTotal);rec.status='posted';
     cell.setNote(human+'\n'+PARTS_RECEIPT+JSON.stringify([rec]));cell.setBackground(FLAG_COLOR);paid.push(k);
+    if(c.EXTRAS&&PART_SHORT[r.sku]){var exc=sh.getRange(at,c.EXTRAS);if(exc.getValues()[0][0]==='')exc.setValue(safeCell_(r.quantity+' '+PART_SHORT[r.sku]+(r.quantity===1?'':'s')));}
   }
   var owed=[];for(var f=1;f<=r.split.of;f++)if(paid.indexOf(f)<0&&skipped.indexOf(f)<0&&older.indexOf(f)<0)owed.push(f);
   var fr=function(list){return (list.length===1?'frame ':'frames ')+list.join(', ');};
