@@ -1125,6 +1125,13 @@ function writeToStoreTab_(ss, x, reasons) {
       sh.getRange(row, c.EXTRAS).setValue(safeCell_('new patio door' + size));
     }
     applyPartsEarnings_(sh, row, c, x, i === 0, isBuild ? NEW_BUILD.earningBase : 0, labor, flags);
+    // Kirsten types the parts in Extras ("2 pins"; 10/27 audit). Filled on the first row when blank, or after the
+    // scanner's own patio text; she adds her "ok" after it.
+    var shorthand = i === 0 && c.EXTRAS ? partsShorthand_(x._parts_plan) : '';
+    if (shorthand) {
+      var ex = sh.getRange(row, c.EXTRAS), had = String(ex.getValues()[0][0]);
+      if (had === '' || /^new patio door/.test(had)) ex.setValue(safeCell_(had ? had + ', ' + shorthand : shorthand));
+    }
     applyExtraLabor_(sh, row, c, x, i === 0, labor, flags);
     showReview_(sh,row,c,flags);
   });

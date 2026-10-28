@@ -174,6 +174,23 @@ function oldGroupPaid_(r,sku,x) {
   return !r.split&&r.group&&r.sku===sku&&scope[2]==='group'&&scope[3]===Number(x.tag_count)&&ticketsClose_(String(scope[1]),String(x.ticket_number||''))&&
     namesClose_(r.customer,sequenceIdentity_(sheetName_(x)));
 }
+/**
+ * Short parts text for Extras, the way Kirsten types it there ("2 pins", "3 rollers"; 10/27 audit: about 15 rows). From
+ * what the scanner credited or found already credited, per frame for split pins. Empty when nothing is known.
+ */
+var PART_SHORT = { '580602':'pin','580603':'clip','580604':'tab','580607':'button','580401':'corner','580402':'latch','580404':'roller',
+  '580409':'patio corner','580406':'Pella corner','580407':'Sears corner','580414':'Andersen roller','580605':'spreader',
+  '580601':'corner set','580625':'cut','580408':'pet grille','580301':'wood frame labor' };
+function partsShorthand_(plan) {
+  if (!plan) return '';
+  var seen = {}, out = [];
+  plan.items.concat(plan.references.map(function (r) { return r.prior; })).forEach(function (p) {
+    var word = PART_SHORT[p.sku]; if (!word || seen[p.sku] || !(p.quantity >= 1)) return; seen[p.sku] = true;
+    var q = p.quantity;
+    out.push(q + ' ' + word + (q === 1 ? '' : (/h$/.test(word) ? 'es' : 's')) + (p.group && !p.split ? ' (whole group)' : ''));
+  });
+  return out.join(', ');
+}
 function partsReceipts_(text) {
   var out=[];String(text||'').split('\n').forEach(function(line){
     if(line.indexOf(PARTS_RECEIPT)!==0)return;
