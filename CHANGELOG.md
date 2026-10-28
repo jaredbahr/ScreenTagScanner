@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.13.31-draft — automation from the 10/27 audit
+
+From an audit of Kirsten's 10/27 edits (144 placed tags, about 60 hand fixes).
+- **Group pins split per frame** (8 hand entries on one New Lenox group; "I wanted to see it on each frame"): $0.50
+  hardware (580602/580603/580604/580607) written once for a group is split evenly per frame when the count divides by
+  N and the line is for the group (marked group-wide, or over 4 at 4 or fewer per frame). The pins tag gets its share;
+  frames already on the tab get theirs then (only into a blank Earning with no receipt or formula, otherwise a note);
+  frames scanned later pick theirs up from the receipts. Each share has its own receipt (scope [tab,"frames",id,k]),
+  so a rescan never pays twice. Uneven counts keep the old once-for-the-group credit. October: the 10/22 24-over-12
+  and 10/27 16-over-8 New Lenox groups qualify; single-frame "2 pins" tags don't.
+
 ## 0.13.30-draft — daily scan count
 
 Kirsten (2026-10-27): "Is there a way to keep a daily scan count somewhere?" Each saved scan's reply to the phone page
