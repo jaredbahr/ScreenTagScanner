@@ -6,7 +6,9 @@ Kirsten (2026-10-27): "Is there a way to keep a daily scan count somewhere?" Eac
 now carries `today`: the tags placed on a store tab today (Chicago), counted from the Scans log, so no sheet change.
 Rescans and scans that weren't placed don't count. The page adds "Today: N tags saved." under the result and keeps
 "Today: N" in the header (remembered on the phone for that day only). A failure reading the count never fails a
-saved scan. The Shortcut's JSON reply is unchanged.
+saved scan. The Shortcut's JSON reply is unchanged. The count covers every phone but reaches a phone when it scans;
+the header hides a count from an earlier day when the page comes back. It reads the active month's Scans log, so a
+mid-day new month starts it again.
 
 ## 0.13.29-draft — assembly / cuts in LB Earn; first-name group tags
 

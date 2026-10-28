@@ -33,6 +33,12 @@ test('the count starts again each Chicago day', () => {
   assert.equal(t.scan(tag('7770906', { width_in: 35, billable_inches: 75 })).today, 1);
 });
 
+test('window tags count too; a group tag counts once', () => {
+  const t = page(load({ now: new Date('2026-10-27T15:00:00Z') }));
+  t.scan(tag('7770911'));
+  assert.equal(t.scan(tag('7770912', { item_type: 'window', panes: 1, glass_price: 20, job_evidence: '1 580503 Labor $24.99', width_in: 20, height_in: 30, billable_inches: null })).today, 2);
+});
+
 test('a failure reading the count never fails a saved scan', () => {
   const t = page(load({ now: new Date('2026-10-27T15:00:00Z') }));
   t.ctx.todayPlacedCount_ = () => { throw Error('synthetic'); };

@@ -104,7 +104,7 @@
     "tests/group-phone.test.cjs": 17,
     "tests/patio-door.test.cjs": 14,
     "tests/assembly-lb.test.cjs": 14,
-    "tests/daily-count.test.cjs": 5
+    "tests/daily-count.test.cjs": 6
   },
   "allowWorkflowDefinitions": true
 }
