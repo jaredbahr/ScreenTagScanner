@@ -13,18 +13,26 @@ const tag = (i, n, tk, x = {}) => ({ store: 'New Lenox', customer_name: 'Nick Sy
   ticket_number: tk, tag_index: i, tag_count: n, width_in: 20 + i, height_in: 30, billable_inches: 50 + i, ...x });
 const ticketNote = (sh, c, seq) => { const r = [...Array(30).keys()].map(k => k + 2).find(k => sh.get(k, c.SEQUENCE) === seq); return sh.notes.get(sh.key(r, c.TICKET)) || ''; };
 
-test('one gap in the group: "likely" the ticket that fits (770764 -> 7707641)', () => {
+test('every other tag scanned and one gap: "likely" the ticket that fits (777764 -> 7777641)', () => {
   const t = load(), { sh, c } = modern(t);
-  [[1, '7777640'], [4, '7777642'], [5, '7777643'], [6, '7777644'], [8, '7777645']].forEach(([i, tk]) => t.scan(tag(i, 9, tk)));
-  t.scan(tag(3, 9, '777764'));
-  assert.match(ticketNote(sh, c, '3 of 9'), /Ticket # 777764 is missing a digit: likely 7777641 \(fits this group's tickets\)/);
+  [[1, '7777640'], [2, '7777642'], [4, '7777643'], [5, '7777644'], [6, '7777645']].forEach(([i, tk]) => t.scan(tag(i, 6, tk)));
+  t.scan(tag(3, 6, '777764'));
+  assert.match(ticketNote(sh, c, '3 of 6'), /Ticket # 777764 is missing a digit: likely 7777641 \(fits this group's tickets\)/);
 });
 
-test('two or three gaps: the candidates are listed (770763 -> 7707632, 7707634 or 7707635)', () => {
+test('two or three gaps: the candidates are listed (777763 -> 7777632, 7777634 or 7777635)', () => {
   const t = load(), { sh, c } = modern(t);
-  [[2, '7777631'], [4, '7777633'], [5, '7777636'], [7, '7777637'], [8, '7777638']].forEach(([i, tk]) => t.scan(tag(i, 8, tk)));
-  t.scan(tag(1, 8, '777763'));
-  assert.match(ticketNote(sh, c, '1 of 8'), /could be 7777632, 7777634 or 7777635 \(gaps in this group's tickets\)/);
+  [[2, '7777631'], [4, '7777633'], [5, '7777636'], [6, '7777637'], [3, '7777638']].forEach(([i, tk]) => t.scan(tag(i, 6, tk)));
+  t.scan(tag(1, 6, '777763'));
+  assert.match(ticketNote(sh, c, '1 of 6'), /could be 7777632, 7777634 or 7777635 \(from this group's tickets\)/);
+});
+
+test('review: with tags still unscanned there is no "likely"; the end of the range is a choice too', () => {
+  const t = load(), { sh, c } = modern(t);
+  [[2, '7777641'], [4, '7777643'], [5, '7777644']].forEach(([i, tk]) => t.scan(tag(i, 5, tk)));
+  t.scan(tag(1, 5, '777764'));
+  const note = ticketNote(sh, c, '1 of 5');
+  assert.doesNotMatch(note, /likely 7777642/); assert.match(note, /could be 7777640, 7777642 or 7777645/);
 });
 
 test("another customer's tickets never narrow it; with one sibling the store hint is kept", () => {
@@ -40,7 +48,7 @@ test("an 8-digit read: one digit dropped into the store's series (81592855 -> 81
   t.scan(one('7779250', 1)); t.scan(one('7779260', 2));
   t.scan(one('77792855', 3));
   const note = [...sh.notes.values()].find(v => v.includes('77792855')) || '';
-  assert.match(note, /Ticket # 77792855 has 8 digits: likely 7779255/);
+  assert.match(note, /Ticket # 77792855 has 8 digits: could be 7779255 or 7779285/, 'two readings fit the series: both listed');
 });
 
 console.log(`${passed} group ticket hint tests passed`);

@@ -16,12 +16,17 @@ From an audit of Kirsten's 10/27 edits (144 placed tags, about 60 hand fixes).
   land in the group's held rows (fewer blank lines); nothing else changes.
 - **Ticket suggestions from the group** (6 fixes got only "7707xxx", 1 got none): a 6-digit group tag uses its
   siblings' tickets (inside the group's range, not already used): one is "likely", two or three are listed. An 8-digit
-  read drops one digit into the store's series (closest to a ticket on the tab wins). The generic 8-digit note says "a
-  digit may be written twice".
+  read drops one digit into the store's series. The generic 8-digit note says "it may have an extra digit".
 - **Parts shorthand in Extras** (about 15 rows typed "2pins", "3rollrs"): the first row's Extras gets the parts the
   scanner credited or found credited ("2 pins, 3 rollers"; "(whole group)" for an unsplit group count), each split frame
   its own share; after the patio text on a patio door; never over text already there. Kirsten adds her "ok" after it. October: the 10/22 24-over-12
   and 10/27 16-over-8 New Lenox groups qualify; single-frame "2 pins" tags don't.
+  Independent review of the names / tickets / Extras features: a sibling with another Scans-log phone, or a tag with
+  the same "x of N", is never a name source or target (two "1 of 2" tags are two jobs), and the "No customer name" flag
+  goes when a name is filled; a group ticket is "likely" only when one candidate remains in a group missing only this
+  tag (candidates inside the siblings' ticket cluster, not already on the tab), else "could be" 1–3; an 8-digit read is
+  "likely" only with one fitting reading; Extras lists only parts actually credited (posted now, or a paid earlier
+  receipt for the same client, labelled "(row N)"); the 8-digit note says "it may have an extra digit".
   Independent review of #31: one split per group and SKU (a second pins line or a rescan with another ticket reading
   reuses it); a group paid whole before 0.13.31 is never split on top; the phone (split and Scans log) must not differ;
   unmarked lines split only at 2 per frame; a new-build frame gets its share on top of the $1.50 base; the pins row

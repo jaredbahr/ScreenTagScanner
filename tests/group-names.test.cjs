@@ -36,12 +36,26 @@ test('only blank names are filled; a typed-in or different name is never replace
   assert.equal(nameOf(sh, c, '1 of 3'), 'Synthanson (?)'); assert.equal(nameOf(sh, c, '2 of 3'), 'Typed');
 });
 
-test('not the same group: another count, a ticket more than 50 away, or another day', () => {
+test('not the same group: another count, a ticket more than 50 away, or another day (each alone)', () => {
   const t = load({ now: new Date('2026-10-27T15:00:00Z') }), { sh, c } = modern(t);
   t.scan(blank(1, 4, '7770601')); t.scan(blank(1, 3, '7770900'));
-  t.setNow(new Date('2026-10-28T15:00:00Z'));
   t.scan(named(2, 3, '7770602'));
-  assert.equal(nameOf(sh, c, '1 of 4'), ''); assert.equal(nameOf(sh, c, '1 of 3'), '', 'yesterday, and a far ticket');
+  assert.equal(nameOf(sh, c, '1 of 4'), '', 'another count'); assert.equal(nameOf(sh, c, '1 of 3'), '', 'a far ticket, same day');
+  const u = load({ now: new Date('2026-10-26T15:00:00Z') }), m = modern(u);
+  u.scan(blank(1, 3, '7770601'));
+  u.setNow(new Date('2026-10-27T15:00:00Z')); u.scan(named(2, 3, '7770602'));
+  assert.equal(nameOf(m.sh, m.c, '1 of 3'), '', 'a near ticket, yesterday');
+});
+
+test("review: another customer's unnamed tags never borrow a name or take its saved row", () => {
+  const t = load(), { sh, c } = modern(t);
+  t.scan(named(1, 2, '7770600', 'Synthers'));
+  t.scan({ ...blank(1, 2, '7770620'), phone: '8155550999' }); t.scan({ ...blank(2, 2, '7770621'), phone: '8155550999' });
+  const rows = [...Array(10).keys()].map(k => k + 2).filter(r => sh.get(r, c.TICKET) === '7770620' || sh.get(r, c.TICKET) === '7770621');
+  for (const r of rows) assert.equal(sh.get(r, c.NAME), '', 'row ' + r);
+  const u = load(), m = modern(u);
+  u.scan(blank(1, 2, '7770620')); u.scan(named(1, 2, '7770600', 'Synthers'));
+  assert.equal(m.sh.get(2, m.c.NAME), '', 'a named "1 of 2" never fills another blank "1 of 2"');
 });
 
 test('when the named tags disagree, a blank tag is left for her', () => {

@@ -144,6 +144,10 @@ Window mapping is built from Kirsten's description and the first real October wi
     digits readable). The scanner prefers the full printed number. A 4–5 digit reading keeps its value and gets a
     ticket-cell note with the likely 7-digit number from that store's series, or both numbers when two series
     share those last digits. Notes stay on the cell until someone clears them; correcting the value doesn't remove them.
+    Since 0.13.31 a 6-digit group tag uses its group's tickets: candidates sit inside the siblings' ticket cluster
+    (gap 10 or less), widened by the number of tags still missing, and not already on the tab. One candidate in a group
+    with only this tag missing is "likely"; otherwise 1–3 candidates are listed as "could be". An 8-digit reading is
+    "likely" only when exactly one dropped digit lands near the store's series, else "could be A or B" (up to 3).
 
 23. **Group rows stay together** (Kirsten's request, approved by Jared 2026-10-22). The first tag of an "x of N" group
     (N = 2–12) holds the empty rows right after it, grey with a column-A note. Later tags of the same group (same
@@ -166,7 +170,9 @@ Window mapping is built from Kirsten's description and the first real October wi
     only on some tags fits the full name on another for the phone match.
 23b. **Names from the group** (0.13.31, Kirsten 2026-10-27): a group tag with no name takes the name its siblings
     (scanned today, same N, same ticket or within 50) agree on; a named tag fills siblings whose Name is blank. Always
-    "(?)" with a note; a name is never replaced; disagreeing names are left for her.
+    "(?)" with a note; a name is never replaced; disagreeing names are left for her. A sibling whose Scans-log phone
+    differs is another customer and is ignored. A blank tag never fills from, or fills, a tag with its own "x of N"
+    (two "1 of 2" rows are two jobs). The "No customer name" flag is dropped when a name is filled.
 24. **Group check** (2026-10-23, from the October 22 scans). A group tag is compared with its group's tags already
     on the tab (same N, close name, ticket close or within 1000). Disagreeing name, ticket or "x of N" gets a note on
     that one cell (pale, not yellow). Values are never changed. Since 0.13.26 a looser match (ticket

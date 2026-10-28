@@ -200,15 +200,23 @@ function oldGroupPaid_(r,sku,x,total) {
  * what the scanner credited or found already credited, per frame for split pins. Empty when nothing is known.
  */
 var PART_SHORT = { '580602':'pin','580603':'clip','580604':'tab','580607':'button','580401':'corner','580402':'latch','580404':'roller',
-  '580409':'patio corner','580406':'Pella corner','580407':'Sears corner','580414':'Andersen roller','580605':'spreader',
+  '580409':'patio corner','580406':'Pella corner','580407':'Sears corner/latch','580414':'Andersen roller','580605':'spreader',
   '580601':'corner set','580625':'cut','580408':'pet grille','580301':'wood frame labor' };
+/**
+ * Only what was credited on this row (Earning or LB Earn), or already paid elsewhere for this customer and named so
+ * ("(whole group, row 2)"); parts held for review are not listed (review: Extras showed uncredited parts).
+ */
 function partsShorthand_(plan) {
   if (!plan) return '';
   var seen = {}, out = [];
-  plan.items.concat(plan.references.map(function (r) { return r.prior; })).forEach(function (p) {
-    var word = PART_SHORT[p.sku]; if (!word || seen[p.sku] || !(p.quantity >= 1)) return; seen[p.sku] = true;
-    var q = p.quantity;
-    out.push(q + ' ' + word + (q === 1 ? '' : (/h$/.test(word) ? 'es' : 's')) + (p.group && !p.split ? ' (whole group)' : ''));
+  var word = function (p) { var w = PART_SHORT[p.sku]; return p.unit === 'job' ? w : p.quantity + ' ' + w + (p.quantity === 1 ? '' : (/(ch|sh)$/.test(w) ? 'es' : 's')); };
+  plan.posted.forEach(function (p) {
+    if (!PART_SHORT[p.sku] || seen[p.sku] || !(p.quantity >= 1)) return; seen[p.sku] = true;
+    out.push(word(p) + (p.group && !p.split ? ' (whole group)' : ''));
+  });
+  plan.references.forEach(function (r) {
+    var p = r.prior; if (!p || !PART_SHORT[p.sku] || seen[p.sku] || r.sameClient === false || !p.paid || !(p.quantity >= 1)) return; seen[p.sku] = true;
+    out.push(word(p) + ' (' + (p.group && !p.split ? 'whole group, ' : '') + 'row ' + p.row + ')');
   });
   return out.join(', ');
 }
@@ -384,7 +392,7 @@ function splitToSiblings_(sh,c,x,r,row,flags) {
     cell.setNote(human+'\n'+PARTS_RECEIPT+JSON.stringify([rec]));
     cell.setNumberFormat('$0.00').setValue(rec.expectedTotal);rec.status='posted';
     cell.setNote(human+'\n'+PARTS_RECEIPT+JSON.stringify([rec]));cell.setBackground(FLAG_COLOR);paid.push(k);
-    if(c.EXTRAS&&PART_SHORT[r.sku]){var exc=sh.getRange(at,c.EXTRAS);if(exc.getValues()[0][0]==='')exc.setValue(safeCell_(r.quantity+' '+PART_SHORT[r.sku]+(r.quantity===1?'':'s')));}
+    if(c.EXTRAS&&PART_SHORT[r.sku]){var exc=sh.getRange(at,c.EXTRAS);if(exc.getValues()[0][0]==='')exc.setValue(safeCell_(partsShorthand_({posted:[rec],references:[]})));}
   }
   var owed=[];for(var f=1;f<=r.split.of;f++)if(paid.indexOf(f)<0&&skipped.indexOf(f)<0&&older.indexOf(f)<0)owed.push(f);
   var fr=function(list){return (list.length===1?'frame ':'frames ')+list.join(', ');};
