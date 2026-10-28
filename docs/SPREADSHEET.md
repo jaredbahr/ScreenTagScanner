@@ -116,6 +116,11 @@ Window mapping is built from Kirsten's description and the first real October wi
    Builds still get none (covered by the build labor); windows keep it in Other Earn. With any written-in additional
    labor line on the tag it stays in Earning (as before) with a note; an LB Earn that is blank, a formula or changed
    leaves it for her with a note. The Earning note says when assembly went to LB Earn.
+   Since 0.13.31 $0.50 hardware (pins, clips, tabs, buttons) written once for a whole group is split evenly per frame
+   when the count divides by N and the line is for the group (marked, or unmarked at exactly 2 per frame with more than
+   4 in all; Kirsten, 2026-10-27): each frame's row gets its share with its own receipt (on top of a $1.50 new-build
+   base); a frame whose Earning she already filled gets a note and the pins row a flag. Same tab and month only; the
+   pins row lists the frames still to come.
 16. **Unresolved scans require reconciliation.** NOT PLACED/PENDING/INTERRUPTED rows are marked **orange**, and later phone replies report that earlier scans need reconciliation. Existing or partial store rows may already be present. Check them first; add a row only after confirming it is missing. Clear Needs Review "YES" only after reconciliation. Controlled RESCAN rows are excluded from the advisory count; OCR review text never decides whether a row counts. If this optional count read fails after a completed save, the phone retains confirmed success and reports that earlier review status is unavailable.
 17. **Interrupted saves don't duplicate.** The `Scans` row is written first (PENDING) and finished after the store
    write, so a retry after a timeout says "Already scanned" and points at the store tab instead of adding a second row.

@@ -1,5 +1,30 @@
 # Changelog
 
+## 0.13.31-draft — automation from the 10/27 audit
+
+From an audit of Kirsten's 10/27 edits (144 placed tags, about 60 hand fixes).
+- **Group pins split per frame** (8 hand entries on one New Lenox group; "I wanted to see it on each frame"): $0.50
+  hardware (580602/580603/580604/580607) written once for a group is split evenly per frame when the count divides by
+  N and the line is for the group (marked group-wide, or over 4 at 4 or fewer per frame). The pins tag gets its share;
+  frames already on the tab get theirs then (only into a blank Earning with no receipt or formula, otherwise a note);
+  frames scanned later pick theirs up from the receipts. Each share has its own receipt (scope [tab,"frames",id,k]),
+  so a rescan never pays twice. Uneven counts keep the old once-for-the-group credit. October: the 10/22 24-over-12
+  and 10/27 16-over-8 New Lenox groups qualify; single-frame "2 pins" tags don't.
+  Independent review of #31: one split per group and SKU (a second pins line or a rescan with another ticket reading
+  reuses it); a group paid whole before 0.13.31 is never split on top; the phone (split and Scans log) must not differ;
+  unmarked lines split only at 2 per frame; a new-build frame gets its share on top of the $1.50 base; the pins row
+  lists paid and owed frames and flags any skipped; a plain group tag never gets a review flag from another row's
+  receipt; receipt columns are read once per block. Round 2: a pins tag paid the whole count on one row before
+  0.13.31 (as 0.13.30 did for the 10/27 group) is never split on top; a rescan reading another count on a split group is
+  flagged, not paid; a split reused from another ticket gets a "check it is the same group" flag; unmarked lines split
+  at exactly 2 per frame; frames older than 14 days are named in the note, and "phone not checked" is noted.
+  Real-data replay of the two New Lenox groups: frames whose tickets were misread ("770763 4", "1707635") missed their
+  share, so a frame scanned within a day of the split also matches on name, N and phone. Result: the 10/27 group gets
+  $1.00 on all 8 frames (what Kirsten typed); the 10/22 group 11 of 12 (its misread duplicate "4 of 12" is held and the
+  pins row lists frame 8 as owed). Round 4: the same-day match applies only to a ticket that looks misread (not a clean 7 digits,
+  or sharing 5 digits with the group's ticket) and needs an exact name or a phone known on both sides, so a close
+  name (Ward / Wood) with a clean far ticket is never paid; the replay is unchanged.
+
 ## 0.13.30-draft — daily scan count
 
 Kirsten (2026-10-27): "Is there a way to keep a daily scan count somewhere?" Each saved scan's reply to the phone page

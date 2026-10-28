@@ -8,7 +8,7 @@ function rename(ss,st){const sh=ss.tabs[st.tab];delete ss.tabs[st.tab];ss.tabs[s
   for(const sheet of ss.getSheets())for(const [key,v] of sheet.cells)if(typeof v==='string'&&v.startsWith('='))sheet.cells.set(key,v.split("'"+st.tab+"'!").join("'"+st.name+"'!"));return sh;}
 function write(t,x){return t.ctx.saveScan_({...BASE,...x},'Synthetic',[],'','synthetic');}
 function approve(t){t.ctx.pauseTagSequenceScans_();const p=t.ctx.previewTagSequenceMigration_();t.props.TAG_SEQUENCE_APPROVED_PLAN=p.approvalCode;t.props.TAG_SEQUENCE_DRAIN_CONFIRMED=p.approvalCode;}
-const part={sku:'580602',quantity:4,unit:'each',group_wide:true,raw:'Synthetic pins 4 total for group'};
+const part={sku:'580602',quantity:5,unit:'each',group_wide:true,raw:'Synthetic pins 5 total for group'}; // 5 does not split evenly over 2 frames: credited once for the group
 test('all four renamed stores route screens and windows with both numeric and city inputs',()=>{
   const t=load();for(const st of t.ctx.STORES.slice(0,4)){
     const sh=rename(t.ss,st);const before=t.ctx.STORES.map(s=>s.tab).join();
@@ -38,14 +38,14 @@ test('posted and reserved historical earnings stay canonical and cannot duplicat
     assert.equal(write(t,x).ok,true);const sh=rename(t.ss,st),c=t.ctx.storeLayout_(sh).screens.EARNING;
     if(status==='reserved'){sh.notes.set('2,'+c,sh.notes.get('2,'+c).replace('"status":"posted"','"status":"reserved"'));sh.set(2,c,'');}
     assert.equal(write(t,{...x,tag_index:2,width_in:20}).ok,true);assert.equal(sh.get(3,c),'');
-    assert.equal(sh.get(2,c),status==='posted'?2:'');
+    assert.equal(sh.get(2,c),status==='posted'?2.5:'');
     const receipts=t.ctx.partsReceipts_(sh.notes.get('2,'+c));assert.equal(receipts[0].tab,st.tab);assert.equal(receipts[0].invalid,undefined);
   }
 });
 test('new earnings on city-named sheet roundtrip with stable canonical receipt and group scope',()=>{
   const t=load(),st=t.ctx.STORES[1],sh=rename(t.ss,st),x={store:st.name,sticker_color:'',ticket_number:'NEWGROUP',tag_count:2,tag_index:1,parts:[part]};
   assert.equal(write(t,x).ok,true);const c=t.ctx.storeLayout_(sh).screens.EARNING,r=t.ctx.partsReceipts_(sh.notes.get('2,'+c))[0];assert.equal(r.invalid,undefined);assert.equal(r.tab,st.tab);assert.equal(JSON.parse(r.scope)[0],st.tab);
-  assert.equal(write(t,{...x,tag_index:2,width_in:20}).ok,true);assert.equal(sh.get(2,c),2);assert.equal(sh.get(3,c),'');
+  assert.equal(write(t,{...x,tag_index:2,width_in:20}).ok,true);assert.equal(sh.get(2,c),2.5);assert.equal(sh.get(3,c),'');
 });
 test('old interrupted migration journal resumes on renamed tab without duplicate insertion',()=>{
   const t=load(),st=t.ctx.STORES[0],sh=t.ss.tabs[st.tab];approve(t);sh.failAfterInsert=true;assert.throws(()=>t.ctx.applyTagSequenceMigration_(),/interruption/);
