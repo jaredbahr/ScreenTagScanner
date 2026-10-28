@@ -72,4 +72,29 @@ test('a close misread among the named tags still fills, with the most common rea
   assert.equal(nameOf(sh, c, '4 of 4'), 'Synthanson (?)');
 });
 
+test('review: with no phones, two rows with one "k of N" mean two groups: nothing is borrowed or filled', () => {
+  const t = load(), { sh, c } = modern(t);
+  t.scan(named(1, 2, '7770600', 'Synthers'));
+  t.scan(blank(1, 2, '7770620')); t.scan(blank(2, 2, '7770621'));
+  t.scan(named(2, 2, '7770601', 'Synthers'));
+  assert.equal(sh.get(2, c.NAME), 'Synthers');
+  const other = [...Array(10).keys()].map(k => k + 2).filter(r => ['7770620', '7770621'].includes(sh.get(r, c.TICKET)));
+  assert.equal(other.length, 2); for (const r of other) assert.equal(sh.get(r, c.NAME), '', 'row ' + r);
+  assert.equal(sh.get(3, c.TICKET), '7770601', "Synthers' 2 of 2 keeps its saved row");
+  const u = load(), m = modern(u); // two blank "2 of 2" before the named "1 of 2": neither is filled
+  u.scan(blank(2, 2, '7770630')); u.scan(blank(2, 2, '7770602')); u.scan(named(1, 2, '7770600', 'Synthers'));
+  assert.equal(m.sh.get(2, m.c.NAME), ''); assert.equal(m.sh.get(3, m.c.NAME), '');
+});
+
+test('a borrowed name drops the "No customer name" flag; far in the book (over 10) it fills the name but takes no saved row', () => {
+  const t = load(), { sh, c } = modern(t);
+  t.scan(named(1, 3, '7770600'));
+  t.scan(blank(2, 3, '7770601'));
+  const r = rowOf(sh, c, '2 of 3'), notes = [...sh.notes.entries()].filter(([k]) => k.startsWith(r + ',')).map(([, v]) => v).join('\n');
+  assert.equal(r, 3, 'near: takes the saved row'); assert.doesNotMatch(notes, /No customer name/);
+  t.scan(blank(3, 3, '7770640'));
+  const f = rowOf(sh, c, '3 of 3');
+  assert.equal(sh.get(f, c.NAME), 'Synthanson (?)'); assert.notEqual(f, 4, 'far: the saved row stays for the group');
+});
+
 console.log(`${passed} group name tests passed`);

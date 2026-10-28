@@ -46,4 +46,17 @@ test('an unsplit whole-group count says so; a patio door keeps its text first', 
   assert.equal(m.sh.get(2, m.c.EXTRAS), 'new patio door 48 x 75 1/2, 2 pins');
 });
 
+test('review: an earlier receipt is listed only when it was paid ("(whole group, row N)"), never when held', () => {
+  const g = (i, x = {}) => tag({ customer_name: 'Nick Synthpas', last_name: 'Synthpas', phone: '8155550190', ticket_number: 'GRP', tag_index: i, tag_count: 2,
+    width_in: 20 + i, extras: '5 580602 pins all frames', parts: [part('580602', 5, 'each', true)], ...x });
+  const t = load(), { sh, c } = modern(t);
+  write(t, g(1)); write(t, g(2));
+  assert.equal(sh.get(3, c.EXTRAS), '5 pins (whole group, row 2)');
+  const u = load(), m = modern(u);
+  write(u, g(1));
+  const k = '2,' + m.c.EARNING; m.sh.notes.set(k, m.sh.notes.get(k).replace('"status":"posted"', '"status":"reserved"')); m.sh.set(2, m.c.EARNING, '');
+  write(u, g(2));
+  assert.equal(m.sh.get(3, m.c.EXTRAS) || '', '', 'a held (unpaid) receipt is not claimed in Extras');
+});
+
 console.log(`${passed} parts shorthand tests passed`);

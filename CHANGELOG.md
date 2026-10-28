@@ -31,6 +31,11 @@ From an audit of Kirsten's 10/27 edits (144 placed tags, about 60 hand fixes).
   though it is on the tab, and gaps inside the group's range come first when they can hold every unscanned tag.
   Result: 14 exact suggestions and 3 more with the right ticket in a short list (live: 13 exact); no wrong "likely"
   beyond the two where Kirsten's typed ticket looks like the typo.
+  Round 2 of the review: with no phones on the tags, two rows with the same "x of N" (named or blank) mean two groups,
+  so nothing is borrowed or filled; a borrowed name takes the group's saved row only within 10 tickets of a named
+  tag; the one-ticket-order rule needs two different "x of N" on that ticket (one tag placed twice is not one); a
+  "likely" needs no other row with this tag's "x of N" and must fit the order when tickets rise with "x of N".
+  Every guard now has a test that fails without it.
   Independent review of #31: one split per group and SKU (a second pins line or a rescan with another ticket reading
   reuses it); a group paid whole before 0.13.31 is never split on top; the phone (split and Scans log) must not differ;
   unmarked lines split only at 2 per frame; a new-build frame gets its share on top of the $1.50 base; the pins row

@@ -271,14 +271,16 @@ function groupTicketHint_(sh, c, x, end) {
   for (var p = 0; p <= 6; p++) for (var d = 0; d <= 9; d++) cands[t.slice(0, p) + d + t.slice(p)] = true;
   var names = sh.getRange(2, c.NAME, end - 1, 1).getValues(), seqs = sh.getRange(2, c.SEQUENCE, end - 1, 1).getValues();
   var tickets = sh.getRange(2, c.TICKET, end - 1, 1).getValues(), outs = c.DATE_OUT ? sh.getRange(2, c.DATE_OUT, end - 1, 1).getValues() : [];
-  var sibs = [], indices = {}, onTab = {};
+  var order = [], sibs = [], indices = {}, onTab = {}, byTicket = {}, own = Number(x.tag_index), otherGroup = false;
   for (var i = 0; i < names.length; i++) {
     var m = /^(\d+) of (\d+)$/.exec(String(seqs[i][0]).trim()), k = String(tickets[i][0]).trim(), who = sequenceIdentity_(names[i][0]);
     if (/^\d{7}$/.test(k)) onTab[k] = true;
     var day = outs[i] ? daySerial_(outs[i][0]) : NaN;
     if (!m || Number(m[2]) !== n || !/^\d{7}$/.test(k) || !(today - day >= 0 && today - day <= GROUP_HOLD_DAYS)) continue;
     if (me && who && !namesClose_(me, who)) continue;
-    if (Object.keys(cands).some(function (cand) { return Math.abs(Number(cand) - Number(k)) <= 50; })) { sibs.push(Number(k)); indices[m[1]] = true; }
+    if (!Object.keys(cands).some(function (cand) { return Math.abs(Number(cand) - Number(k)) <= 50; })) continue;
+    if (Number(m[1]) === own) { otherGroup = true; continue; } // this tag's own "k of N" on another row: a second group
+    sibs.push(Number(k)); indices[m[1]] = true; (byTicket[k] = byTicket[k] || {})[m[1]] = true; order.push([Number(m[1]), Number(k)]);
   }
   if (sibs.length < 2) return null;
   // Clusters of nearby tickets (a group can span two books); a candidate must sit in or next to a cluster, by as many
@@ -287,9 +289,10 @@ function groupTicketHint_(sh, c, x, end) {
   sibs.sort(function (a, b) { return a - b; });
   var clusters = [[sibs[0]]];
   for (var s = 1; s < sibs.length; s++) { var last = clusters[clusters.length - 1]; if (sibs[s] - last[last.length - 1] <= 10) last.push(sibs[s]); else clusters.push([sibs[s]]); }
-  var missing = Math.max(0, n - 1 - Object.keys(indices).length), complete = missing === 0;
+  var missing = Math.max(0, n - 1 - Object.keys(indices).length), complete = missing === 0 && !otherGroup;
   // Some stores (Homer Glen) give the whole order one ticket: when every sibling reads the same ticket, that is it.
-  if (sibs[0] === sibs[sibs.length - 1] && cands[String(sibs[0])])
+  // Two distinct "k of N" must share it (review: one tag placed twice is not an order-wide ticket).
+  if (sibs[0] === sibs[sibs.length - 1] && cands[String(sibs[0])] && Object.keys(byTicket[String(sibs[0])]).length >= 2)
     return 'Ticket # ' + t + ' is missing a digit: likely ' + sibs[0] + ' (the group\'s other tags all read it), check the tag';
   // Candidates inside a cluster's range come first, but only when the open tickets inside the ranges can hold this
   // tag and every unscanned one; otherwise some of them lie outside, so widen by the unscanned tags.
@@ -303,7 +306,11 @@ function groupTicketHint_(sh, c, x, end) {
   clusters.forEach(function (cl) { for (var v = cl[0] + 1; v < cl[cl.length - 1]; v++) if (!onTab[String(v)]) open++; });
   var fit = open >= missing + 1 ? within(0) : [];
   if (!fit.length) fit = within(missing);
-  if (fit.length === 1 && complete) return 'Ticket # ' + t + ' is missing a digit: likely ' + fit[0] + ' (fits this group\'s tickets), check the tag';
+  // Tickets rising with "k of N": a "likely" must sit in that order (review: a voided ticket inside the range).
+  order.sort(function (a, b) { return a[0] - b[0]; });
+  var rising = order.length >= 2 && order.every(function (p, i) { return !i || p[1] > order[i - 1][1]; });
+  var inOrder = function (v) { return order.every(function (p) { return p[0] < own ? p[1] < v : p[1] > v; }); };
+  if (fit.length === 1 && complete && (!rising || inOrder(Number(fit[0])))) return 'Ticket # ' + t + ' is missing a digit: likely ' + fit[0] + ' (fits this group\'s tickets), check the tag';
   if (fit.length >= 1 && fit.length <= 3) return 'Ticket # ' + t + ' is missing a digit: could be ' + (fit.length === 1 ? fit[0] : fit.slice(0, -1).join(', ') + ' or ' + fit[fit.length - 1]) + ' (from this group\'s tickets), check the tag';
   return null;
 }
@@ -843,32 +850,35 @@ function groupSiblings_(sh, c, x, end) {
     var m = /^(\d+) of (\d+)$/.exec(String(seqs[i][0]).trim()), s = String(tickets[i][0]).trim();
     if (!m || Number(m[2]) !== n || daySerial_(outs[i][0]) !== today) continue;
     if (!(s === t || (/^\d{7}$/.test(s) && /^\d{7}$/.test(t) && Math.abs(Number(s) - Number(t)) <= 50))) continue;
-    out.push({ row: i + 2, name: String(names[i][0]).replace(/ \(\?\)$/, '').trim(), index: Number(m[1]) });
+    out.push({ row: i + 2, name: String(names[i][0]).replace(/ \(\?\)$/, '').trim(), index: Number(m[1]), ticket: s });
   }
   // Another customer's tags are not this group (review: two unnamed tags borrowed a name and took its held row): drop
   // siblings whose Scans-log phone differs from this tag's.
   var mine = phoneKey_(x.phone), store = (storeByTabName_(sh.getName()) || {}).name, phoneAt = typeof x._row_phone === 'function' ? x._row_phone : null;
   return out.filter(function (s) { return !(mine && phoneAt && phonesDiffer_(phoneAt(store, s.row), mine)); });
 }
+/** Two rows (named or blank, this tag included) with the same "k of N" mean two groups are in the window: hands off. */
+function twoGroups_(sibs, index, row) {
+  var seen = {}; seen[index] = true;
+  return sibs.some(function (s) { if (s.row === row) return false; if (seen[s.index]) return true; seen[s.index] = true; return false; });
+}
+/** {name, near}: the name the siblings agree on, and whether a named sibling's ticket is within 10 (book order). */
 function groupNameFor_(sh, c, x, end) {
   var sibs = groupSiblings_(sh, c, x, end), named = sibs.filter(function (s) { return s.name; });
-  if (!named.length) return '';
-  // A named sibling with this tag's own "k of N" means a second group, not this one: no name is borrowed.
-  if (named.some(function (s) { return s.index === Number(x.tag_index); })) return '';
+  if (!named.length || twoGroups_(sibs, Number(x.tag_index), -1)) return null;
   var first = sequenceIdentity_(named[0].name);
-  if (!named.every(function (s) { return namesClose_(sequenceIdentity_(s.name), first); })) return ''; // they disagree: hers to decide
+  if (!named.every(function (s) { return namesClose_(sequenceIdentity_(s.name), first); })) return null; // they disagree: hers to decide
   var count = {}; named.forEach(function (s) { count[s.name] = (count[s.name] || 0) + 1; });
-  return Object.keys(count).sort(function (a, b) { return count[b] - count[a]; })[0];
+  var t = String(x.ticket_number || '').trim();
+  var near = named.some(function (s) { return s.ticket === t || (/^\d{7}$/.test(s.ticket) && /^\d{7}$/.test(t) && Math.abs(Number(s.ticket) - Number(t)) <= 10); });
+  return { name: Object.keys(count).sort(function (a, b) { return count[b] - count[a]; })[0], near: near };
 }
 function fillGroupNames_(sh, c, x, end, row) {
   var name = String(sheetName_(x)).replace(/ \(\?\)$/, '');
-  var sibs = groupSiblings_(sh, c, x, end), taken = {};
-  sibs.forEach(function (s) { if (s.name || s.row === row) taken[s.index] = true; });
-  taken[Number(x.tag_index)] = true;
+  var sibs = groupSiblings_(sh, c, x, end);
+  if (twoGroups_(sibs, Number(x.tag_index), row)) return; // review: a second group's blank tag was filled first by row
   sibs.forEach(function (s) {
-    if (s.row === row || s.name || taken[s.index] === 'blank') return;
-    if (taken[s.index] === true) return; // a named tag already has this "k of N": another group's tag
-    taken[s.index] = 'blank'; // two blank rows with one index: only the first
+    if (s.row === row || s.name) return;
     var cell = sh.getRange(s.row, c.NAME);
     if (cell.getValues()[0][0] !== '') return;
     cell.setValue(safeCell_(name + ' (?)'));
@@ -1046,14 +1056,16 @@ function writeToStoreTab_(ss, x, reasons) {
   var count = isBuild && multi ? x.screens_on_tag : 1;
   var end = screenBlockEnd_(sh);
   var rows = [];
-  var namedOnScan = !!sheetName_(x), fromGroup = namedOnScan ? null : groupNameFor_(sh, c, x, end);
+  var namedOnScan = !!sheetName_(x), borrowed = namedOnScan ? null : groupNameFor_(sh, c, x, end), fromGroup = borrowed && borrowed.name;
+  var holdX = x; // a borrowed name takes the group's held row only when the ticket is within 10 of a named tag's
   if (fromGroup) {
     x = Object.assign({}, x, { customer_name: fromGroup, last_name: fromGroup, name_unclear: true });
+    if (borrowed.near) holdX = x;
     flags = flags.filter(function (f) { return f !== 'No customer name'; });
     flags.push('Group check (name): no name on this tag; filled from the group\'s other tags ("' + fromGroup + '"). Check the tag.');
   }
   groupCheck_(sh, c, x, end).forEach(function (f) { if (flags.indexOf(f) < 0) flags.push(f); });
-  var group = count === 1 ? groupKey_(x, c) : null, heldRow = group ? takeGroupHold_(sh, c, group, end, flags) : -1;
+  var group = count === 1 ? groupKey_(holdX, c) : null, heldRow = group ? takeGroupHold_(sh, c, group, end, flags) : -1;
   if (heldRow > 0) rows.push(heldRow);
   for (var r = 2; rows.length < count; r++) {
     var next = firstEmptyScreenRowFrom_(sh, r, end, layout);
