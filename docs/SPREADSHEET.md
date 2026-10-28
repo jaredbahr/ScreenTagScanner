@@ -162,6 +162,9 @@ Window mapping is built from Kirsten's description and the first real October wi
     row is saved per extra tag right after the group, typed-in held rows are released, a smaller N frees nothing,
     and the Tag x of N cell gets a note. Since 0.13.29 the hold also keeps the full customer name, so a first name
     only on some tags fits the full name on another for the phone match.
+23b. **Names from the group** (0.13.31, Kirsten 2026-10-27): a group tag with no name takes the name its siblings
+    (scanned today, same N, same ticket or within 50) agree on; a named tag fills siblings whose Name is blank. Always
+    "(?)" with a note; a name is never replaced; disagreeing names are left for her.
 24. **Group check** (2026-10-23, from the October 22 scans). A group tag is compared with its group's tags already
     on the tab (same N, close name, ticket close or within 1000). Disagreeing name, ticket or "x of N" gets a note on
     that one cell (pale, not yellow). Values are never changed. Since 0.13.26 a looser match (ticket

@@ -8,7 +8,12 @@ From an audit of Kirsten's 10/27 edits (144 placed tags, about 60 hand fixes).
   N and the line is for the group (marked group-wide, or over 4 at 4 or fewer per frame). The pins tag gets its share;
   frames already on the tab get theirs then (only into a blank Earning with no receipt or formula, otherwise a note);
   frames scanned later pick theirs up from the receipts. Each share has its own receipt (scope [tab,"frames",id,k]),
-  so a rescan never pays twice. Uneven counts keep the old once-for-the-group credit. October: the 10/22 24-over-12
+  so a rescan never pays twice. Uneven counts keep the old once-for-the-group credit.
+- **Names from the group** (8 hand entries on one 9-tag New Lenox group): a group tag with no name takes the name its
+  siblings agree on (scanned today, same N, same ticket or within 50; disagreeing names are left for her); a named tag
+  fills siblings whose Name is blank. Always "(?)" with a cell note; a name is never replaced. Replay of all October
+  scans: 7 of that group's 8 blank rows get the name (the 8th has a 6-digit ticket), and the last two blank tags now
+  land in the group's held rows (fewer blank lines); nothing else changes. October: the 10/22 24-over-12
   and 10/27 16-over-8 New Lenox groups qualify; single-frame "2 pins" tags don't.
 
 ## 0.13.30-draft — daily scan count

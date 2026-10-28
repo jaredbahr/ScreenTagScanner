@@ -763,6 +763,45 @@ function holdGroupRows_(sh, c, key, row, endRow, x) {
   return held;
 }
 
+/**
+ * Names from the group (Kirsten, 2026-10-27: 8 of 9 tags of one group had no name and she typed it on each). Siblings
+ * are rows scanned today with the same "of N" and the same ticket or one within 50. A tag with no name takes the name
+ * its siblings agree on; a named tag fills siblings whose Name is blank. Always "(?)" with a note; a name is never
+ * replaced.
+ */
+function groupSiblings_(sh, c, x, end) {
+  var n = Number(x.tag_count), t = String(x.ticket_number || '').trim(), today = scanDateSerial_(), out = [];
+  if (!c.SEQUENCE || !c.DATE_OUT || !verifiedSequence_(tagOf_(x)) || !(n >= 2 && n <= GROUP_HOLD_MAX) || !t) return out;
+  var names = sh.getRange(2, c.NAME, end - 1, 1).getValues(), seqs = sh.getRange(2, c.SEQUENCE, end - 1, 1).getValues();
+  var tickets = sh.getRange(2, c.TICKET, end - 1, 1).getValues(), outs = sh.getRange(2, c.DATE_OUT, end - 1, 1).getValues();
+  for (var i = 0; i < names.length; i++) {
+    var m = /^(\d+) of (\d+)$/.exec(String(seqs[i][0]).trim()), s = String(tickets[i][0]).trim();
+    if (!m || Number(m[2]) !== n || daySerial_(outs[i][0]) !== today) continue;
+    if (!(s === t || (/^\d{7}$/.test(s) && /^\d{7}$/.test(t) && Math.abs(Number(s) - Number(t)) <= 50))) continue;
+    out.push({ row: i + 2, name: String(names[i][0]).replace(/ \(\?\)$/, '').trim() });
+  }
+  return out;
+}
+function groupNameFor_(sh, c, x, end) {
+  var named = groupSiblings_(sh, c, x, end).filter(function (s) { return s.name; });
+  if (!named.length) return '';
+  var first = sequenceIdentity_(named[0].name);
+  if (!named.every(function (s) { return namesClose_(sequenceIdentity_(s.name), first); })) return ''; // they disagree: hers to decide
+  var count = {}; named.forEach(function (s) { count[s.name] = (count[s.name] || 0) + 1; });
+  return Object.keys(count).sort(function (a, b) { return count[b] - count[a]; })[0];
+}
+function fillGroupNames_(sh, c, x, end, row) {
+  var name = String(sheetName_(x)).replace(/ \(\?\)$/, '');
+  groupSiblings_(sh, c, x, end).forEach(function (s) {
+    if (s.row === row || s.name) return;
+    var cell = sh.getRange(s.row, c.NAME);
+    if (cell.getValues()[0][0] !== '') return;
+    cell.setValue(safeCell_(name + ' (?)'));
+    appendReviewNote_(cell, 'Glance at this value:\n- Group check (name): no name on this tag; filled from row ' + row + ' of the same group ("' + name + '"). Check the tag.');
+    cell.setBackground(HINT_COLOR);
+  });
+}
+
 /** Ticket lookup uses each block's current headers, including during migration. */
 function ticketInStoreTab_(sh, ticket, layout) {
   if (!ticket) return false;
@@ -932,6 +971,11 @@ function writeToStoreTab_(ss, x, reasons) {
   var count = isBuild && multi ? x.screens_on_tag : 1;
   var end = screenBlockEnd_(sh);
   var rows = [];
+  var namedOnScan = !!sheetName_(x), fromGroup = namedOnScan ? null : groupNameFor_(sh, c, x, end);
+  if (fromGroup) {
+    x = Object.assign({}, x, { customer_name: fromGroup, last_name: fromGroup, name_unclear: true });
+    flags.push('Group check (name): no name on this tag; filled from the group\'s other tags ("' + fromGroup + '"). Check the tag.');
+  }
   groupCheck_(sh, c, x, end).forEach(function (f) { if (flags.indexOf(f) < 0) flags.push(f); });
   var group = count === 1 ? groupKey_(x, c) : null, heldRow = group ? takeGroupHold_(sh, c, group, end, flags) : -1;
   if (heldRow > 0) rows.push(heldRow);
@@ -1042,6 +1086,7 @@ function writeToStoreTab_(ss, x, reasons) {
     showReview_(sh,row,c,flags);
   });
   if (group && heldRow < 0) holdGroupRows_(sh, c, group, rows[0], end, x);
+  if (namedOnScan) fillGroupNames_(sh, c, x, end, rows[0]);
   return { ok: true, store: store, tab: store.tab, row: rows.join(', '), block: 'screens', flags: flags };
 }
 

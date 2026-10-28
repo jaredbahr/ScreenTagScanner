@@ -1,0 +1,61 @@
+'use strict';
+// Names from the group (Kirsten, 2026-10-27: 8 of 9 tags of one group had no name; she typed it on each).
+// Synthetic data only.
+const assert = require('node:assert/strict');
+const { load } = require('./offline.test.cjs');
+let passed = 0;
+function test(name, fn) { fn(); passed++; console.log('PASS ' + name); }
+function modern(t, tab = 'New Lenox') {
+  const sh = t.ss.tabs[tab];
+  sh.insertColumnAfter(15); sh.set(1, 16, 'Tag x of N'); sh.insertColumnAfter(3); sh.set(1, 4, 'Tag x of N');
+  return { sh, c: t.ctx.storeLayout_(sh).screens };
+}
+const blank = (i, n, tk) => ({ store: 'New Lenox', customer_name: null, last_name: null, phone: null, ticket_number: tk, tag_index: i, tag_count: n,
+  width_in: 20 + i, height_in: 30, billable_inches: 50 + i });
+const named = (i, n, tk, name = 'Synthanson') => ({ ...blank(i, n, tk), customer_name: 'Bill ' + name, last_name: name, phone: '8155550123' });
+const rowOf = (sh, c, seq) => [...Array(30).keys()].map(k => k + 2).find(r => sh.get(r, c.SEQUENCE) === seq);
+const nameOf = (sh, c, seq) => sh.get(rowOf(sh, c, seq), c.NAME);
+
+test('Kirsten\'s pattern: blank tags before the named one are filled when it arrives, blank tags after take its name', () => {
+  const t = load(), { sh, c } = modern(t);
+  [[9, '7770609'], [8, '7770645'], [2, '7770601'], [1, '7770640'], [4, '7770642'], [3, '7770641']].forEach(([i, tk]) => t.scan(blank(i, 9, tk)));
+  t.scan(named(7, 9, '7770608'));
+  for (const i of [9, 8, 2, 1, 4, 3]) assert.equal(nameOf(sh, c, i + ' of 9'), 'Synthanson (?)', 'before: ' + i);
+  t.scan(blank(6, 9, '7770644')); t.scan(blank(5, 9, '7770643'));
+  for (const i of [6, 5]) assert.equal(nameOf(sh, c, i + ' of 9'), 'Synthanson (?)', 'after: ' + i);
+  assert.equal(nameOf(sh, c, '7 of 9'), 'Synthanson');
+  assert.match(sh.notes.get(sh.key(rowOf(sh, c, '9 of 9'), c.NAME)) || '', /no name on this tag; filled from row \d+ of the same group \("Synthanson"\)/);
+  assert.match(sh.notes.get(sh.key(rowOf(sh, c, '6 of 9'), c.NAME)) || '', /no name on this tag; filled from the group's other tags \("Synthanson"\)/);
+});
+
+test('only blank names are filled; a typed-in or different name is never replaced', () => {
+  const t = load(), { sh, c } = modern(t);
+  t.scan(blank(1, 3, '7770601')); t.scan(blank(2, 3, '7770602'));
+  sh.set(rowOf(sh, c, '2 of 3'), c.NAME, 'Typed');
+  t.scan(named(3, 3, '7770603'));
+  assert.equal(nameOf(sh, c, '1 of 3'), 'Synthanson (?)'); assert.equal(nameOf(sh, c, '2 of 3'), 'Typed');
+});
+
+test('not the same group: another count, a ticket more than 50 away, or another day', () => {
+  const t = load({ now: new Date('2026-10-27T15:00:00Z') }), { sh, c } = modern(t);
+  t.scan(blank(1, 4, '7770601')); t.scan(blank(1, 3, '7770900'));
+  t.setNow(new Date('2026-10-28T15:00:00Z'));
+  t.scan(named(2, 3, '7770602'));
+  assert.equal(nameOf(sh, c, '1 of 4'), ''); assert.equal(nameOf(sh, c, '1 of 3'), '', 'yesterday, and a far ticket');
+});
+
+test('when the named tags disagree, a blank tag is left for her', () => {
+  const t = load(), { sh, c } = modern(t);
+  t.scan(named(1, 3, '7770601', 'Synthanson')); t.scan(named(2, 3, '7770602', 'Synthwick'));
+  t.scan(blank(3, 3, '7770603'));
+  assert.equal(nameOf(sh, c, '3 of 3'), '');
+});
+
+test('a close misread among the named tags still fills, with the most common reading', () => {
+  const t = load(), { sh, c } = modern(t);
+  t.scan(named(1, 4, '7770601', 'Synthanson')); t.scan(named(2, 4, '7770602', 'Synthanson')); t.scan(named(3, 4, '7770603', 'Synthansen'));
+  t.scan(blank(4, 4, '7770604'));
+  assert.equal(nameOf(sh, c, '4 of 4'), 'Synthanson (?)');
+});
+
+console.log(`${passed} group name tests passed`);
