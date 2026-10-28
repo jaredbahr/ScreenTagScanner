@@ -310,12 +310,14 @@ function groupTicketHint_(sh, c, x, end) {
   order.sort(function (a, b) { return a[0] - b[0]; });
   var rising = order.length >= 2 && order.every(function (p, i) { return !i || p[1] > order[i - 1][1]; });
   var inOrder = function (v) { return order.every(function (p) { return p[0] < own ? p[1] < v : p[1] > v; }); };
-  // The first or last tag of a complete, rising group: the ticket just outside the range (review: no gap to fill).
+  // The first or last tag of a complete, rising group: "could be" the ticket just outside the range (never "likely":
+  // another job's ticket may sit between, review round 4).
+  var edgeOnly = false;
   if (!fit.length && complete && rising) {
     var edge = own < order[0][0] ? order[0][1] - 1 : own > order[order.length - 1][0] ? order[order.length - 1][1] + 1 : 0;
-    if (edge && cands[String(edge)] && !onTab[String(edge)]) fit = [String(edge)];
+    if (edge && cands[String(edge)] && !onTab[String(edge)]) { fit = [String(edge)]; edgeOnly = true; }
   }
-  if (fit.length === 1 && complete && (!rising || inOrder(Number(fit[0])))) return 'Ticket # ' + t + ' is missing a digit: likely ' + fit[0] + ' (fits this group\'s tickets), check the tag';
+  if (fit.length === 1 && complete && !edgeOnly && (!rising || inOrder(Number(fit[0])))) return 'Ticket # ' + t + ' is missing a digit: likely ' + fit[0] + ' (fits this group\'s tickets), check the tag';
   if (fit.length >= 1 && fit.length <= 3) return 'Ticket # ' + t + ' is missing a digit: could be ' + (fit.length === 1 ? fit[0] : fit.slice(0, -1).join(', ') + ' or ' + fit[fit.length - 1]) + ' (from this group\'s tickets), check the tag';
   return null;
 }

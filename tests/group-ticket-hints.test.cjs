@@ -107,11 +107,12 @@ test('gaps inside the range first when they can hold every unscanned tag (replay
   assert.doesNotMatch(ticketNote(m.sh, m.c, '6 of 9'), /from this group|likely/);
 });
 
-test('the first tag of a complete group whose tickets rise: "likely" the ticket just before the range', () => {
+test('the first tag of a complete group whose tickets rise: "could be" the ticket just before the range, never "likely"', () => {
   const t = load(), { sh, c } = modern(t);
   [[2, '7777641'], [3, '7777642'], [4, '7777643']].forEach(([i, tk]) => t.scan(tag(i, 4, tk)));
   t.scan(tag(1, 4, '777764'));
-  assert.match(ticketNote(sh, c, '1 of 4'), /likely 7777640 \(fits this group's tickets\)/);
+  const note = ticketNote(sh, c, '1 of 4');
+  assert.match(note, /could be 7777640 \(from this group's tickets\)/); assert.doesNotMatch(note, /likely/);
 });
 
 console.log(`${passed} group ticket hint tests passed`);

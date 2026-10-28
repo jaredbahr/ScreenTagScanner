@@ -151,7 +151,7 @@ Window mapping is built from Kirsten's description and the first real October wi
     other row with this tag's "x of N") is "likely", unless the siblings' tickets rise with "x of N" and the candidate
     is out of that order; otherwise 1–3
     candidates are listed as "could be"; the first or last tag of a complete group whose tickets rise with "x of N"
-    gets the ticket just outside the range; more gives no group hint (the store hint stays). An 8-digit reading is
+    gets "could be" the ticket just outside the range; more gives no group hint (the store hint stays). An 8-digit reading is
     "likely" only when exactly one dropped digit lands near the store's series, else "could be A or B" (up to 3).
 
 23. **Group rows stay together** (Kirsten's request, approved by Jared 2026-10-22). The first tag of an "x of N" group

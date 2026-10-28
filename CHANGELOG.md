@@ -37,7 +37,8 @@ From an audit of Kirsten's 10/27 edits (144 placed tags, about 60 hand fixes).
   Every guard now has a test that fails without it.
   Round 3: only a clearly read name (not "(?)", so never a name the scanner filled) counts for the within-10 rule, so
   a chain of fills can't move another customer's tag into a saved row; the first or last tag of a complete group whose
-  tickets rise gets "likely" the ticket just outside the range. Replay after round 3: the same 7 blank rows are named,
+  tickets rise gets "could be" the ticket just outside the range (round 4: never "likely", another job's
+  ticket may sit between). Replay after round 3: the same 7 blank rows are named,
   but the two tags in the group's second ticket book (32 tickets from the named tag) now go to the next free rows, as
   they do live today, instead of the group's saved rows.
   Independent review of #31: one split per group and SKU (a second pins line or a rescan with another ticket reading
