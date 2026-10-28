@@ -156,15 +156,23 @@ var SPLIT_PER_FRAME_SKUS = ['580602','580603','580604','580607'];
 function splitPerFrame_(x,sku,p,group) {
   var seq=verifiedSequence_(tagOf_(x)),n=Number(x.tag_count),k=Number(x.tag_index),q=p.quantity;
   if(SPLIT_PER_FRAME_SKUS.indexOf(sku)<0||!seq||!(n>=2&&n<=GROUP_HOLD_MAX)||!Number.isInteger(q)||q%n)return null;
-  if(!(group||(q>4&&q/n<=4)))return null;
+  // Unmarked lines split only at 2 per frame (Kirsten's real groups: 16 over 8, 24 over 12); review of #31.
+  if(!(group||(q>4&&q/n<=2)))return null;
   var st=resolveStore_(x).store,name=sequenceIdentity_(sheetName_(x));if(!st||!x.ticket_number||!name)return null;
   var ref=PART_EARNINGS[sku],per=q/n,id=JSON.stringify([st.tab,String(x.ticket_number),sku,n]);
   return {sku:sku,name:ref.name,quantity:per,rate:ref.rate,unit:ref.unit,group:false,scope:JSON.stringify([st.tab,'frames',id,k]),amount:cents_(per*ref.rate),
-    split:{id:id,of:n,index:k,total:q,from:k,name:name,ticket:String(x.ticket_number)}};
+    split:{id:id,of:n,index:k,total:q,from:k,name:name,ticket:String(x.ticket_number),phone:phoneKey_(x.phone)}};
 }
-/** A split receipt's group is this tag's group: same N, a close name and a close ticket (as for group holds). */
+/** A split receipt's group is this tag's group: same N, a close name, a close ticket, and no phone that says otherwise. */
 function splitMatches_(split,x) {
-  return split.of===Number(x.tag_count)&&namesClose_(split.name,sequenceIdentity_(sheetName_(x)))&&ticketsClose_(split.ticket,String(x.ticket_number||''));
+  return split.of===Number(x.tag_count)&&namesClose_(split.name,sequenceIdentity_(sheetName_(x)))&&ticketsClose_(split.ticket,String(x.ticket_number||''))&&
+    !phonesDiffer_(split.phone||'',phoneKey_(x.phone));
+}
+/** A pre-0.13.31 whole-group receipt ([tab,ticket,'group',N]) for this tag's group and SKU: the group was already paid. */
+function oldGroupPaid_(r,sku,x) {
+  var scope;try{scope=JSON.parse(r.scope);}catch(e){return false;}
+  return !r.split&&r.group&&r.sku===sku&&scope[2]==='group'&&scope[3]===Number(x.tag_count)&&ticketsClose_(String(scope[1]),String(x.ticket_number||''))&&
+    namesClose_(r.customer,sequenceIdentity_(sheetName_(x)));
 }
 function partsReceipts_(text) {
   var out=[];String(text||'').split('\n').forEach(function(line){
@@ -204,35 +212,48 @@ function preparePartsEarnings_(ss,x) {
   // Receipts live on Earning (Other Earn for windows) and, for assembly, on the screens LB Earn cell.
   [['screens','earning'],['screens','lb'],['windows','earning']].forEach(function(where){
     var block=where[0],c=layout[block],earning=where[1]==='lb'?c.LB_EARN:block==='screens'?c.EARNING:c.OTHER_EARN,end=block==='screens'?screenBlockEnd_(sh):WINDOW_LAST_ROW;
-    var notes=sh.getRange(2,earning,end-1,1).getNotes(),ticket=sequenceIdentity_(x.ticket_number);
+    var notes=sh.getRange(2,earning,end-1,1).getNotes(),ticket=sequenceIdentity_(x.ticket_number),cols=null;
     notes.forEach(function(r,i){
       var row=i+2;
+      if(r[0]&&r[0].indexOf(PARTS_RECEIPT)>=0&&!cols)cols={t:sh.getRange(2,c.TICKET,end-1,1).getValues(),n:sh.getRange(2,c.NAME,end-1,1).getValues(),v:sh.getRange(2,earning,end-1,1).getValues()};
       partsReceipts_(r[0]).forEach(function(receipt){
         if(!receipt.invalid&&(receipt.column==='lb')!==(where[1]==='lb'))receipt=Object.assign({},receipt,{invalid:true}); // moved by hand
         // A receipt only matters to this scan when it is about the same ticket. Kirsten correcting a
         // name, ticket or amount on another row is her call and never blocks the rest of the tab
         // (2026-10-21: one edited Downers Grove row had silently stopped every later parts earning).
-        var rowTicket=sequenceIdentity_(sh.getRange(row,c.TICKET).getValues()[0][0]);
+        var rowTicket=sequenceIdentity_(cols.t[i][0]);
         if(receipt.invalid){
           if(rowTicket===ticket)held.push('An earlier earnings note for this ticket was changed by hand; enter parts earnings manually');
           return;
         }
-        var current=sh.getRange(row,earning).getValues()[0][0];
+        var current=cols.v[i][0];
         var edited=(receipt.tab!==st.tab&&receipt.tab!==sh.getName())||receipt.block!==block||receipt.row!==row||
-          !receiptNameOk_(receipt,sequenceIdentity_(sh.getRange(row,c.NAME).getValues()[0][0]))||
+          !receiptNameOk_(receipt,sequenceIdentity_(cols.n[i][0]))||
           receipt.ticket!==rowTicket||receipt.status==='posted'&&current!==receipt.expectedTotal;
         found.push(Object.assign({},receipt,{block:block,row:row,paid:!edited&&current===receipt.expectedTotal,edited:edited}));
       });
     });
   });
-  // A frame scanned after its group's split pins picks up its own share (one item per split, never twice).
-  var mine=verifiedSequence_(tagOf_(x))?Number(x.tag_index):0,seen={};
-  if(mine)found.forEach(function(r){
-    if(!r.split||r.edited||seen[r.split.id]||!splitMatches_(r.split,x))return;seen[r.split.id]=true;
-    var scope=JSON.stringify([JSON.parse(r.scope)[0],'frames',r.split.id,mine]);
-    if(plan.items.some(function(i){return i.scope===scope;}))return;
-    plan.items.push({sku:r.sku,name:r.name,quantity:r.quantity,rate:r.rate,unit:r.unit,group:false,scope:scope,amount:r.amount,
-      split:{id:r.split.id,of:r.split.of,index:mine,total:r.split.total,from:r.split.from,name:r.split.name,ticket:r.split.ticket}});
+  // One split per group and SKU (review of #31): a pins line read again (another tag, a rescan with another ticket
+  // reading) reuses the group's existing split; a group paid whole before 0.13.31 is never split on top.
+  var mine=verifiedSequence_(tagOf_(x))?Number(x.tag_index):0,share=function(r){
+    return {sku:r.sku,name:r.name,quantity:r.quantity,rate:r.rate,unit:r.unit,group:false,amount:r.amount,
+      scope:JSON.stringify([JSON.parse(r.scope)[0],'frames',r.split.id,mine]),
+      split:{id:r.split.id,of:r.split.of,index:mine,total:r.split.total,from:r.split.from,name:r.split.name,ticket:r.split.ticket,phone:r.split.phone}};
+  };
+  plan.items=plan.items.filter(function(item){
+    if(!item.split)return true;
+    var paid=found.filter(function(r){return oldGroupPaid_(r,item.sku,x);})[0];
+    if(paid){plan.references.push({item:item,prior:paid,sameClient:true});return false;}
+    var prior=found.filter(function(r){return r.split&&!r.edited&&r.sku===item.sku&&splitMatches_(r.split,x);})[0];
+    if(!prior){item._spread=true;return true;}
+    if(prior.split.total!==item.split.total){plan.flags.push('SKU '+item.sku+' group count ('+item.split.total+') differs from the earlier tag ('+prior.split.total+'); no additional earnings added');return false;}
+    Object.assign(item,share(prior));return true;
+  });
+  if(mine)found.forEach(function(r){ // a frame scanned after its group's split picks up its own share
+    if(!r.split||r.edited||!splitMatches_(r.split,x)||plan.items.some(function(i){return i.split&&i.sku===r.sku;}))return;
+    if(found.some(function(o){return oldGroupPaid_(o,r.sku,x);}))return;
+    plan.items.push(share(r));
   });
   // Scans Notes contain untrusted OCR and are an audit copy only, never payment authority.
   plan.items=plan.items.filter(function(item){
@@ -247,7 +268,7 @@ function preparePartsEarnings_(ss,x) {
     if(prior.quantity!==item.quantity||prior.amount!==item.amount)plan.flags.push('Parts quantity/rate differs from the earlier receipt; no additional earnings added');
     return false;
   });
-  if(held.length){plan.flags.push(held[0]);plan.items=[];}
+  if(held.length&&plan.items.length){plan.flags.push(held[0]);plan.items=[];} // nothing to pay: no review flag (review of #31)
   return plan;
 }
 function applyPartsEarnings_(sh,row,c,x,firstRow,base,laborBase,flags) {
@@ -262,11 +283,13 @@ function applyPartsEarnings_(sh,row,c,x,firstRow,base,laborBase,flags) {
   items.forEach(function(item){lines.push('SKU '+item.sku+' '+item.name+': '+item.quantity+' '+item.unit+(item.derived?' (from '+item.derived+')':'')+' × $'+item.rate.toFixed(2)+' = $'+item.amount.toFixed(2)+
     (item.split?' for this frame ('+item.split.total+' written on tag '+item.split.from+' of '+item.split.of+', split per frame); credit once':item.group?' total for the whole group; credit once':' total for this tag/form; credit once'));});
   plan.references.forEach(function(ref){lines.push(ref.sameClient===false?'SKU '+ref.prior.sku+': customer identity conflicts with an earlier group receipt; earnings held for manual allocation.':
-    'SKU '+ref.prior.sku+': $'+ref.prior.amount.toFixed(2)+' whole-group/tag total '+(ref.prior.paid?'already recorded':'PENDING review')+' on '+ref.prior.tab+' '+ref.prior.block+' row '+ref.prior.row+(ref.prior.column==='lb'?' (LB Earn)':'')+'. No duplicate amount added.');});
+    'SKU '+ref.prior.sku+': $'+ref.prior.amount.toFixed(2)+(ref.prior.split?' this frame\'s share ':' whole-group/tag total ')+(ref.prior.paid?'already recorded':'PENDING review')+' on '+ref.prior.tab+' '+ref.prior.block+' row '+ref.prior.row+(ref.prior.column==='lb'?' (LB Earn)':'')+'. No duplicate amount added.');});
   if(!firstRow&&plan.posted.length)lines.push('Parts total is recorded on the first row of this form; no duplicate amount added.');
   if(!lines.length)return;
-  var receipts=firstRow?items.map(function(item){return Object.assign({},item,{status:'reserved',tab:storeByTabName_(sh.getName()).tab,block:x.item_type==='window'?'windows':'screens',row:row,
-    client:partsClient_(x),customer:sequenceIdentity_(sheetName_(x)),ticket:sequenceIdentity_(x.ticket_number)});}):[];
+  var spread=[];
+  var receipts=firstRow?items.map(function(item){var r=Object.assign({},item,{status:'reserved',tab:storeByTabName_(sh.getName()).tab,block:x.item_type==='window'?'windows':'screens',row:row,
+    client:partsClient_(x),customer:sequenceIdentity_(sheetName_(x)),ticket:sequenceIdentity_(x.ticket_number)});
+    if(r._spread)spread.push(r);delete r._spread;return r;}):[];
   var extra=receipts.reduce(function(n,item){return n+item.amount;},0),total=cents_((base||0)+extra);
   receipts.forEach(function(r){r.expectedTotal=total;});
   var human=escapePartsReceiptText_((note?note+'\n\n':'')+lines.join('\n'));
@@ -275,33 +298,48 @@ function applyPartsEarnings_(sh,row,c,x,firstRow,base,laborBase,flags) {
   if(receipts.length){range.setNumberFormat('$0.00').setValue(total);receipts.forEach(function(r){r.status='posted';});
     range.setNote(human+'\n'+PARTS_RECEIPT+JSON.stringify(receipts));plan.posted.push.apply(plan.posted,receipts);}
   range.setBackground(FLAG_COLOR);
-  if(firstRow)receipts.forEach(function(r){if(r.split&&r.split.from===r.split.index)splitToSiblings_(sh,c,x,r,row);});
+  if(receipts.length)spread.forEach(function(r){splitToSiblings_(sh,c,x,r,row,flags||[]);});
 }
 /**
- * The frames of a split group already on the tab get their share now, each with its own receipt. Only into a blank
- * Earning cell with no receipt and no formula; any other row gets a note instead (never added on top of her entry).
+ * The frames of a split group already on the tab get their share now, each with its own receipt (review of #31: same
+ * N, close name and ticket, within 14 days, and the phone from the Scans log when it is there). Only into a blank
+ * Earning, or the scanner's own $1.50 new-build base (the share goes on top); any other entry gets a note and a flag.
+ * The pins row's note lists the frames paid and the ones still to come.
  */
-function splitToSiblings_(sh,c,x,r,row) {
+function splitToSiblings_(sh,c,x,r,row,flags) {
   if(x.item_type==='window'||!c.SEQUENCE)return;
   var end=screenBlockEnd_(sh),names=sh.getRange(2,c.NAME,end-1,1).getValues(),seqs=sh.getRange(2,c.SEQUENCE,end-1,1).getValues();
-  var tickets=sh.getRange(2,c.TICKET,end-1,1).getValues(),st=storeByTabName_(sh.getName()),done={};done[r.split.index]=true;
+  var tickets=sh.getRange(2,c.TICKET,end-1,1).getValues(),outs=c.DATE_OUT?sh.getRange(2,c.DATE_OUT,end-1,1).getValues():[];
+  var st=storeByTabName_(sh.getName()),today=scanDateSerial_(),done={},paid=[r.split.index],skipped=[];done[r.split.index]=true;
+  var phoneAt=typeof x._row_phone==='function'?x._row_phone:function(){return '';};
   for(var i=0;i<names.length;i++){
     var at=i+2,m=/^(\d+) of (\d+)$/.exec(String(seqs[i][0]).trim());
     if(at===row||!m||Number(m[2])!==r.split.of||done[Number(m[1])])continue;
-    var who=sequenceIdentity_(names[i][0]),tk=String(tickets[i][0]).trim();
-    if(!namesClose_(who,r.split.name)||!ticketsClose_(tk,r.split.ticket))continue;
+    var who=sequenceIdentity_(names[i][0]),tk=String(tickets[i][0]).trim(),day=outs[i]?daySerial_(outs[i][0]):NaN;
+    if(!namesClose_(who,r.split.name)||!ticketsClose_(tk,r.split.ticket)||!(today-day>=0&&today-day<=GROUP_HOLD_DAYS))continue;
+    if(phonesDiffer_(phoneAt(st.name,at),r.split.phone||''))continue; // another customer with a close name
     var k=Number(m[1]);done[k]=true;
-    var cell=sh.getRange(at,c.EARNING),note=cell.getNote(),value=cell.getValues()[0][0];
-    if(cell.getFormulas()[0][0]||(value!==''&&value!==0)||partsReceipts_(note).length){
-      cell.setNote([note,'Pins for this frame not added ($'+r.amount.toFixed(2)+', split from tag '+r.split.from+' of '+r.split.of+'): Earning already has an entry.'].filter(Boolean).join('\n'));continue;
+    var cell=sh.getRange(at,c.EARNING),note=cell.getNote(),value=cell.getValues()[0][0],own=partsReceipts_(note);
+    if(own.some(function(o){return o.split&&o.split.id===r.split.id;})){paid.push(k);continue;} // already has this share
+    var base=value===''||value===0?0:value===NEW_BUILD.earningBase&&/^New build:/.test(String(note))&&!own.length?NEW_BUILD.earningBase:null;
+    if(cell.getFormulas()[0][0]||base===null||own.length){
+      skipped.push(k);
+      cell.setNote([note,'Pins for this frame not added ($'+r.amount.toFixed(2)+', split from tag '+r.split.from+' of '+r.split.of+'): Earning already has an entry. Add it by hand if it is not already included.'].filter(Boolean).join('\n'));
+      continue;
     }
     var rec=Object.assign({},r,{scope:JSON.stringify([st.tab,'frames',r.split.id,k]),split:Object.assign({},r.split,{index:k}),status:'reserved',row:at,
-      client:JSON.stringify([who,who,'']),customer:who,ticket:sequenceIdentity_(tk),expectedTotal:r.amount});
+      client:JSON.stringify([who,who,'']),customer:who,ticket:sequenceIdentity_(tk),expectedTotal:cents_(base+r.amount)});
     var human=escapePartsReceiptText_([note,'SKU '+r.sku+' '+r.name+': '+r.quantity+' '+r.unit+' × $'+r.rate.toFixed(2)+' = $'+r.amount.toFixed(2)+' for this frame ('+r.split.total+' written on tag '+r.split.from+' of '+r.split.of+', split per frame); credit once'].filter(Boolean).join('\n'));
     cell.setNote(human+'\n'+PARTS_RECEIPT+JSON.stringify([rec]));
-    cell.setNumberFormat('$0.00').setValue(r.amount);rec.status='posted';
-    cell.setNote(human+'\n'+PARTS_RECEIPT+JSON.stringify([rec]));cell.setBackground(FLAG_COLOR);
+    cell.setNumberFormat('$0.00').setValue(rec.expectedTotal);rec.status='posted';
+    cell.setNote(human+'\n'+PARTS_RECEIPT+JSON.stringify([rec]));cell.setBackground(FLAG_COLOR);paid.push(k);
   }
+  var owed=[];for(var f=1;f<=r.split.of;f++)if(paid.indexOf(f)<0&&skipped.indexOf(f)<0)owed.push(f);
+  var mine=sh.getRange(row,c.EARNING),line='Split per frame: paid on frames '+paid.sort(function(a,b){return a-b;}).join(', ')+
+    (owed.length?'; frames '+owed.join(', ')+' get theirs when scanned':'')+(skipped.length?'; frames '+skipped.join(', ')+' not added (Earning already had an entry)':'')+'.';
+  var n=mine.getNote(),cut=n.lastIndexOf('\n'+PARTS_RECEIPT);
+  mine.setNote(cut>=0?n.slice(0,cut)+'\n'+line+n.slice(cut):[n,line].filter(Boolean).join('\n'));
+  if(skipped.length)flags.push('Pins split per frame: frames '+skipped.join(', ')+' not added because their Earning already had an entry; add by hand if not already included');
 }
 /**
  * Assembly (580625) is added to LB Earn (Kirsten, 2026-10-27): only on the first row, only when LB Earn still holds
