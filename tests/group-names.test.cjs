@@ -97,4 +97,14 @@ test('a borrowed name drops the "No customer name" flag; far in the book (over 1
   assert.equal(sh.get(f, c.NAME), 'Synthanson (?)'); assert.notEqual(f, 4, 'far: the saved row stays for the group');
 });
 
+test('review: a name the scanner filled never lets another tag take the saved row (no chain of fills)', () => {
+  const t = load(), { sh, c } = modern(t);
+  t.scan(blank(2, 3, '7770640'));
+  t.scan(named(1, 3, '7770600', 'Synthers'));
+  assert.equal(nameOf(sh, c, '2 of 3'), 'Synthers (?)');
+  const held = [...Array(10).keys()].map(k => k + 2).filter(r => /Saved for the rest/.test(sh.notes.get(sh.key(r, 1)) || ''));
+  t.scan(blank(3, 3, '7770641'));
+  assert.ok(held.length >= 1); assert.notEqual(rowOf(sh, c, '3 of 3'), held[0], 'the saved row stays for the named group');
+});
+
 console.log(`${passed} group name tests passed`);

@@ -12,8 +12,7 @@ From an audit of Kirsten's 10/27 edits (144 placed tags, about 60 hand fixes).
 - **Names from the group** (8 hand entries on one 9-tag New Lenox group): a group tag with no name takes the name its
   siblings agree on (scanned today, same N, same ticket or within 50; disagreeing names are left for her); a named tag
   fills siblings whose Name is blank. Always "(?)" with a cell note; a name is never replaced. Replay of all October
-  scans: 7 of that group's 8 blank rows get the name (the 8th has a 6-digit ticket), and the last two blank tags now
-  land in the group's held rows (fewer blank lines); nothing else changes.
+  scans: 7 of that group's 8 blank rows get the name (the 8th has a 6-digit ticket); nothing else changes.
 - **Ticket suggestions from the group** (6 fixes got only the store series, 1 got none): a 6-digit group tag uses its
   siblings' tickets (inside the group's range, not already used): one is "likely", two or three are listed. An 8-digit
   read drops one digit into the store's series. The generic 8-digit note says "it may have an extra digit".
@@ -36,6 +35,11 @@ From an audit of Kirsten's 10/27 edits (144 placed tags, about 60 hand fixes).
   tag; the one-ticket-order rule needs two different "x of N" on that ticket (one tag placed twice is not one); a
   "likely" needs no other row with this tag's "x of N" and must fit the order when tickets rise with "x of N".
   Every guard now has a test that fails without it.
+  Round 3: only a clearly read name (not "(?)", so never a name the scanner filled) counts for the within-10 rule, so
+  a chain of fills can't move another customer's tag into a saved row; the first or last tag of a complete group whose
+  tickets rise gets "likely" the ticket just outside the range. Replay after round 3: the same 7 blank rows are named,
+  but the two tags in the group's second ticket book (32 tickets from the named tag) now go to the next free rows, as
+  they do live today, instead of the group's saved rows.
   Independent review of #31: one split per group and SKU (a second pins line or a rescan with another ticket reading
   reuses it); a group paid whole before 0.13.31 is never split on top; the phone (split and Scans log) must not differ;
   unmarked lines split only at 2 per frame; a new-build frame gets its share on top of the $1.50 base; the pins row

@@ -150,7 +150,8 @@ Window mapping is built from Kirsten's description and the first real October wi
     are not already on the tab. One candidate in a group with only this tag missing (and no
     other row with this tag's "x of N") is "likely", unless the siblings' tickets rise with "x of N" and the candidate
     is out of that order; otherwise 1–3
-    candidates are listed as "could be"; more gives no group hint (the store hint stays). An 8-digit reading is
+    candidates are listed as "could be"; the first or last tag of a complete group whose tickets rise with "x of N"
+    gets the ticket just outside the range; more gives no group hint (the store hint stays). An 8-digit reading is
     "likely" only when exactly one dropped digit lands near the store's series, else "could be A or B" (up to 3).
 
 23. **Group rows stay together** (Kirsten's request, approved by Jared 2026-10-22). The first tag of an "x of N" group
@@ -177,7 +178,7 @@ Window mapping is built from Kirsten's description and the first real October wi
     "(?)" with a note; a name is never replaced; disagreeing names are left for her. A sibling whose Scans-log phone
     differs (both have one) is another customer and is ignored. Two rows with the same "x of N" in the window (named or
     blank, this tag included) mean two groups: nothing is borrowed or filled. A borrowed name takes the group's saved
-    row only when the ticket is within 10 of a named tag's; otherwise the tag goes to the next free row. The "No
+    row only when the ticket is within 10 of a clearly read name's (not "(?)"); otherwise the tag goes to the next free row. The "No
     customer name" flag is dropped when a name is filled.
 24. **Group check** (2026-10-23, from the October 22 scans). A group tag is compared with its group's tags already
     on the tab (same N, close name, ticket close or within 1000). Disagreeing name, ticket or "x of N" gets a note on

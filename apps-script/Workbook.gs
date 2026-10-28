@@ -310,6 +310,11 @@ function groupTicketHint_(sh, c, x, end) {
   order.sort(function (a, b) { return a[0] - b[0]; });
   var rising = order.length >= 2 && order.every(function (p, i) { return !i || p[1] > order[i - 1][1]; });
   var inOrder = function (v) { return order.every(function (p) { return p[0] < own ? p[1] < v : p[1] > v; }); };
+  // The first or last tag of a complete, rising group: the ticket just outside the range (review: no gap to fill).
+  if (!fit.length && complete && rising) {
+    var edge = own < order[0][0] ? order[0][1] - 1 : own > order[order.length - 1][0] ? order[order.length - 1][1] + 1 : 0;
+    if (edge && cands[String(edge)] && !onTab[String(edge)]) fit = [String(edge)];
+  }
   if (fit.length === 1 && complete && (!rising || inOrder(Number(fit[0])))) return 'Ticket # ' + t + ' is missing a digit: likely ' + fit[0] + ' (fits this group\'s tickets), check the tag';
   if (fit.length >= 1 && fit.length <= 3) return 'Ticket # ' + t + ' is missing a digit: could be ' + (fit.length === 1 ? fit[0] : fit.slice(0, -1).join(', ') + ' or ' + fit[fit.length - 1]) + ' (from this group\'s tickets), check the tag';
   return null;
@@ -850,7 +855,8 @@ function groupSiblings_(sh, c, x, end) {
     var m = /^(\d+) of (\d+)$/.exec(String(seqs[i][0]).trim()), s = String(tickets[i][0]).trim();
     if (!m || Number(m[2]) !== n || daySerial_(outs[i][0]) !== today) continue;
     if (!(s === t || (/^\d{7}$/.test(s) && /^\d{7}$/.test(t) && Math.abs(Number(s) - Number(t)) <= 50))) continue;
-    out.push({ row: i + 2, name: String(names[i][0]).replace(/ \(\?\)$/, '').trim(), index: Number(m[1]), ticket: s });
+    var raw = String(names[i][0]).trim();
+    out.push({ row: i + 2, name: raw.replace(/ \(\?\)$/, '').trim(), unsure: / \(\?\)$/.test(raw), index: Number(m[1]), ticket: s });
   }
   // Another customer's tags are not this group (review: two unnamed tags borrowed a name and took its held row): drop
   // siblings whose Scans-log phone differs from this tag's.
@@ -862,7 +868,10 @@ function twoGroups_(sibs, index, row) {
   var seen = {}; seen[index] = true;
   return sibs.some(function (s) { if (s.row === row) return false; if (seen[s.index]) return true; seen[s.index] = true; return false; });
 }
-/** {name, near}: the name the siblings agree on, and whether a named sibling's ticket is within 10 (book order). */
+/**
+ * {name, near}: the name the siblings agree on, and whether a sibling whose name was read clearly (not "(?)", so never
+ * one the scanner filled from the group) has a ticket within 10 (book order). Review: a chain of fills must not reach.
+ */
 function groupNameFor_(sh, c, x, end) {
   var sibs = groupSiblings_(sh, c, x, end), named = sibs.filter(function (s) { return s.name; });
   if (!named.length || twoGroups_(sibs, Number(x.tag_index), -1)) return null;
@@ -870,7 +879,7 @@ function groupNameFor_(sh, c, x, end) {
   if (!named.every(function (s) { return namesClose_(sequenceIdentity_(s.name), first); })) return null; // they disagree: hers to decide
   var count = {}; named.forEach(function (s) { count[s.name] = (count[s.name] || 0) + 1; });
   var t = String(x.ticket_number || '').trim();
-  var near = named.some(function (s) { return s.ticket === t || (/^\d{7}$/.test(s.ticket) && /^\d{7}$/.test(t) && Math.abs(Number(s.ticket) - Number(t)) <= 10); });
+  var near = named.some(function (s) { return !s.unsure && (s.ticket === t || (/^\d{7}$/.test(s.ticket) && /^\d{7}$/.test(t) && Math.abs(Number(s.ticket) - Number(t)) <= 10)); });
   return { name: Object.keys(count).sort(function (a, b) { return count[b] - count[a]; })[0], near: near };
 }
 function fillGroupNames_(sh, c, x, end, row) {

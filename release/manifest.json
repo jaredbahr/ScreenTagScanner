@@ -106,8 +106,8 @@
     "tests/assembly-lb.test.cjs": 14,
     "tests/daily-count.test.cjs": 6,
     "tests/pins-per-frame.test.cjs": 27,
-    "tests/group-names.test.cjs": 8,
-    "tests/group-ticket-hints.test.cjs": 11,
+    "tests/group-names.test.cjs": 9,
+    "tests/group-ticket-hints.test.cjs": 12,
     "tests/parts-shorthand.test.cjs": 5
   },
   "allowWorkflowDefinitions": true
