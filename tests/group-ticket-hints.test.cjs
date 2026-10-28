@@ -51,4 +51,24 @@ test("an 8-digit read: one digit dropped into the store's series (81592855 -> 81
   assert.match(note, /Ticket # 77792855 has 8 digits: could be 7779255 or 7779285/, 'two readings fit the series: both listed');
 });
 
+test('one ticket for the whole order (Homer Glen style): "likely" that ticket even though it is on the tab', () => {
+  const t = load(), { sh, c } = modern(t);
+  [1, 2, 3, 4].forEach(i => t.scan(tag(i, 5, '7777956')));
+  t.scan(tag(5, 5, '777795'));
+  assert.match(ticketNote(sh, c, '5 of 5'), /likely 7777956 \(the group's other tags all read it\)/);
+});
+
+test('gaps inside the range first when they can hold every unscanned tag (replay: 9-tag group over two books)', () => {
+  const t = load(), { sh, c } = modern(t);
+  t.scan(tag(1, 1, '7777604', { customer_name: 'Sam Synthson', last_name: 'Synthson', phone: '8155550777' })); // another job's ticket: not a choice
+  [[1, '7777601'], [2, '7777609'], [3, '7777640'], [4, '7777642'], [5, '7777645']].forEach(([i, tk]) => t.scan(tag(i, 9, tk)));
+  t.scan(tag(6, 9, '777764'));
+  const note = ticketNote(sh, c, '6 of 9');
+  assert.match(note, /could be 7777641, 7777643 or 7777644 \(from this group's tickets\)/); assert.doesNotMatch(note, /likely/);
+  const u = load(), m = modern(u); // without that job, 7777604 is a fourth choice: no group hint, the store hint stays
+  [[1, '7777601'], [2, '7777609'], [3, '7777640'], [4, '7777642'], [5, '7777645']].forEach(([i, tk]) => u.scan(tag(i, 9, tk)));
+  u.scan(tag(6, 9, '777764'));
+  assert.doesNotMatch(ticketNote(m.sh, m.c, '6 of 9'), /from this group|likely/);
+});
+
 console.log(`${passed} group ticket hint tests passed`);

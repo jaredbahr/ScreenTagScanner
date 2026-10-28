@@ -259,8 +259,10 @@ function longTicketHint_(t, known, near) {
 
 /**
  * A 6-digit group tag: its siblings' tickets narrow the missing digit (Kirsten, 2026-10-27: "770764" in a group with
- * 7707640 and 7707642-45 was 7707641). Candidates must fall inside the group's ticket range and not be a sibling's
- * ticket; one candidate is "likely", two or three are listed. Siblings: same N, close name (or no name), within 14 days.
+ * 7707640 and 7707642-45 was 7707641). Siblings: same N, close name (or no name), within 14 days. When every sibling
+ * reads one ticket (one ticket per order), that is "likely". Otherwise candidates sit inside a cluster of the siblings'
+ * tickets (widened by the unscanned tags when the open slots can't hold them) and are not on the tab; one candidate
+ * with no other tag missing is "likely", two or three are "could be", more gives no group hint.
  */
 function groupTicketHint_(sh, c, x, end) {
   var t = String(x.ticket_number || ''), n = Number(x.tag_count), me = sequenceIdentity_(sheetName_(x)), today = scanDateSerial_();
@@ -285,12 +287,22 @@ function groupTicketHint_(sh, c, x, end) {
   sibs.sort(function (a, b) { return a - b; });
   var clusters = [[sibs[0]]];
   for (var s = 1; s < sibs.length; s++) { var last = clusters[clusters.length - 1]; if (sibs[s] - last[last.length - 1] <= 10) last.push(sibs[s]); else clusters.push([sibs[s]]); }
-  var missing = Math.max(0, n - 1 - Object.keys(indices).length);
-  var fit = Object.keys(cands).filter(function (cand) {
-    var v = Number(cand); if (onTab[cand]) return false;
-    return clusters.some(function (cl) { return v >= cl[0] - missing && v <= cl[cl.length - 1] + missing; });
-  }).sort();
-  var complete = missing === 0;
+  var missing = Math.max(0, n - 1 - Object.keys(indices).length), complete = missing === 0;
+  // Some stores (Homer Glen) give the whole order one ticket: when every sibling reads the same ticket, that is it.
+  if (sibs[0] === sibs[sibs.length - 1] && cands[String(sibs[0])])
+    return 'Ticket # ' + t + ' is missing a digit: likely ' + sibs[0] + ' (the group\'s other tags all read it), check the tag';
+  // Candidates inside a cluster's range come first, but only when the open tickets inside the ranges can hold this
+  // tag and every unscanned one; otherwise some of them lie outside, so widen by the unscanned tags.
+  function within(pad) {
+    return Object.keys(cands).filter(function (cand) {
+      var v = Number(cand); if (onTab[cand]) return false;
+      return clusters.some(function (cl) { return v >= cl[0] - pad && v <= cl[cl.length - 1] + pad; });
+    }).sort();
+  }
+  var open = 0;
+  clusters.forEach(function (cl) { for (var v = cl[0] + 1; v < cl[cl.length - 1]; v++) if (!onTab[String(v)]) open++; });
+  var fit = open >= missing + 1 ? within(0) : [];
+  if (!fit.length) fit = within(missing);
   if (fit.length === 1 && complete) return 'Ticket # ' + t + ' is missing a digit: likely ' + fit[0] + ' (fits this group\'s tickets), check the tag';
   if (fit.length >= 1 && fit.length <= 3) return 'Ticket # ' + t + ' is missing a digit: could be ' + (fit.length === 1 ? fit[0] : fit.slice(0, -1).join(', ') + ' or ' + fit[fit.length - 1]) + ' (from this group\'s tickets), check the tag';
   return null;

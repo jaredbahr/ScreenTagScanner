@@ -144,9 +144,11 @@ Window mapping is built from Kirsten's description and the first real October wi
     digits readable). The scanner prefers the full printed number. A 4–5 digit reading keeps its value and gets a
     ticket-cell note with the likely 7-digit number from that store's series, or both numbers when two series
     share those last digits. Notes stay on the cell until someone clears them; correcting the value doesn't remove them.
-    Since 0.13.31 a 6-digit group tag uses its group's tickets: candidates sit inside the siblings' ticket cluster
-    (gap 10 or less), widened by the number of tags still missing, and not already on the tab. One candidate in a group
-    with only this tag missing is "likely"; otherwise 1–3 candidates are listed as "could be". An 8-digit reading is
+    Since 0.13.31 a 6-digit group tag uses its group's tickets. When every sibling reads one ticket (one ticket per
+    order, as at Homer Glen) that ticket is "likely". Otherwise candidates sit inside the siblings' ticket clusters (gap
+    10 or less), widened by the number of tags still missing only when the open tickets inside can't hold them, and
+    are not already on the tab. One candidate in a group with only this tag missing is "likely"; otherwise 1–3
+    candidates are listed as "could be"; more gives no group hint (the store hint stays). An 8-digit reading is
     "likely" only when exactly one dropped digit lands near the store's series, else "could be A or B" (up to 3).
 
 23. **Group rows stay together** (Kirsten's request, approved by Jared 2026-10-22). The first tag of an "x of N" group

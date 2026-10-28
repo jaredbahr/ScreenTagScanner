@@ -27,6 +27,10 @@ From an audit of Kirsten's 10/27 edits (144 placed tags, about 60 hand fixes).
   tag (candidates inside the siblings' ticket cluster, not already on the tab), else "could be" 1–3; an 8-digit read is
   "likely" only with one fitting reading; Extras lists only parts actually credited (posted now, or a paid earlier
   receipt for the same client, labelled "(row N)"); the 8-digit note says "it may have an extra digit".
+  Real-data ticket replay (37 October fixes) after those changes: a one-ticket order (Homer Glen) names that ticket even
+  though it is on the tab, and gaps inside the group's range come first when they can hold every unscanned tag.
+  Result: 14 exact suggestions and 3 more with the right ticket in a short list (live: 13 exact); no wrong "likely"
+  beyond the two where Kirsten's typed ticket looks like the typo.
   Independent review of #31: one split per group and SKU (a second pins line or a rescan with another ticket reading
   reuses it); a group paid whole before 0.13.31 is never split on top; the phone (split and Scans log) must not differ;
   unmarked lines split only at 2 per frame; a new-build frame gets its share on top of the $1.50 base; the pins row
