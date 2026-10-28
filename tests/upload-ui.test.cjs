@@ -294,5 +294,25 @@ async function test(name,fn){await fn();passed++;console.log('PASS '+name);}
     assert.match(html,/<input id="month-password" type="password"[^>]*autocomplete="off"/);assert.match(html,/<p id="month-status"[^>]*aria-live="polite"/);
     assert.doesNotMatch(script,/saveToken\([^)]*monthPassword|setItem\([^)]*monthPassword|console\./);
   });
+  await test('daily count: a saved scan shows "Today: N tags saved" and the header count, kept for today only',async()=>{
+    const t=environment();await t.select();t.token();t.submit();
+    t.success({status:'ok',message:'Added: Synth #7770901, 30 x 40 → Homer Glen, row 2',today:37});
+    assert.match(t.elements.status.textContent,/Today so far: 37 tags saved\./);
+    assert.equal(t.elements['today-count'].textContent,'· Today: 37');assert.equal(t.elements['today-count'].hidden,false);
+    assert.equal(JSON.parse(t.storage.get('scanner.today')).n,37);
+    const again=environment({storage:t.storage});assert.equal(again.elements['today-count'].textContent,'· Today: 37','shown again on reload the same day');
+    const old=new Map([['scanner.today',JSON.stringify({day:'2026-1-1',n:9})]]);
+    assert.notEqual(environment({storage:old}).elements['today-count'].hidden,false,'yesterday\'s count is not shown');
+    const open=environment({storage:t.storage});open.storage.set('scanner.today',JSON.stringify({day:'2026-1-1',n:37}));
+    open.ctx.window.pageshow();assert.equal(open.elements['today-count'].hidden,true,'a page left open overnight hides the old count');
+  });
+  await test('daily count: errors, a missing count, or blocked storage never break the result',async()=>{
+    const t=environment();await t.select();t.token();t.submit();t.success({status:'error',message:'Scanner settings are unavailable. Contact Jared.',today:5});
+    assert.doesNotMatch(t.elements.status.textContent,/Today:/);
+    const u=environment();await u.select();u.token();u.submit();u.success({status:'ok',message:'Saved.'});
+    assert.doesNotMatch(u.elements.status.textContent,/Today:/);
+    const w=environment({writeThrows:true});await w.select();w.token();w.submit();w.success({status:'ok',message:'Saved.',today:1});
+    assert.match(w.elements.status.textContent,/Today so far: 1 tag saved\./);
+  });
   console.log(`${passed} inert UI tests passed`);
 })().catch(err=>{console.error(err);process.exitCode=1;});
