@@ -19,7 +19,16 @@ From an audit of Kirsten's 10/27 edits (144 placed tags, about 60 hand fixes).
   reuses it); a group paid whole before 0.13.31 is never split on top; the phone (split and Scans log) must not differ;
   unmarked lines split only at 2 per frame; a new-build frame gets its share on top of the $1.50 base; the pins row
   lists paid and owed frames and flags any skipped; a plain group tag never gets a review flag from another row's
-  receipt; receipt columns are read once per block.
+  receipt; receipt columns are read once per block. Round 2: a pins tag paid the whole count on one row before
+  0.13.31 (as 0.13.30 did for the 10/27 group) is never split on top; a rescan reading another count on a split group is
+  flagged, not paid; a split reused from another ticket gets a "check it is the same group" flag; unmarked lines split
+  at exactly 2 per frame; frames older than 14 days are named in the note, and "phone not checked" is noted.
+  Real-data replay of the two New Lenox groups: frames whose tickets were misread ("770763 4", "1707635") missed their
+  share, so a frame scanned within a day of the split also matches on name, N and phone. Result: the 10/27 group gets
+  $1.00 on all 8 frames (what Kirsten typed); the 10/22 group 11 of 12 (its misread duplicate "4 of 12" is held and the
+  pins row lists frame 8 as owed). Round 4: the same-day match applies only to a ticket that looks misread (not a clean 7 digits,
+  or sharing 5 digits with the group's ticket) and needs an exact name or a phone known on both sides, so a close
+  name (Ward / Wood) with a clean far ticket is never paid; the replay is unchanged.
 
 ## 0.13.30-draft — daily scan count
 
