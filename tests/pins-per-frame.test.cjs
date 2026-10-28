@@ -201,4 +201,30 @@ test('October replay: frames with misread tickets scanned the same day still get
   assert.equal(earningBy(m.sh, m.c)['1 of 8'] || '', '', 'days later with a misread ticket: not matched');
 });
 
+test('review of #31 round 4: a close name (Ward / Wood) the same day with a clean far ticket and no phone is never paid', () => {
+  const t = load(), { sh, c } = modern(t), ward = { customer_name: 'Synthward', last_name: 'Synthward', phone: null };
+  const wood = { customer_name: 'Synthwood', last_name: 'Synthwood', phone: null };
+  write(t, tag(2, 2, { ...wood, ticket_number: '7790000' })); // already on the tab
+  write(t, tag(1, 2, { ...ward, ticket_number: '7770631', extras: '4 580602 pins all frames', parts: [pins(4, true)] }));
+  write(t, tag(2, 2, { ...wood, ticket_number: '7790001', width_in: 40 })); // scanned later
+  const woodRows = [...Array(20).keys()].map(k => k + 2).filter(r => /synthwood/i.test(String(sh.get(r, c.NAME))));
+  for (const r of woodRows) assert.equal(sh.get(r, c.EARNING) || '', '', 'Wood row ' + r);
+});
+
+test('review of #31 round 4: a frame already on the tab with a misread ticket (same day, same name) gets its share', () => {
+  const t = load(), { sh, c } = modern(t);
+  write(t, tag(3, 8, { ticket_number: '777063 4' }));
+  write(t, tag(4, 8, { extras: '16 580602 pins', parts: [pins(16)] }));
+  assert.equal(earningBy(sh, c)['3 of 8'], 1);
+});
+
+test('review of #31 round 4: an older row with the same frame number never blocks the current frame', () => {
+  const t = load({ now: new Date('2026-10-01T15:00:00Z') }), { sh, c } = modern(t);
+  write(t, tag(7, 8, { ticket_number: '7770601' }));
+  t.setNow(new Date('2026-10-27T15:00:00Z'));
+  write(t, tag(7, 8, { width_in: 99 })); write(t, tag(4, 8, { extras: '16 580602 pins', parts: [pins(16)] }));
+  const rows = [...Array(20).keys()].map(k => k + 2).filter(r => sh.get(r, c.SEQUENCE) === '7 of 8');
+  assert.equal(rows.length, 2); assert.equal(sh.get(rows[0], c.EARNING) || '', '', 'the old row'); assert.equal(sh.get(rows[1], c.EARNING), 1, 'today\'s row');
+});
+
 console.log(`${passed} pins per frame tests passed`);

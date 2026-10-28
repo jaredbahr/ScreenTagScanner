@@ -168,9 +168,21 @@ function splitPerFrame_(x,sku,p,group) {
  * or a scan within a day of the split (the October replay: misread tickets like "770763 4" lost their frame's share).
  */
 function splitMatches_(split,x) {
+  var name=sequenceIdentity_(sheetName_(x)),phone=phoneKey_(x.phone),t=String(x.ticket_number||'');
+  if(split.of!==Number(x.tag_count)||!namesClose_(split.name,name)||phonesDiffer_(split.phone||'',phone))return false;
+  if(ticketsClose_(split.ticket,t))return true;
   var sameVisit=Number.isFinite(split.day)&&Math.abs(scanDateSerial_()-split.day)<=1;
-  return split.of===Number(x.tag_count)&&namesClose_(split.name,sequenceIdentity_(sheetName_(x)))&&
-    (ticketsClose_(split.ticket,String(x.ticket_number||''))||sameVisit)&&!phonesDiffer_(split.phone||'',phoneKey_(x.phone));
+  return sameVisit&&misreadTicketMatch_(t,split.ticket)&&(name===split.name||!!(phone&&split.phone)); // review of #31: Ward / Wood
+}
+/**
+ * A misread ticket of the same group: not a clean 7-digit read ("770763 4", "770763"), or sharing a run of 5 digits
+ * with the group's ticket ("1707635" / "7707633"). Used only for tags scanned within a day of the split.
+ */
+function misreadTicketMatch_(t,groupTicket) {
+  t=String(t||'');var g=String(groupTicket||'').replace(/\D/g,''),d=t.replace(/\D/g,'');
+  if(!/^\d{7}$/.test(t))return true;
+  for(var i=0;i+5<=d.length;i++)if(g.indexOf(d.slice(i,i+5))>=0)return true;
+  return false;
 }
 /**
  * A receipt from before 0.13.31 that already paid this group's pins: a whole-group receipt ([tab,ticket,'group',N]),
@@ -333,9 +345,11 @@ function splitToSiblings_(sh,c,x,r,row,flags) {
     var at=i+2,m=/^(\d+) of (\d+)$/.exec(String(seqs[i][0]).trim());
     if(at===row||!m||Number(m[2])!==r.split.of||done[Number(m[1])])continue;
     var who=sequenceIdentity_(names[i][0]),tk=String(tickets[i][0]).trim(),day=outs[i]?daySerial_(outs[i][0]):NaN;
-    if(!namesClose_(who,r.split.name)||!(ticketsClose_(tk,r.split.ticket)||day===today))continue; // a misread ticket scanned today still counts
+    if(!namesClose_(who,r.split.name))continue;
     var rowPhone=phoneAt(st.name,at);
     if(phonesDiffer_(rowPhone,r.split.phone||''))continue; // another customer with a close name
+    // A misread ticket scanned today still counts, with an exact name or a phone known on both sides (review of #31).
+    if(!ticketsClose_(tk,r.split.ticket)&&!(day===today&&misreadTicketMatch_(tk,r.split.ticket)&&(who===r.split.name||!!(rowPhone&&r.split.phone))))continue;
     var k=Number(m[1]);
     if(!(today-day>=0&&today-day<=GROUP_HOLD_DAYS)){if(older.indexOf(k)<0)older.push(k);continue;} // outside the group window
     done[k]=true;older=older.filter(function(o){return o!==k;});
