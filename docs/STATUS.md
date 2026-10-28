@@ -3,13 +3,13 @@
 Living notes so any session (Claude Code or Codex) can pick up where the last one stopped. Update this
 file whenever the state below changes. No customer data, emails, Google IDs or secrets here.
 
-_Last updated: 2026-10-24 (version 16 receipt verified at 2026-10-24T18:07:46.406Z)._
+_Last updated: 2026-10-28 (version 17 receipt verified at 2026-10-28T01:45:13.407Z)._
 
 ## Where things stand
 | | |
 |---|---|
-| Live in Google | Immutable version 16 / **0.13.28-draft**, source `832f80b4a896b0ed24e8422961a41d10b371eba9`. Deployed 2026-10-24 18:05 UTC / 13:05 America/Chicago (minute precision); verified 2026-10-24T18:07:46.406Z. All eleven code/HTML files matched raw target blobs, including immutable readback. Unchanged saved-editor manifest differed only by the terminal LF omission explicitly approved by Jared at 18:00 UTC; restoring that LF in memory matched the canonical blob. Manifest left untouched. Health and What's new (0.13.28 · Oct 24) passed; existing deployment preserved. No scans or property/sharing/trigger/sheet changes. |
-| Ready to deploy | The approved issue #24 pin is deployed. This metadata-only record awaits Claude/user review and merge; future runtime changes require a new reviewed main pin and release validation. |
+| Live in Google | Immutable version 17 / **0.13.30-draft**, source `ac5a18907ea9ff0f2adc0d94543ac51fa97e7cee`. Deployed 2026-10-28 01:44 UTC / October 27, 20:44 America/Chicago (minute precision); verified 2026-10-28T01:45:13.407Z. All twelve saved files checked after explicit saves and reload: eleven raw code/HTML blobs matched; unchanged manifest retained only its approved missing final LF. Initial failed saves were caught before deployment, stopped, corrected with Jared's approval and fully rechecked before one deployment on the same endpoint. Health/scanner/What's new (0.13.30, then 0.13.29) passed. No scans or sheet/property/settings/access/trigger changes. |
+| Ready to deploy | The approved issue #28 pin is deployed. This metadata-only record awaits Claude/user review and merge; future runtime changes require a new reviewed main pin and release validation. |
 | Who deploys | Codex, per [DEPLOYMENT.md](DEPLOYMENT.md) and the release gate, recorded as a `deployment` issue |
 | Lesson (2026-10-22) | Google ran Codex's unmerged PR line for a week while the default branch moved on separately. Rule now: deploy only from the default branch; the release gate fails a candidate that lacks the deployed source's history |
 | Workbook in use | "October 2026" in the shared monthly folder; tabs named by store ("Downers Grove", …); a "Tag x of N" column after Name in both blocks |
