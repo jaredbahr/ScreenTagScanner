@@ -476,7 +476,7 @@ function reviewTopics_(reasons) {
 
 /**
  * A tag rescanned with its ticket read differently slips past isExactRescan_ (New Lenox, Oct 21:
- * 770761 then 770261, same tag 35 minutes apart). Same store, last name, size and "x of N" on the
+ * 777761 then 777261, same tag 35 minutes apart). Same store, last name, size and "x of N" on the
  * same day with a different ticket is flagged on the row; nothing is skipped or deleted.
  */
 function possibleDoubleScan_(log, x) {

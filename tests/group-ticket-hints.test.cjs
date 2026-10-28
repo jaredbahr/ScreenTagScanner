@@ -42,7 +42,7 @@ test("another customer's tickets never narrow it; with one sibling the store hin
   assert.doesNotMatch(ticketNote(sh, c, '3 of 3'), /fits this group|gaps in this group/);
 });
 
-test("an 8-digit read: one digit dropped into the store's series (81592855 -> 8159255)", () => {
+test("an 8-digit read: one digit dropped into the store's series (77792855 -> 7779255)", () => {
   const t = load(), sh = t.ss.tabs['18559-(500)'];
   const one = (tk, i) => ({ store: 'Downers Grove', customer_name: 'Synth ' + i, last_name: 'Synth' + i, ticket_number: tk, tag_index: 1, tag_count: 1, width_in: 20 + i, height_in: 30, billable_inches: 50 + i });
   t.scan(one('7779250', 1)); t.scan(one('7779260', 2));

@@ -14,7 +14,7 @@ From an audit of Kirsten's 10/27 edits (144 placed tags, about 60 hand fixes).
   fills siblings whose Name is blank. Always "(?)" with a cell note; a name is never replaced. Replay of all October
   scans: 7 of that group's 8 blank rows get the name (the 8th has a 6-digit ticket), and the last two blank tags now
   land in the group's held rows (fewer blank lines); nothing else changes.
-- **Ticket suggestions from the group** (6 fixes got only "7707xxx", 1 got none): a 6-digit group tag uses its
+- **Ticket suggestions from the group** (6 fixes got only the store series, 1 got none): a 6-digit group tag uses its
   siblings' tickets (inside the group's range, not already used): one is "likely", two or three are listed. An 8-digit
   read drops one digit into the store's series. The generic 8-digit note says "it may have an extra digit".
 - **Parts shorthand in Extras** (about 15 rows typed "2pins", "3rollrs"): the first row's Extras gets the parts the
@@ -39,7 +39,7 @@ From an audit of Kirsten's 10/27 edits (144 placed tags, about 60 hand fixes).
   0.13.31 (as 0.13.30 did for the 10/27 group) is never split on top; a rescan reading another count on a split group is
   flagged, not paid; a split reused from another ticket gets a "check it is the same group" flag; unmarked lines split
   at exactly 2 per frame; frames older than 14 days are named in the note, and "phone not checked" is noted.
-  Real-data replay of the two New Lenox groups: frames whose tickets were misread ("770763 4", "1707635") missed their
+  Real-data replay of the two New Lenox groups: frames whose tickets were misread (a space inside, a wrong first digit) missed their
   share, so a frame scanned within a day of the split also matches on name, N and phone. Result: the 10/27 group gets
   $1.00 on all 8 frames (what Kirsten typed); the 10/22 group 11 of 12 (its misread duplicate "4 of 12" is held and the
   pins row lists frame 8 as owed). Round 4: the same-day match applies only to a ticket that looks misread (not a clean 7 digits,

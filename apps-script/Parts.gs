@@ -165,7 +165,7 @@ function splitPerFrame_(x,sku,p,group) {
 }
 /**
  * A split receipt's group is this tag's group: same N, a close name, no phone that says otherwise, and a close ticket
- * or a scan within a day of the split (the October replay: misread tickets like "770763 4" lost their frame's share).
+ * or a scan within a day of the split (the October replay: misread tickets (a space inside, a digit missing) lost their frame's share).
  */
 function splitMatches_(split,x) {
   var name=sequenceIdentity_(sheetName_(x)),phone=phoneKey_(x.phone),t=String(x.ticket_number||'');
@@ -175,8 +175,8 @@ function splitMatches_(split,x) {
   return sameVisit&&misreadTicketMatch_(t,split.ticket)&&(name===split.name||!!(phone&&split.phone)); // review of #31: Ward / Wood
 }
 /**
- * A misread ticket of the same group: not a clean 7-digit read ("770763 4", "770763"), or sharing a run of 5 digits
- * with the group's ticket ("1707635" / "7707633"). Used only for tags scanned within a day of the split.
+ * A misread ticket of the same group: not a clean 7-digit read ("777763 4", "777763"), or sharing a run of 5 digits
+ * with the group's ticket ("1777635" / "7777633"). Used only for tags scanned within a day of the split.
  */
 function misreadTicketMatch_(t,groupTicket) {
   t=String(t||'');var g=String(groupTicket||'').replace(/\D/g,''),d=t.replace(/\D/g,'');

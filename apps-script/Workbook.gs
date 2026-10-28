@@ -245,7 +245,7 @@ function lookAlikeTicket_(t, known, near) {
 }
 
 /**
- * An 8-digit ticket has one digit too many (Downers Grove, 2026-10-27: "81592855" for 8159255). Dropping one digit
+ * An 8-digit ticket has one digit too many (Downers Grove, 2026-10-27: a 7-digit ticket with one digit written twice). Dropping one digit
  * into this store's series gives the likely ticket when one reading clearly wins. Never changes the value.
  */
 function longTicketHint_(t, known, near) {
@@ -258,8 +258,8 @@ function longTicketHint_(t, known, near) {
 }
 
 /**
- * A 6-digit group tag: its siblings' tickets narrow the missing digit (Kirsten, 2026-10-27: "770764" in a group with
- * 7707640 and 7707642-45 was 7707641). Siblings: same N, close name (or no name), within 14 days. When every sibling
+ * A 6-digit group tag: its siblings' tickets narrow the missing digit (Kirsten, 2026-10-27: a 6-digit read in a group with
+ * tickets one apart was the one gap). Siblings: same N, close name (or no name), within 14 days. When every sibling
  * reads one ticket (one ticket per order), that is "likely". Otherwise candidates sit inside a cluster of the siblings'
  * tickets (widened by the unscanned tags when the open slots can't hold them) and are not on the tab; one candidate
  * with no other tag missing is "likely", two or three are "could be", more gives no group hint.
