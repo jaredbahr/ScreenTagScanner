@@ -189,7 +189,7 @@ function appendReviewNote_(cell, note) {
  */
 function ticketBookHint_(sh, layout, ticket) {
   var t = String(ticket || '');
-  if (!/^\d{4,7}$/.test(t)) return null;
+  if (!/^\d{4,8}$/.test(t)) return null;
   var known = [];
   ['screens', 'windows'].forEach(function (block) {
     var end = block === 'screens' ? screenBlockEnd_(sh) : WINDOW_LAST_ROW;
@@ -201,6 +201,7 @@ function ticketBookHint_(sh, layout, ticket) {
   var near = function (s) { var n = Number(s); return known.some(function (k) { return Math.abs(k - n) <= 300; }); };
   if (t.length === 7 && near(t)) return null;
   if (t.length <= 5) return shortTicketHint_(t, known, near);
+  if (t.length === 8) return longTicketHint_(t, known, near);
   if (t.length === 7) { var alike = lookAlikeTicket_(t, known, near); if (alike) return alike; }
   var cands = {};
   for (var p = 0; p <= t.length; p++) for (var d = 0; d <= 9; d++) {
@@ -241,6 +242,48 @@ function lookAlikeTicket_(t, known, near) {
   var fix = found[0] + t.slice(4), pairs = [];
   for (var i = 0; i < 4; i++) if (fix.charAt(i) !== t.charAt(i)) pairs.push(t.charAt(i) + '/' + fix.charAt(i));
   return 'Ticket # ' + t + ' looks off for this store (' + found[0] + 'xxx): likely ' + fix + ' (' + pairs.filter(function (p, k) { return pairs.indexOf(p) === k; }).join(', ') + ' look alike), check the tag';
+}
+
+/**
+ * An 8-digit ticket has one digit too many (Downers Grove, 2026-10-27: "81592855" for 8159255). Dropping one digit
+ * into this store's series gives the likely ticket when one reading clearly wins. Never changes the value.
+ */
+function longTicketHint_(t, known, near) {
+  var cands = {};
+  for (var p = 0; p < 8; p++) { var c = t.slice(0, p) + t.slice(p + 1); if (near(c)) cands[c] = true; }
+  // Closest to a ticket already on the tab wins when it is at least twice as close as the next reading.
+  var gap = function (c) { var n = Number(c); return Math.min.apply(null, known.map(function (k) { return Math.abs(k - n); })); };
+  var list = Object.keys(cands).sort(function (a, b) { return gap(a) - gap(b); });
+  if (list.length === 1 || (list.length > 1 && 2 * gap(list[0]) <= gap(list[1]))) return 'Ticket # ' + t + ' has 8 digits: likely ' + list[0] + ', check the tag';
+  return list.length ? 'Ticket # ' + t + ' has 8 digits: could be ' + list.slice(0, 3).join(' or ') + ', check the tag' : null;
+}
+
+/**
+ * A 6-digit group tag: its siblings' tickets narrow the missing digit (Kirsten, 2026-10-27: "770764" in a group with
+ * 7707640 and 7707642-45 was 7707641). Candidates must fall inside the group's ticket range and not be a sibling's
+ * ticket; one candidate is "likely", two or three are listed. Siblings: same N, close name (or no name), within 14 days.
+ */
+function groupTicketHint_(sh, c, x, end) {
+  var t = String(x.ticket_number || ''), n = Number(x.tag_count), me = sequenceIdentity_(sheetName_(x)), today = scanDateSerial_();
+  if (!/^\d{6}$/.test(t) || !c.SEQUENCE || !(n >= 2) || !verifiedSequence_(tagOf_(x))) return null;
+  var cands = {};
+  for (var p = 0; p <= 6; p++) for (var d = 0; d <= 9; d++) cands[t.slice(0, p) + d + t.slice(p)] = true;
+  var names = sh.getRange(2, c.NAME, end - 1, 1).getValues(), seqs = sh.getRange(2, c.SEQUENCE, end - 1, 1).getValues();
+  var tickets = sh.getRange(2, c.TICKET, end - 1, 1).getValues(), outs = c.DATE_OUT ? sh.getRange(2, c.DATE_OUT, end - 1, 1).getValues() : [];
+  var sibs = [];
+  for (var i = 0; i < names.length; i++) {
+    var m = /^(\d+) of (\d+)$/.exec(String(seqs[i][0]).trim()), k = String(tickets[i][0]).trim(), who = sequenceIdentity_(names[i][0]);
+    var day = outs[i] ? daySerial_(outs[i][0]) : NaN;
+    if (!m || Number(m[2]) !== n || !/^\d{7}$/.test(k) || !(today - day >= 0 && today - day <= GROUP_HOLD_DAYS)) continue;
+    if (me && who && !namesClose_(me, who)) continue;
+    if (Object.keys(cands).some(function (cand) { return Math.abs(Number(cand) - Number(k)) <= 50; })) sibs.push(Number(k));
+  }
+  if (sibs.length < 2) return null;
+  var lo = Math.min.apply(null, sibs), hi = Math.max.apply(null, sibs);
+  var fit = Object.keys(cands).filter(function (cand) { var v = Number(cand); return v >= lo && v <= hi && sibs.indexOf(v) < 0; }).sort();
+  if (fit.length === 1) return 'Ticket # ' + t + ' is missing a digit: likely ' + fit[0] + ' (fits this group\'s tickets), check the tag';
+  if (fit.length > 1 && fit.length <= 3) return 'Ticket # ' + t + ' is missing a digit: could be ' + fit.slice(0, -1).join(', ') + ' or ' + fit[fit.length - 1] + ' (gaps in this group\'s tickets), check the tag';
+  return null;
 }
 
 /**
@@ -955,7 +998,7 @@ function writeToStoreTab_(ss, x, reasons) {
   // Some stores (Homer) use one ticket number for a whole group of tags, so a ticket
   // already on the tab is normal when the tag says "Qty x of N". Exact rescans are
   // caught earlier against the Scans log (Code.gs). Here we only flag the ambiguous case.
-  var bookHint = ticketBookHint_(sh, layout, x.ticket_number);
+  var bookHint = groupTicketHint_(sh, c, x, screenBlockEnd_(sh)) || ticketBookHint_(sh, layout, x.ticket_number);
   if (bookHint) flags.push(bookHint);
   if (ticketInStoreTab_(sh, x.ticket_number, layout) && !(x.tag_count > 1)) {
     flags.push('Ticket already on the ' + store.name + ' tab: another tag in the group, or a duplicate?');

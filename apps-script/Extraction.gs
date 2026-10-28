@@ -351,7 +351,7 @@ function reviewReasons_(x) {
   else if (/^\d+$/.test(x.ticket_number) && x.ticket_number.length !== 7) {
     // Every Ace ticket seen so far is 7 digits; a staple over the first digit is the usual cause.
     reasons.push('Ticket # has ' + x.ticket_number.length + ' digits (Ace tickets have 7): ' +
-      (x.ticket_number.length <= 5 ? 'it may be only the handwritten last digits' : 'a staple may hide a digit') + ', check the tag');
+      (x.ticket_number.length <= 5 ? 'it may be only the handwritten last digits' : x.ticket_number.length > 7 ? 'a digit may be written twice' : 'a staple may hide a digit') + ', check the tag');
   }
   if (!x.store && (!x.sticker_color || x.sticker_color === 'none')) reasons.push('No store');
   if (!x.last_name) reasons.push('No customer name');
