@@ -4,12 +4,12 @@
   "reconciliationBranch": "main",
   "requiredUpstreamCommit": "5ebceb692142a7968f628b4cf841e0179e27b8cf",
   "lastVerifiedDeployment": {
-    "sourceCommit": "ac5a18907ea9ff0f2adc0d94543ac51fa97e7cee",
-    "version": "0.13.30-draft",
-    "appsScriptVersion": 17,
-    "deployedAtUtc": "2026-10-28T01:44:00Z",
-    "verifiedAtUtc": "2026-10-28T01:45:13.407Z",
-    "evidence": "Sole cloud browser writer submitted one deployment at 2026-10-28T01:44:04.627Z; version 17 was confirmed at 01:44:27.130Z on the same existing deployment/endpoint. Google displayed October 27, 20:44 America/Chicago; deployedAtUtc has minute precision, not an asserted exact Google creation timestamp. The initial five-file paste/save did not persist; Code.gs read back as the old baseline, so the writer stopped before deployment. Jared explicitly approved inspection/correction and repeated full readback. Explicit clipboard paste and visible Save corrected the failed saves. After explicit saves and browser reload, all twelve saved files were checked against the pin: eleven code/HTML SHA-256 hashes matched canonical source bytes, with only the known approved manifest missing-terminal-LF exception. The unchanged manifest raw blob 1209f928704010a313ed09d80f84a8eeb507b483 matches canonical af507c4c66583975efc63b989fea75ceb033c1f8 only after restoring one LF in memory; no trimming or other normalization. Only then was the single deployment submitted. Live health returned 0.13.30-draft; scanner loaded and What's new began 0.13.30 · Oct 27 then 0.13.29 · Oct 27. No scans, sheet writes, property/settings/access/trigger changes or permission prompts. No private target identifiers recorded."
+    "sourceCommit": "1806ab3f93e6056bb07d00f97fbf2d538e12f96a",
+    "version": "0.13.31-draft",
+    "appsScriptVersion": 18,
+    "deployedAtUtc": "2026-10-28T12:04:39.062Z",
+    "verifiedAtUtc": "2026-10-28T12:06:36.451Z",
+    "evidence": "Sole cloud-browser writer submitted exactly one deployment at 2026-10-28T12:04:39.062Z (07:04:39.062 America/Chicago); immutable version 18 was confirmed at 12:05:03.556Z on the same deployment/endpoint. deployedAtUtc records observed submission, not an asserted exact Google server creation time. Execution identity and access remained unchanged. Baseline version 17/ac5a189 and post-save source were each checked across all twelve files. Five approved files were pasted with explicit clipboard paste and visible Save; after reload, eleven code/HTML raw blobs matched the exact target before deployment, readback complete at 12:03:25.704Z. The untouched manifest retained only the known approved missing terminal LF: raw blob 1209f928704010a313ed09d80f84a8eeb507b483, canonical af507c4c66583975efc63b989fea75ceb033c1f8 after adding exactly one LF in memory; no trimming or other normalization. Main was rechecked exact at 12:03:44Z. Health returned 0.13.31-draft; scanner loaded and What's new began 0.13.31 · Oct 28 then 0.13.30 · Oct 27. No new permissions, property/scope/sharing/trigger/data changes, scans, migrations or month tests. No private target identifiers recorded."
   },
   "requiredProductionFiles": [
     "apps-script/Backup.gs",
@@ -27,16 +27,16 @@
   ],
   "baselineRuntimeBlobs": {
     "apps-script/Backup.gs": "ebb93e40165fdea0e509e40e8ca9e84edd7e85bf",
-    "apps-script/Code.gs": "ac08722a5b6fe4a239695c40f56392e304bf1020",
+    "apps-script/Code.gs": "8074d4f3c69cc69d833c9ee39f784d242a44fdda",
     "apps-script/ExtraLabor.gs": "c486f353d9f637f0e74b69da12f40d4c2334015a",
-    "apps-script/Extraction.gs": "939bb9b905ed61b388d28d9c86c69c1f50e1abe5",
+    "apps-script/Extraction.gs": "36822eeef4ac1830ff1abdc7c7d85892cfd26316",
     "apps-script/Layout.gs": "404068706c114dbfc678777af9c7d7a702c91e46",
     "apps-script/Month.gs": "313dbc09c372695495aaa36dadda07599ccff55b",
     "apps-script/MonthArchive.gs": "eb3a398ff452cb7c4ef208fc97582cddf2509e16",
-    "apps-script/Parts.gs": "858bb5df922b939d397b4093480982d0c2e96653",
+    "apps-script/Parts.gs": "5b9a32b48fbe50ee8d7e82ca148e4aba3b29c4e7",
     "apps-script/Routing.gs": "095b77271cb5951bd18616867457618c50285def",
-    "apps-script/Upload.html": "2c779b1062f600d6999971e7c0abd12eb2243005",
-    "apps-script/Workbook.gs": "130dd4ce1551839f6de83b215011925bd8fed21f",
+    "apps-script/Upload.html": "ab956fd661e47cb58d2fb816d35b482a28fd9a9a",
+    "apps-script/Workbook.gs": "2e0235e540cdc336bd2eae180ab52b72f974c587",
     "apps-script/appsscript.json": "af507c4c66583975efc63b989fea75ceb033c1f8"
   },
   "allowedPublicFunctions": [

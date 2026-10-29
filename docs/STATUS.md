@@ -3,13 +3,13 @@
 Living notes so any session (Claude Code or Codex) can pick up where the last one stopped. Update this
 file whenever the state below changes. No customer data, emails, Google IDs or secrets here.
 
-_Last updated: 2026-10-28 (version 17 receipt verified at 2026-10-28T01:45:13.407Z)._
+_Last updated: 2026-10-28 (version 18 receipt verified at 2026-10-28T12:06:36.451Z)._
 
 ## Where things stand
 | | |
 |---|---|
-| Live in Google | Immutable version 17 / **0.13.30-draft**, source `ac5a18907ea9ff0f2adc0d94543ac51fa97e7cee`. Deployed 2026-10-28 01:44 UTC / October 27, 20:44 America/Chicago (minute precision); verified 2026-10-28T01:45:13.407Z. All twelve saved files checked after explicit saves and reload: eleven raw code/HTML blobs matched; unchanged manifest retained only its approved missing final LF. Initial failed saves were caught before deployment, stopped, corrected with Jared's approval and fully rechecked before one deployment on the same endpoint. Health/scanner/What's new (0.13.30, then 0.13.29) passed. No scans or sheet/property/settings/access/trigger changes. |
-| Ready to deploy | The approved issue #28 pin is deployed. This metadata-only record awaits Claude/user review and merge; future runtime changes require a new reviewed main pin and release validation. |
+| Live in Google | Immutable version 18 / **0.13.31-draft**, source `1806ab3f93e6056bb07d00f97fbf2d538e12f96a`. Deployment submitted 2026-10-28 12:04:39.062 UTC / 07:04:39.062 America/Chicago; confirmed 12:05:03.556 UTC; verified 12:06:36.451 UTC. All twelve baseline and post-save files checked: eleven code/HTML blobs matched raw; untouched manifest retained only its known approved missing final LF. Full readback completed after explicit clipboard paste, visible Save and reload, before one same-endpoint deployment. Health/scanner/What's new (0.13.31, then 0.13.30) passed; identity/access preserved. No permission, property/scope/sharing/trigger/data changes or scans/migrations/month tests. |
+| Ready to deploy | The approved issue #33 pin is deployed. This metadata-only record awaits Claude/user review and merge; future runtime changes require a new reviewed main pin and release validation. |
 | Who deploys | Codex, per [DEPLOYMENT.md](DEPLOYMENT.md) and the release gate, recorded as a `deployment` issue |
 | Lesson (2026-10-22) | Google ran Codex's unmerged PR line for a week while the default branch moved on separately. Rule now: deploy only from the default branch; the release gate fails a candidate that lacks the deployed source's history |
 | Workbook in use | "October 2026" in the shared monthly folder; tabs named by store ("Downers Grove", …); a "Tag x of N" column after Name in both blocks |
