@@ -246,13 +246,18 @@ function lookAlikeTicket_(t, known, near) {
 
 /**
  * An 8-digit ticket has one digit too many (Downers Grove, 2026-10-27: a 7-digit ticket with one digit written twice). Dropping one digit
- * into this store's series gives the likely ticket when one reading clearly wins. Never changes the value.
+ * into this store's series gives the likely ticket when one reading clearly wins, or when a digit appears three times
+ * in a row and one fewer of it is in the series. Never changes the value.
  */
 function longTicketHint_(t, known, near) {
   var cands = {};
   for (var p = 0; p < 8; p++) { var c = t.slice(0, p) + t.slice(p + 1); if (near(c)) cands[c] = true; }
   // "likely" only when one reading lands in this store's series; otherwise the choices (review: nearness is noise).
   var list = Object.keys(cands).sort();
+  // Three of one digit in a row ("999") is the reader doubling a digit (Homer, 2026-10-28: a clearly written ticket
+  // with "99" read as "999"): one fewer of that run wins when it is in the series. A run of two proves nothing.
+  var run = /(\d)\1\1/.exec(t);
+  if (list.length > 1 && run) { var fewer = t.slice(0, run.index) + t.slice(run.index + 1); if (cands[fewer]) list = [fewer]; }
   if (list.length === 1) return 'Ticket # ' + t + ' has 8 digits: likely ' + list[0] + ', check the tag';
   return list.length && list.length <= 3 ? 'Ticket # ' + t + ' has 8 digits: could be ' + list.join(' or ') + ', check the tag' : null;
 }

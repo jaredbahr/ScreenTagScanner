@@ -115,4 +115,13 @@ test('the first tag of a complete group whose tickets rise: "could be" the ticke
   assert.match(note, /could be 7777640 \(from this group's tickets\)/); assert.doesNotMatch(note, /likely/);
 });
 
+test('an 8-digit read with one digit three times in a row: "likely" one fewer of it (23499974 -> 2349974)', () => {
+  const t = load(), sh = t.ss.tabs['18559-(500)'];
+  const one = (tk, i) => ({ store: 'Downers Grove', customer_name: 'Synth ' + i, last_name: 'Synth' + i, ticket_number: tk, tag_index: 1, tag_count: 1, width_in: 20 + i, height_in: 30, billable_inches: 50 + i });
+  t.scan(one('2349970', 1)); t.scan(one('2349972', 2));
+  t.scan(one('23499974', 3));
+  const note = [...sh.notes.values()].find(v => v.includes('23499974')) || '';
+  assert.match(note, /Ticket # 23499974 has 8 digits: likely 2349974,/);
+});
+
 console.log(`${passed} group ticket hint tests passed`);
