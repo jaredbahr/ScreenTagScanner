@@ -246,13 +246,28 @@ function lookAlikeTicket_(t, known, near) {
 
 /**
  * An 8-digit ticket has one digit too many (Downers Grove, 2026-10-27: a 7-digit ticket with one digit written twice). Dropping one digit
- * into this store's series gives the likely ticket when one reading clearly wins. Never changes the value.
+ * into this store's series gives the likely ticket when one reading clearly wins, or when a digit appears three times
+ * in a row and only one series reading drops a repeated digit. Never changes the value.
  */
 function longTicketHint_(t, known, near) {
   var cands = {};
   for (var p = 0; p < 8; p++) { var c = t.slice(0, p) + t.slice(p + 1); if (near(c)) cands[c] = true; }
   // "likely" only when one reading lands in this store's series; otherwise the choices (review: nearness is noise).
   var list = Object.keys(cands).sort();
+  // Three of one digit in a row ("999") suggests the reader doubled a digit (Homer, 2026-10-28: a clearly written
+  // ticket with "99" read as "999"). "likely" only when exactly one series reading comes from dropping a digit next
+  // to the same digit (review: a real "999" with another doubled digit leaves two such readings). Runs of two alone
+  // prove nothing.
+  if (list.length > 1 && /(\d)\1\1/.test(t)) {
+    var doubled = {}, tripled = {};
+    for (var q = 0; q < 8; q++) if (t[q] === t[q - 1] || t[q] === t[q + 1]) {
+      var r = t.slice(0, q) + t.slice(q + 1); if (!cands[r]) continue;
+      doubled[r] = true;
+      if ((t[q - 2] === t[q] && t[q - 1] === t[q]) || (t[q - 1] === t[q] && t[q + 1] === t[q]) || (t[q + 1] === t[q] && t[q + 2] === t[q])) tripled[r] = true;
+    }
+    var only = Object.keys(doubled);
+    if (only.length === 1 && tripled[only[0]]) list = only; // it must come from the run of three itself
+  }
   if (list.length === 1) return 'Ticket # ' + t + ' has 8 digits: likely ' + list[0] + ', check the tag';
   return list.length && list.length <= 3 ? 'Ticket # ' + t + ' has 8 digits: could be ' + list.join(' or ') + ', check the tag' : null;
 }

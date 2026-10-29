@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13.32-draft — a digit read three times
+
+Kirsten (2026-10-28, Homer, on live 0.13.31): a clearly written ticket with "99" was read with "999" (8 digits);
+the note listed three choices. An 8-digit read with one digit three times in a row is now "likely" one fewer of it
+when that is the only series reading made by dropping a repeated digit (on the October Homer tickets: the ticket she
+wrote). Review: a real "999" with another digit doubled leaves two such readings and stays "could be". A run of two proves nothing
+(the one Downers Grove 8-digit read was a different digit), so it stays "could be". Values are never changed.
+
 ## 0.13.31-draft — automation from the 10/27 audit
 
 From an audit of Kirsten's 10/27 edits (144 placed tags, about 60 hand fixes).
