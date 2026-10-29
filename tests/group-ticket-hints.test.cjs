@@ -122,6 +122,9 @@ test('an 8-digit read with one digit three times in a row: "likely" one fewer of
   t.scan(one('23499974', 3));
   const note = [...sh.notes.values()].find(v => v.includes('23499974')) || '';
   assert.match(note, /Ticket # 23499974 has 8 digits: likely 2349974,/);
+  t.scan(one('23499911', 4)); // a real "999" with a doubled 1: two readings drop a repeated digit
+  const two = [...sh.notes.values()].find(v => v.includes('23499911')) || '';
+  assert.match(two, /could be 2349911 or 2349991/); assert.doesNotMatch(two, /likely/);
 });
 
 console.log(`${passed} group ticket hint tests passed`);
