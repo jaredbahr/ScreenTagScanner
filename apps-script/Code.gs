@@ -314,10 +314,11 @@ function saveScan_(x, user, reasons, photoUrl, scanId, admittedId, leaseId) {
       if (!logRows) {
         logRows = [];
         var last = log.getLastRow(), ph = HEADERS.indexOf('Phone'), cu = HEADERS.indexOf('Customer'), ln = HEADERS.indexOf('Last Name');
+        var tk = HEADERS.indexOf('Ticket #'), fm = HEADERS.indexOf('Form');
         if (last >= 2) log.getRange(2, 1, last - 1, HEADERS.length).getValues().forEach(function (r) {
           var m = /^(.*?) (screens|windows) rows? ([\d, ]+)$/.exec(String(r[COL.WRITTEN_TO - 1])), p = phoneKey_(r[ph]);
           if (m && p) m[3].split(/\s*,\s*/).forEach(function (n) {
-            logRows.push({ tab: m[1], block: m[2], row: Number(n), phone: p, customer: r[cu], last: r[ln] });
+            logRows.push({ tab: m[1], block: m[2], row: Number(n), phone: p, customer: r[cu], last: r[ln], ticket: r[tk], form: r[fm] });
           });
         });
       }

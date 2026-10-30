@@ -3,10 +3,11 @@
 ## 0.13.33-draft — repeat customers keep Kirsten's spelling
 
 Jared (2026-10-30): "give confidence to repeat names." When a tag's phone (last 7 digits) matches earlier rows on the
-same store tab where Kirsten typed the name herself (the cell differs from what the scanner wrote and has no "(?)"),
-those rows agree on one spelling, and the reading is a close misspelling of it (a letter or two), her spelling is
-written with a name-cell note ("Repeat customer (name): read as …; same phone as row N …"). Never on a phone alone,
-never from a scanner-written or "(?)" name, never from another store tab. Data behind it (October): with a phone
+same store's tab, all their names (non-blank, no "(?)") are one spelling, Kirsten typed it herself (the cell differs from
+what the scanner wrote), and the reading is a close misspelling of it (a letter or two, both 5+ letters), her spelling
+is written with a name-cell note ("Repeat customer (name): read as …; same phone as row N …"). Review: an unchanged
+scanner-written name for the phone counts against it (two people on one phone); a row must still hold its logged
+ticket (rows she inserted never mislead); numbered store tabs match by store name; patio forms are never evidence. Data behind it (October): with a phone
 match, hand-typed spellings were right 13 of 16 times; spelling alone would have changed 12 of 161 correct names. A
 day-by-day replay of October with her corrections applied each evening: 1 replacement, matching her spelling; the
 same replay without corrections changes nothing. This month's sheet only; earlier months come next.

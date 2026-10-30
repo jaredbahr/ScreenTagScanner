@@ -1046,29 +1046,40 @@ function cents_(n) {
  * Window tags go to the N–W block (writeWindowRow_).
  */
 /**
- * Repeat customers (Jared, 2026-10-30): when this tag's phone matches earlier rows on this tab where Kirsten typed the
- * name herself (the cell differs from what the scanner wrote, and has no "(?)"), and the read is a close misspelling of
- * that one spelling, write her spelling with a note. Never on a phone alone, never from a name the scanner wrote, never
- * when her spellings for that phone disagree. October: phone-matched, hand-typed spellings were right 13 of 16 times;
+ * Repeat customers (Jared, 2026-10-30): a spelling Kirsten typed for this phone replaces a close misread. Evidence is every
+ * earlier row on this store's tab with the same phone (last 7 digits) whose row still holds the logged ticket (rows she
+ * inserted or deleted never mislead) and that is not a patio form (it may carry the shop's phone). All their non-blank
+ * names without "(?)" must be one spelling, typed by her (the cell differs from what the scanner wrote); the reading must
+ * be a close misspelling of it (a letter or two) and both at least 5 letters. A scanner-written name nobody changed counts
+ * against it (review: two people on one phone). October: phone-matched, hand-typed spellings were right 13 of 16 times;
  * spelling alone would have changed 12 of 161 correct names. This month's sheet only, for now.
  */
 function repeatCustomerName_(sh, layout, x) {
   var mine = phoneKey_(x.phone), read = String(sheetName_(x) || '').replace(/ \(\?\)$/, '').trim();
   if (!mine || !read || x.form_type === 'patio_door' || typeof x._log_rows !== 'function') return null;
-  var tab = sh.getName(), seen = {}, spellings = {}, rowOf = {};
+  var store = (storeByTabName_(sh.getName()) || {}).name || sh.getName(), cells = {}, seen = {}, spellings = {}, typedBy = {}, rowOf = {};
+  var col = function (block) { // name and ticket columns of one block, read once
+    if (!cells[block]) {
+      var L = layout[block], end = block === 'windows' ? WINDOW_LAST_ROW : screenBlockEnd_(sh);
+      cells[block] = L && L.NAME && L.TICKET ? { names: sh.getRange(2, L.NAME, end - 1, 1).getValues(), tickets: sh.getRange(2, L.TICKET, end - 1, 1).getValues() } : null;
+    }
+    return cells[block];
+  };
   x._log_rows().forEach(function (r) {
-    if (r.tab !== tab || r.phone !== mine) return;
-    var col = (r.block === 'windows' ? layout.windows : layout.screens).NAME, key = r.block + '|' + r.row;
-    if (!col || seen[key]) return;
+    if (r.tab !== store || r.phone !== mine || r.form === 'patio_door') return;
+    var key = r.block + '|' + r.row, b = seen[key] ? null : col(r.block);
     seen[key] = true;
-    var now = String(sh.getRange(r.row, col).getValues()[0][0] || '').trim();
-    var wrote = sequenceIdentity_(sheetName_({ customer_name: r.customer, last_name: r.last }));
-    if (!now || / \(\?\)$/.test(now) || sequenceIdentity_(now) === wrote) return; // blank, unsure, or the scanner's own
+    if (!b || r.row < 2 || r.row - 2 >= b.names.length) return;
+    if (String(b.tickets[r.row - 2][0]).trim() !== String(r.ticket || '').trim()) return; // the row moved or was reused
+    var now = String(b.names[r.row - 2][0] || '').trim();
+    if (!now || / \(\?\)$/.test(now)) return;
     var k = sequenceIdentity_(now);
     if (!spellings[k]) { spellings[k] = now; rowOf[k] = r.row; }
+    if (k !== sequenceIdentity_(sheetName_({ customer_name: r.customer, last_name: r.last }))) typedBy[k] = true;
   });
-  var keys = Object.keys(spellings), me = sequenceIdentity_(read);
-  if (keys.length !== 1 || me === keys[0] || !namesClose_(me, keys[0])) return null;
+  var keys = Object.keys(spellings), me = sequenceIdentity_(read), letters = function (v) { return v.replace(/[^a-z]/g, '').length; };
+  if (keys.length !== 1 || !typedBy[keys[0]] || me === keys[0]) return null;
+  if (letters(me) < 5 || letters(keys[0]) < 5 || !namesClose_(me, keys[0])) return null;
   return { name: spellings[keys[0]], row: rowOf[keys[0]], read: read };
 }
 
@@ -1100,7 +1111,6 @@ function writeToStoreTab_(ss, x, reasons) {
   var repeat = repeatCustomerName_(sh, layout, x);
   if (repeat) {
     x = Object.assign({}, x, { customer_name: repeat.name, last_name: repeat.name, name_unclear: false });
-    flags = flags.filter(function (f) { return f !== 'No customer name'; });
     flags.push('Repeat customer (name): read as "' + repeat.read + '"; same phone as row ' + repeat.row + ', where the name was typed "' + repeat.name + '". Check the tag.');
   }
   var bookHint = groupTicketHint_(sh, c, x, screenBlockEnd_(sh)) || ticketBookHint_(sh, layout, x.ticket_number);

@@ -31,8 +31,8 @@ test('never without a matching phone, and never from another tab', () => {
   const u = load(), j = u.ss.tabs['18650 (60)'], jc = u.ctx.storeLayout_(j).screens;
   const nl0 = u.ss.tabs['New Lenox'], nc0 = u.ctx.storeLayout_(nl0).screens;
   u.scan(tag('Qwynth', '7779001', { phone: '8155550777' })); nl0.set(2, nc0.NAME, 'Rynthe'); // same row number, other customer
-  u.scan(tag('Bynthe', '6479101', { store: 'Joliet' }));
-  const r = [...Array(10).keys()].map(k => k + 2).find(k => String(j.get(k, jc.TICKET)) === '6479101'); j.set(r, jc.NAME, 'Rynthe');
+  u.scan(tag('Bynthe', '7779001', { store: 'Joliet' })); // same row number and ticket as the New Lenox row: only the tab differs
+  const r = [...Array(10).keys()].map(k => k + 2).find(k => String(j.get(k, jc.TICKET)) === '7779001'); j.set(r, jc.NAME, 'Rynthe');
   u.scan(tag('Bynthe', '7779155'));
   const nl = u.ss.tabs['New Lenox'], nc = u.ctx.storeLayout_(nl).screens;
   assert.equal(nameOf(nl, nc, '7779155'), 'Bynthe', 'a spelling typed on another store tab is not used');
@@ -72,6 +72,49 @@ test('a window row she corrected also counts, and an unsure read "(?)" takes her
   sh.set(wr, l.windows.NAME, 'Rynthe');
   t.scan(tag('Bynthe', '7779155', { name_unclear: true }));
   assert.equal(nameOf(sh, l.screens, '7779155'), 'Rynthe');
+});
+
+test('review: an unchanged scanner-written name for the phone counts against it (two people on one phone)', () => {
+  const { t, sh, c } = setup();
+  t.scan(tag('Synthwood', '7779101'));            // right as read; nobody touched it
+  t.scan(tag('Synthwood', '7779102'));
+  sh.set(rowOfTicket(sh, c, '7779102'), c.NAME, 'Synthward'); // she typed another person's name on the same phone
+  t.scan(tag('Synthwood', '7779155'));
+  assert.equal(nameOf(sh, c, '7779155'), 'Synthwood');
+});
+
+test('review: a row that moved or was reused (its ticket no longer matches the log) is not evidence', () => {
+  const { t, sh, c } = setup();
+  t.scan(tag('Bynthe', '7779101'));
+  const r = rowOfTicket(sh, c, '7779101');
+  sh.set(r, c.NAME, 'Rynthe'); sh.set(r, c.TICKET, '7779888'); // she inserted a row: another job now sits here
+  t.scan(tag('Bynthe', '7779155'));
+  assert.equal(nameOf(sh, c, '7779155'), 'Bynthe');
+});
+
+test('review: stores on numbered tabs (Joliet) match too', () => {
+  const t = load(), j = t.ss.tabs['18650 (60)'], jc = t.ctx.storeLayout_(j).screens;
+  t.scan(tag('Bynthe', '6479101', { store: 'Joliet' }));
+  j.set(rowOfTicket(j, jc, '6479101'), jc.NAME, 'Rynthe');
+  t.scan(tag('Bynthe', '6479155', { store: 'Joliet' }));
+  assert.equal(nameOf(j, jc, '6479155'), 'Rynthe');
+});
+
+test('review: a patio form row is not evidence (it may carry the shop phone); short names are never changed', () => {
+  const { t, sh, c } = setup();
+  t.scan(tag('Bynthe', '7779101', { form_type: 'patio_door', width_in: 48, height_in: 75.5, billable_inches: null, material: null }));
+  const r = [...Array(40).keys()].map(k => k + 2).find(k => String(sh.get(k, c.TICKET)) === '7779101');
+  sh.set(r, c.NAME, 'Rynthe');
+  t.scan(tag('Bynthe', '7779155'));
+  assert.equal(nameOf(sh, c, '7779155'), 'Bynthe');
+  const u = setup();
+  u.t.scan(tag('Hurt', '7779101')); u.sh.set(rowOfTicket(u.sh, u.c, '7779101'), u.c.NAME, 'Hart');
+  u.t.scan(tag('Hurt', '7779155'));
+  assert.equal(nameOf(u.sh, u.c, '7779155'), 'Hurt', 'four letters: too short to trust');
+  const v = setup();
+  v.t.scan(tag('Bynthe', '7779101')); v.sh.set(rowOfTicket(v.sh, v.c, '7779101'), v.c.NAME, 'Rynthe');
+  v.t.scan(tag('Bynthe', '7779155', { form_type: 'patio_door', width_in: 48, height_in: 75.5, billable_inches: null, material: null }));
+  assert.equal(nameOf(v.sh, v.c, '7779155'), 'Bynthe', 'a patio form itself is never changed');
 });
 
 console.log(`${passed} repeat customer tests passed`);
