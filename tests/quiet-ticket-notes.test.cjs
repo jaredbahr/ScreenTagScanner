@@ -30,4 +30,23 @@ test('kept on the sheet: a doubt with detail, a ticket outside the series, or to
   assert.match(noteOf(u.sh, u.c, '7779101'), /ticket_number/, 'first ticket on the tab: no series yet');
 });
 
+test('review: a quieted scan keeps its other flags in the Scans log, Needs Review and the phone warning', () => {
+  const { t, sh, c } = setup();
+  t.scan(tag('7779101')); t.scan(tag('7779102'));
+  const r = t.scan(tag('7779110', { unclear: ['ticket_number'], billable_inches: null }));
+  const h = t.ctx.HEADERS, row = t.ss.tabs.Scans.getDataRange().getValues().find(v => String(v[h.indexOf('Ticket #')]) === '7779110');
+  assert.match(String(row[h.indexOf('Review Reason')]), /Inches calculated from measurements/);
+  assert.equal(row[h.indexOf('Needs Review')], 'YES');
+  assert.match(r.message, /Check on the sheet: inches/);
+  assert.doesNotMatch(noteOf(sh, c, '7779110'), /ticket_number/);
+});
+
+test('review: a ticket never fits the series by matching itself', () => {
+  const { t, sh, c } = setup();
+  t.scan(tag('7779110')); t.scan(tag('7779901'));
+  t.scan(tag('7779110', { unclear: ['ticket_number'], width_in: 41 }));
+  const notes = [...Array(10).keys()].map(k => k + 2).filter(r => String(sh.get(r, c.TICKET)) === '7779110').map(r => sh.notes.get(sh.key(r, c.TICKET)) || '');
+  assert.ok(notes.some(n => /ticket_number/.test(n)));
+});
+
 console.log(`${passed} quiet ticket note tests passed`);
