@@ -183,14 +183,12 @@ function appendReviewNote_(cell, note) {
   cell.setNote(existing ? existing + '\n\n' + note : note);
 }
 
-/**
- * Each store uses sequential ticket books (Homer 8169xxx, Downers Grove 8159xxx, ...). When the read
- * ticket isn't near any 7-digit ticket already on that store's tab, suggest the one-digit fix that is
- * (a staple hiding the first digit was the most common October correction). Never changes the value.
- */
-function ticketBookHint_(sh, layout, ticket) {
-  var t = String(ticket || '');
-  if (!/^\d{4,8}$/.test(t)) return null;
+/** The flags shown on the sheet: all of them, less a quieted bare ticket doubt (it stays in the Scans log). */
+function sheetFlags_(flags, x) {
+  return x && x._quiet_bare_ticket ? flags.filter(function (f) { return f !== 'ticket_number'; }) : flags;
+}
+/** The 7-digit tickets on both blocks of a store tab. */
+function knownTickets_(sh, layout) {
   var known = [];
   ['screens', 'windows'].forEach(function (block) {
     var end = block === 'screens' ? screenBlockEnd_(sh) : WINDOW_LAST_ROW;
@@ -198,6 +196,24 @@ function ticketBookHint_(sh, layout, ticket) {
       var v = String(r[0]).trim(); if (/^\d{7}$/.test(v)) known.push(Number(v));
     });
   });
+  return known;
+}
+/** A 7-digit ticket within 300 of another ticket on the tab (2+ known; itself never counts): it fits the series. */
+function ticketFitsSeries_(sh, layout, ticket) {
+  var t = String(ticket || '').trim();
+  if (!/^\d{7}$/.test(t)) return false;
+  var known = knownTickets_(sh, layout);
+  return known.length >= 2 && known.some(function (k) { return k !== Number(t) && Math.abs(k - Number(t)) <= 300; });
+}
+/**
+ * Each store uses sequential ticket books (one series per store, ...). When the read
+ * ticket isn't near any 7-digit ticket already on that store's tab, suggest the one-digit fix that is
+ * (a staple hiding the first digit was the most common October correction). Never changes the value.
+ */
+function ticketBookHint_(sh, layout, ticket) {
+  var t = String(ticket || '');
+  if (!/^\d{4,8}$/.test(t)) return null;
+  var known = knownTickets_(sh, layout);
   if (known.length < 2) return null;
   var near = function (s) { var n = Number(s); return known.some(function (k) { return Math.abs(k - n) <= 300; }); };
   if (t.length === 7 && near(t)) return null;
@@ -969,7 +985,7 @@ function writeWindowRow_(sh, store, x, flags, layout) {
   }
   applyPartsEarnings_(sh, row, c, x, true, 0);
   applyExtraLabor_(sh, row, c, x, true, labor, flags);
-  showReview_(sh,row,c,flags);
+  showReview_(sh,row,c,sheetFlags_(flags,x));
   return { ok: true, store: store, tab: store.tab, row: row, block: 'windows', flags: flags };
 }
 
@@ -1120,6 +1136,10 @@ function writeToStoreTab_(ss, x, reasons) {
   }
   var bookHint = groupTicketHint_(sh, c, x, screenBlockEnd_(sh)) || ticketBookHint_(sh, layout, x.ticket_number);
   if (bookHint) flags.push(bookHint);
+  // A bare "ticket_number" doubt (the reader gave no detail) on a ticket that already fits this tab's series is not a
+  // sheet note (Jared, 2026-10-30): since 10/20 such notes led to a fix 4 times in 77. Only the note is left out: the
+  // flags list stays whole, because saveScan_ copies the sheet-only flags back to the log by position (review).
+  else if (flags.indexOf('ticket_number') >= 0 && ticketFitsSeries_(sh, layout, x.ticket_number)) x = Object.assign({}, x, { _quiet_bare_ticket: true });
   if (ticketInStoreTab_(sh, x.ticket_number, layout) && !(x.tag_count > 1)) {
     flags.push('Ticket already on the ' + store.name + ' tab: another tag in the group, or a duplicate?');
   }
@@ -1256,7 +1276,7 @@ function writeToStoreTab_(ss, x, reasons) {
       if (had === '' || /^new patio door/.test(had)) ex.setValue(safeCell_(had ? had + ', ' + shorthand : shorthand));
     }
     applyExtraLabor_(sh, row, c, x, i === 0, labor, flags);
-    showReview_(sh,row,c,flags);
+    showReview_(sh,row,c,sheetFlags_(flags,x));
   });
   if (group && heldRow < 0) holdGroupRows_(sh, c, group, rows[0], end, x);
   if (namedOnScan) fillGroupNames_(sh, c, x, end, rows[0]);

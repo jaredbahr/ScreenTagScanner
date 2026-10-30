@@ -14,6 +14,11 @@ match, hand-typed spellings were right 13 of 16 times; spelling alone would have
 day-by-day replay of October with her corrections applied each evening: 1 replacement, matching her spelling; the
 same replay without corrections changes nothing. This month's sheet only; earlier months come next.
 
+Also in 0.13.33 (Jared, 2026-10-30, after the 10/30 review): a bare "ticket_number" doubt (the reader gave no detail) on a
+ticket that already fits the tab's series (7 digits, within 300 of a ticket on the tab) is no longer a sheet note; it
+stays in the Scans log. Since 10/20 such notes appeared on 77 in-series tickets and led to a fix 4 times. Doubts with
+detail, tickets outside the series and every scanner hint stay.
+
 ## 0.13.32-draft — a digit read three times
 
 Kirsten (2026-10-28, Homer, on live 0.13.31): a clearly written ticket with "99" was read with "999" (8 digits);
