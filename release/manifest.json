@@ -109,7 +109,7 @@
     "tests/group-names.test.cjs": 9,
     "tests/group-ticket-hints.test.cjs": 13,
     "tests/parts-shorthand.test.cjs": 5,
-    "tests/ticket-space.test.cjs": 3
+    "tests/ticket-space.test.cjs": 4
   },
   "allowWorkflowDefinitions": true
 }

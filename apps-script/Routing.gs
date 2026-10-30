@@ -82,8 +82,8 @@ function normalizeJobInput_(original) {
   // A space inside the ticket ("123456 7"): the reader split one number. Every such read in October was the 7 digits
   // run together (4 of them, fixed by hand). Approved by Jared 2026-10-30: write the digits, keep the reading in a note.
   var tk = typeof x.ticket_number === 'string' ? x.ticket_number.trim() : '';
-  if (/^\d[\d ]*\d$/.test(tk) && tk.indexOf(' ') >= 0 && tk.replace(/ /g, '').length === 7) {
-    x.ticket_number = tk.replace(/ /g, '');
+  if (/^\d+ \d+$/.test(tk) && tk.replace(' ', '').length === 7) { // one space, as in every October case
+    x.ticket_number = tk.replace(' ', '');
     x.routing_review.push('Ticket # ' + x.ticket_number + ' was read with a space ("' + tk + '"); written as one number, check the tag');
   }
   if (x.form_type === 'patio_door') patioDoor_(x, original);

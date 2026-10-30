@@ -12,7 +12,8 @@ Approved by Jared after the 3-day audit (2026-10-30):
 - A ticket read with a space inside ("123456 7") is written as the 7 digits when removing the space leaves exactly 7;
   the ticket cell notes the reading. All 4 such reads in October were the 7 digits run together (hand-fixed).
 - The "Window tag: new to the scanner" row flag is retired: the audit found it on 4 rows needing no change. Specific
-  window flags (panes unknown, balance-due slip) stay.
+  window flags (panes unknown, balance-due slip) stay, plus a new "Window Glass not filled" flag when no glass
+  price was read (review: the generic flag was its only check). The space rule takes exactly one space.
 
 ## 0.13.31-draft — automation from the 10/27 audit
 

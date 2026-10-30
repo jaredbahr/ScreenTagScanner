@@ -939,7 +939,9 @@ function writeWindowRow_(sh, store, x, flags, layout) {
   var row = firstEmptyWindowRow_(sh, layout);
   if (row < 0) return { ok: false, store: store, problem: 'the ' + store.name + ' windows section is full' };
   // The "Window tag: new to the scanner" flag was retired 2026-10-30 (Jared): windows are routine now, and the 3-day audit
-  // found it on 4 rows that needed no change. Specific window flags (panes, balance due) stay.
+  // found it on 4 rows that needed no change. Specific window flags (panes, balance due) stay, and a missing glass
+  // price keeps its own flag (review: the generic flag was its only check).
+  if (x.glass_price === null || x.glass_price === undefined || x.glass_price === '') flags.push('Window Glass not filled: no glass price read');
   var perPane = x.thermopane ? WINDOW_LABOR_PER_PANE.thermopane : WINDOW_LABOR_PER_PANE.standard;
   var labor = x.panes ? cents_(x.panes * perPane) : '';
   if (!x.panes) flags.push('Window LB Earn not filled: panes unknown');
