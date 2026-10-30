@@ -36,10 +36,10 @@ test('real pattern: 3 of 3 first, other jobs in between, then 2 of 3 and 1 of 3 
 
 test('same-ticket groups (Homer style) fill holds in any order; a different customer does not', () => {
   const t = load(), { sh, c } = modern(t);
-  t.scan(job('Synthgrp', '8169901', 2, 4));
+  t.scan(job('Synthgrp', '8339901', 2, 4));
   t.scan(job('Synthelse', '9999999', 3, 4, { bump: 3 })); // a different customer with the same N: not the group
   assert.equal(seqAt(sh, c, 6), '3 of 4', 'goes past the 3 held rows (3–5)'); assert.equal(sh.get(6, c.NAME), 'Synthelse');
-  t.scan(job('Synthgrp', '8169901', 4, 4)); t.scan(job('Synthgrp', '8169901', 1, 4, { bump: 1 }));
+  t.scan(job('Synthgrp', '8339901', 4, 4)); t.scan(job('Synthgrp', '8339901', 1, 4, { bump: 1 }));
   assert.deepEqual([2, 3, 4].map(r => seqAt(sh, c, r)), ['2 of 4', '4 of 4', '1 of 4']);
 });
 

@@ -20,15 +20,15 @@ const rowOf = (sh, c, ticket) => [...Array(60).keys()].map(i => i + 2).find(r =>
 
 test('same-ticket group (Homer style): a name or ticket read differently gets a note on that cell only', () => {
   const t = load(), { sh, c } = modern(t, 'Homer Glen');
-  t.scan(tag('HOMER', 'Synthrus', '8169901', 4, 6));
-  const r = t.scan(tag('HOMER', 'Synthbus', '8169601', 3, 6)); // one letter and one digit misread
+  t.scan(tag('HOMER', 'Synthrus', '8339901', 4, 6));
+  const r = t.scan(tag('HOMER', 'Synthbus', '8339601', 3, 6)); // one letter and one digit misread
   const row = 3;
   assert.equal(sh.get(row, c.NAME), 'Synthbus', 'values are never changed');
   assert.match(note(sh, row, c.NAME), /Group check \(name\): this tag reads "synthbus"; other tags in this group read "synthrus" \(rows 2\)/);
-  assert.match(note(sh, row, c.TICKET), /Group check \(ticket\): 8169601 is far from the rest of this group \(8169901, rows 2\)/);
-  t.scan(tag('HOMER', 'Synthrus', '8169901', 2, 6));
-  t.scan(tag('HOMER', 'Synthrus', '8169501', 1, 6)); // two agreeing tags: the shared-ticket wording
-  assert.match(note(sh, rowOf(sh, c, '8169501'), c.TICKET), /this tag reads 8169501; 2 other tags in this group read 8169901/);
+  assert.match(note(sh, row, c.TICKET), /Group check \(ticket\): 8339601 is far from the rest of this group \(8339901, rows 2\)/);
+  t.scan(tag('HOMER', 'Synthrus', '8339901', 2, 6));
+  t.scan(tag('HOMER', 'Synthrus', '8339501', 1, 6)); // two agreeing tags: the shared-ticket wording
+  assert.match(note(sh, rowOf(sh, c, '8339501'), c.TICKET), /this tag reads 8339501; 2 other tags in this group read 8339901/);
   assert.doesNotMatch(r.message, /Check on the sheet:/, 'cell notes, not a yellow row');
   assert.notEqual(sh.bg.get(row + ',' + c.DATE_IN), t.ctx.FLAG_COLOR);
 });
