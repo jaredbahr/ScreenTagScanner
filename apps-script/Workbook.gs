@@ -188,9 +188,8 @@ function appendReviewNote_(cell, note) {
  * ticket isn't near any 7-digit ticket already on that store's tab, suggest the one-digit fix that is
  * (a staple hiding the first digit was the most common October correction). Never changes the value.
  */
-function ticketBookHint_(sh, layout, ticket) {
-  var t = String(ticket || '');
-  if (!/^\d{4,8}$/.test(t)) return null;
+/** The 7-digit tickets on both blocks of a store tab. */
+function knownTickets_(sh, layout) {
   var known = [];
   ['screens', 'windows'].forEach(function (block) {
     var end = block === 'screens' ? screenBlockEnd_(sh) : WINDOW_LAST_ROW;
@@ -198,6 +197,19 @@ function ticketBookHint_(sh, layout, ticket) {
       var v = String(r[0]).trim(); if (/^\d{7}$/.test(v)) known.push(Number(v));
     });
   });
+  return known;
+}
+/** A 7-digit ticket within 300 of a ticket already on the tab (2+ known): it fits this store's series. */
+function ticketFitsSeries_(sh, layout, ticket) {
+  var t = String(ticket || '').trim();
+  if (!/^\d{7}$/.test(t)) return false;
+  var known = knownTickets_(sh, layout);
+  return known.length >= 2 && known.some(function (k) { return Math.abs(k - Number(t)) <= 300; });
+}
+function ticketBookHint_(sh, layout, ticket) {
+  var t = String(ticket || '');
+  if (!/^\d{4,8}$/.test(t)) return null;
+  var known = knownTickets_(sh, layout);
   if (known.length < 2) return null;
   var near = function (s) { var n = Number(s); return known.some(function (k) { return Math.abs(k - n) <= 300; }); };
   if (t.length === 7 && near(t)) return null;
@@ -1120,6 +1132,9 @@ function writeToStoreTab_(ss, x, reasons) {
   }
   var bookHint = groupTicketHint_(sh, c, x, screenBlockEnd_(sh)) || ticketBookHint_(sh, layout, x.ticket_number);
   if (bookHint) flags.push(bookHint);
+  // A bare "ticket_number" doubt (the reader gave no detail) on a ticket that already fits this tab's series stays in the
+  // Scans log only (Jared, 2026-10-30): since 10/20 such sheet notes led to a fix 4 times in 77.
+  else if (flags.indexOf('ticket_number') >= 0 && ticketFitsSeries_(sh, layout, x.ticket_number)) flags = flags.filter(function (f) { return f !== 'ticket_number'; });
   if (ticketInStoreTab_(sh, x.ticket_number, layout) && !(x.tag_count > 1)) {
     flags.push('Ticket already on the ' + store.name + ' tab: another tag in the group, or a duplicate?');
   }
