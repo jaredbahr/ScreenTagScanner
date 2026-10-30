@@ -3,13 +3,13 @@
 Living notes so any session (Claude Code or Codex) can pick up where the last one stopped. Update this
 file whenever the state below changes. No customer data, emails, Google IDs or secrets here.
 
-_Last updated: 2026-10-28 (version 18 receipt verified at 2026-10-28T12:06:36.451Z)._
+_Last updated: 2026-10-30 (version 19 receipt verified at 2026-10-30T20:25:05.439Z)._
 
 ## Where things stand
 | | |
 |---|---|
-| Live in Google | Immutable version 18 / **0.13.31-draft**, source `1806ab3f93e6056bb07d00f97fbf2d538e12f96a`. Deployment submitted 2026-10-28 12:04:39.062 UTC / 07:04:39.062 America/Chicago; confirmed 12:05:03.556 UTC; verified 12:06:36.451 UTC. All twelve baseline and post-save files checked: eleven code/HTML blobs matched raw; untouched manifest retained only its known approved missing final LF. Full readback completed after explicit clipboard paste, visible Save and reload, before one same-endpoint deployment. Health/scanner/What's new (0.13.31, then 0.13.30) passed; identity/access preserved. No permission, property/scope/sharing/trigger/data changes or scans/migrations/month tests. |
-| Ready to deploy | The approved issue #33 pin is deployed. This metadata-only record awaits Claude/user review and merge; future runtime changes require a new reviewed main pin and release validation. |
+| Live in Google | Immutable version 19 / **0.13.32-draft**, source `1cb66ce08f64f726f147388d8754f5cb0d9b18eb`. Submitted 2026-10-30 20:24:20.716 UTC / 15:24:20.716 America/Chicago; success observed 20:24:29.858 UTC; verified 20:25:05.439 UTC. All twelve baseline and post-save files checked: eleven raw code/HTML matches plus only the unchanged manifest's approved missing final LF. Initial rejected Save stopped before deployment; Jared approved discard/rebaseline and guarded five-file retry, followed by reload/full readback before exactly one same-endpoint deployment. Health/What's new (0.13.32, then 0.13.31) passed; settings preserved. No new permissions/scopes, properties/sharing/triggers/data changes or scans. Normal cloud viewport verified; phone-sized-window and physical-phone QA not completed. |
+| Ready to deploy | The approved issue #36 updated pin is deployed. This metadata-only record awaits Claude/user review and merge; future runtime changes require a new reviewed main pin and release validation. |
 | Who deploys | Codex, per [DEPLOYMENT.md](DEPLOYMENT.md) and the release gate, recorded as a `deployment` issue |
 | Lesson (2026-10-22) | Google ran Codex's unmerged PR line for a week while the default branch moved on separately. Rule now: deploy only from the default branch; the release gate fails a candidate that lacks the deployed source's history |
 | Workbook in use | "October 2026" in the shared monthly folder; tabs named by store ("Downers Grove", …); a "Tag x of N" column after Name in both blocks |

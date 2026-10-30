@@ -4,12 +4,12 @@
   "reconciliationBranch": "main",
   "requiredUpstreamCommit": "5ebceb692142a7968f628b4cf841e0179e27b8cf",
   "lastVerifiedDeployment": {
-    "sourceCommit": "1806ab3f93e6056bb07d00f97fbf2d538e12f96a",
-    "version": "0.13.31-draft",
-    "appsScriptVersion": 18,
-    "deployedAtUtc": "2026-10-28T12:04:39.062Z",
-    "verifiedAtUtc": "2026-10-28T12:06:36.451Z",
-    "evidence": "Sole cloud-browser writer submitted exactly one deployment at 2026-10-28T12:04:39.062Z (07:04:39.062 America/Chicago); immutable version 18 was confirmed at 12:05:03.556Z on the same deployment/endpoint. deployedAtUtc records observed submission, not an asserted exact Google server creation time. Execution identity and access remained unchanged. Baseline version 17/ac5a189 and post-save source were each checked across all twelve files. Five approved files were pasted with explicit clipboard paste and visible Save; after reload, eleven code/HTML raw blobs matched the exact target before deployment, readback complete at 12:03:25.704Z. The untouched manifest retained only the known approved missing terminal LF: raw blob 1209f928704010a313ed09d80f84a8eeb507b483, canonical af507c4c66583975efc63b989fea75ceb033c1f8 after adding exactly one LF in memory; no trimming or other normalization. Main was rechecked exact at 12:03:44Z. Health returned 0.13.31-draft; scanner loaded and What's new began 0.13.31 · Oct 28 then 0.13.30 · Oct 27. No new permissions, property/scope/sharing/trigger/data changes, scans, migrations or month tests. No private target identifiers recorded."
+    "sourceCommit": "1cb66ce08f64f726f147388d8754f5cb0d9b18eb",
+    "version": "0.13.32-draft",
+    "appsScriptVersion": 19,
+    "deployedAtUtc": "2026-10-30T20:24:20.716Z",
+    "verifiedAtUtc": "2026-10-30T20:25:05.439Z",
+    "evidence": "Sole cloud-browser writer submitted exactly one deployment at 2026-10-30T20:24:20.716Z (15:24:20.716 America/Chicago); version 19 success was observed at 20:24:29.858Z on the same existing endpoint/settings. deployedAtUtc records observed submission, not an asserted exact Google server creation time. All twelve saved baseline files matched version 18/1806ab3 at 19:52:22Z. The initial Save at 19:54:38Z was rejected for invalid unsaved appsscript.json changes; no persisted changes or deployment were established. Jared specifically authorized recovery at 20:19:36Z. After safe discard and all-twelve-file rebaseline at 20:20:50.883Z, five guarded clipboard pastes with visible Saves succeeded. Reload and full target readback completed at 20:23:26.858Z: eleven code/HTML raw blobs matched, plus only the unchanged manifest known approved missing terminal LF. Manifest raw blob 1209f928704010a313ed09d80f84a8eeb507b483 matches canonical af507c4c66583975efc63b989fea75ceb033c1f8 after adding exactly one LF in memory; no trimming or other normalization. Fresh source gate at 20:20:11.191Z confirmed no drift. Health returned 0.13.32-draft; What's new began 0.13.32 · Oct 30 then 0.13.31 · Oct 28. No new permissions/scopes, Script Properties, sharing, trigger or data changes, or scans. No private target identifiers recorded. Normal cloud viewport health/scanner/notes verified. Phone-sized-window verification was not completed because native resize left the width unchanged; no actual phone test."
   },
   "requiredProductionFiles": [
     "apps-script/Backup.gs",
@@ -29,14 +29,14 @@
     "apps-script/Backup.gs": "ebb93e40165fdea0e509e40e8ca9e84edd7e85bf",
     "apps-script/Code.gs": "8074d4f3c69cc69d833c9ee39f784d242a44fdda",
     "apps-script/ExtraLabor.gs": "c486f353d9f637f0e74b69da12f40d4c2334015a",
-    "apps-script/Extraction.gs": "36822eeef4ac1830ff1abdc7c7d85892cfd26316",
+    "apps-script/Extraction.gs": "c9fb1ddbcb37e6d772d2910e2918bcacdf850432",
     "apps-script/Layout.gs": "404068706c114dbfc678777af9c7d7a702c91e46",
     "apps-script/Month.gs": "313dbc09c372695495aaa36dadda07599ccff55b",
     "apps-script/MonthArchive.gs": "eb3a398ff452cb7c4ef208fc97582cddf2509e16",
-    "apps-script/Parts.gs": "5b9a32b48fbe50ee8d7e82ca148e4aba3b29c4e7",
-    "apps-script/Routing.gs": "095b77271cb5951bd18616867457618c50285def",
-    "apps-script/Upload.html": "ab956fd661e47cb58d2fb816d35b482a28fd9a9a",
-    "apps-script/Workbook.gs": "2e0235e540cdc336bd2eae180ab52b72f974c587",
+    "apps-script/Parts.gs": "8e0cf7d8e1ab0db4b27716b9b9840d804efc33f6",
+    "apps-script/Routing.gs": "4fc5febe9ff2e09a48fca96833b82f844ea7b32f",
+    "apps-script/Upload.html": "3360a0b9a625f9c4527c2f5cb712ab3fdf3e4fd0",
+    "apps-script/Workbook.gs": "9e0c8a44608b7d5a40abf67c30eae8a4afa78823",
     "apps-script/appsscript.json": "af507c4c66583975efc63b989fea75ceb033c1f8"
   },
   "allowedPublicFunctions": [
