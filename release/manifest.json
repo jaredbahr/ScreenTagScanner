@@ -105,10 +105,11 @@
     "tests/patio-door.test.cjs": 14,
     "tests/assembly-lb.test.cjs": 14,
     "tests/daily-count.test.cjs": 6,
-    "tests/pins-per-frame.test.cjs": 27,
+    "tests/pins-per-frame.test.cjs": 28,
     "tests/group-names.test.cjs": 9,
     "tests/group-ticket-hints.test.cjs": 13,
-    "tests/parts-shorthand.test.cjs": 5
+    "tests/parts-shorthand.test.cjs": 5,
+    "tests/ticket-space.test.cjs": 4
   },
   "allowWorkflowDefinitions": true
 }

@@ -238,11 +238,20 @@ test('review of #31 round 5: each same-day guard alone blocks a wrong match', ()
 });
 
 test('review of #31 round 5: a misread-ticket frame on the tab from another day is not paid by the same-day path', () => {
+  // A 6-digit read stays a misread; a read with a space is now written as one 7-digit number (0.13.32), see below.
   const t = load({ now: new Date('2026-10-20T15:00:00Z') }), { sh, c } = modern(t);
-  write(t, tag(3, 8, { ticket_number: '777063 4' }));
+  write(t, tag(3, 8, { ticket_number: '777063' }));
   t.setNow(new Date('2026-10-27T15:00:00Z'));
   write(t, tag(4, 8, { extras: '16 580602 pins', parts: [pins(16)] }));
   assert.equal(earningBy(sh, c)['3 of 8'] || '', '');
+});
+
+test('0.13.32: a ticket read with a space is written as 7 digits, so that frame matches its group like any clean read', () => {
+  const t = load({ now: new Date('2026-10-20T15:00:00Z') }), { sh, c } = modern(t);
+  write(t, tag(3, 8, { ticket_number: '777063 3' }));
+  t.setNow(new Date('2026-10-27T15:00:00Z'));
+  write(t, tag(4, 8, { extras: '16 580602 pins', parts: [pins(16)] }));
+  assert.equal(earningBy(sh, c)['3 of 8'], 1);
 });
 
 console.log(`${passed} pins per frame tests passed`);

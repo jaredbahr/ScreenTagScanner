@@ -144,6 +144,8 @@ Window mapping is built from Kirsten's description and the first real October wi
     digits readable). The scanner prefers the full printed number. A 4–5 digit reading keeps its value and gets a
     ticket-cell note with the likely 7-digit number from that store's series, or both numbers when two series
     share those last digits. Notes stay on the cell until someone clears them; correcting the value doesn't remove them.
+    Since 0.13.32 a reading with one space inside ("123456 7") that is exactly 7 digits without it is written as the 7
+    digits, with a ticket-cell note showing the reading (Jared, 2026-10-30). Anything else is left as read.
     Since 0.13.31 a 6-digit group tag uses its group's tickets. When siblings with at least two different "x of N"
     all read one ticket (one ticket per order, as at Homer Glen) that ticket is "likely". Otherwise candidates sit inside the siblings' ticket clusters (gap
     10 or less), widened by the number of tags still missing only when the open tickets inside can't hold them, and

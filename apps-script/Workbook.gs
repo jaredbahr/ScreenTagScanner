@@ -500,7 +500,7 @@ function groupKey_(x, c) {
   var key = { name: name, of: n, ticket: String(x.ticket_number || '').trim(), index: Number(x.tag_index) };
   var phone = x.form_type === 'patio_door' ? '' : phoneKey_(x.phone); // a supplier form may carry the shop's own phone
   if (phone) key.phone = phone;
-  // The full name too: "Rob" on three tags and "Rob Pekelder"-style full names on the fourth share the first name
+  // The full name too: "Ann" on three tags and "Ann Synthwell"-style full names on the fourth share the first name
   // (Plainfield, 2026-10-27). Used only with the phone match.
   var full = sequenceIdentity_(x.customer_name);
   if (full && full !== name) key.full = full;
@@ -541,7 +541,7 @@ function ticketsNear6_(a, b) {
   return Math.abs(Number(a.slice(-6)) - Number(b.slice(-6))) <= 50;
 }
 
-/** Names that differ by a misread letter or two ("Surm"/"Surim", "Busin"/"Rusin"). */
+/** Names that differ by a misread letter or two ("Synthm"/"Synthim", "Bynth"/"Rynth"). */
 function namesClose_(a, b) {
   a = String(a || '').toLowerCase().replace(/[^a-z]/g, ''); b = String(b || '').toLowerCase().replace(/[^a-z]/g, '');
   if (!a || !b) return false;
@@ -938,7 +938,10 @@ function writeWindowRow_(sh, store, x, flags, layout) {
   var c = (layout || storeLayout_(sh)).windows;
   var row = firstEmptyWindowRow_(sh, layout);
   if (row < 0) return { ok: false, store: store, problem: 'the ' + store.name + ' windows section is full' };
-  flags.push('Window tag: new to the scanner, please check glass, panes and labor');
+  // The "Window tag: new to the scanner" flag was retired 2026-10-30 (Jared): windows are routine now, and the 3-day audit
+  // found it on 4 rows that needed no change. Specific window flags (panes, balance due) stay, and a missing glass
+  // price keeps its own flag (review: the generic flag was its only check).
+  if (x.glass_price === null || x.glass_price === undefined || x.glass_price === '') flags.push('Window Glass not filled: no glass price read');
   var perPane = x.thermopane ? WINDOW_LABOR_PER_PANE.thermopane : WINDOW_LABOR_PER_PANE.standard;
   var labor = x.panes ? cents_(x.panes * perPane) : '';
   if (!x.panes) flags.push('Window LB Earn not filled: panes unknown');

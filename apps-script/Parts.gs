@@ -175,7 +175,7 @@ function splitMatches_(split,x) {
   return sameVisit&&misreadTicketMatch_(t,split.ticket)&&(name===split.name||!!(phone&&split.phone)); // review of #31: Ward / Wood
 }
 /**
- * A misread ticket of the same group: not a clean 7-digit read ("777763 4", "777763"), or sharing a run of 5 digits
+ * A misread ticket of the same group: not a clean 7-digit read ("777763", or a spaced read saved before 0.13.32), or sharing a run of 5 digits
  * with the group's ticket ("1777635" / "7777633"). Used only for tags scanned within a day of the split.
  */
 function misreadTicketMatch_(t,groupTicket) {

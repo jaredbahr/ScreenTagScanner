@@ -54,7 +54,7 @@ test('the same "x of N" twice: noted with what is still missing', () => {
 
 test('different customers with the same N are not treated as one group', () => {
   const t = load(), { sh, c } = modern(t, 'New Lenox');
-  t.scan(tag('New Lenox', 'Synthalpha', '7707601', 1, 2));
+  t.scan(tag('New Lenox', 'Synthalpha', '7777350', 1, 2));
   t.scan(tag('New Lenox', 'Synthomega', '7707950', 1, 2));
   for (let r = 2; r <= 6; r++) for (const col of [c.NAME, c.TICKET, c.SEQUENCE]) assert.doesNotMatch(note(sh, r, col), /Group check/);
 });
@@ -62,10 +62,10 @@ test('different customers with the same N are not treated as one group', () => {
 test('grey rows are filled even when the name is misread by a letter (looser matching)', () => {
   const t = load(), { sh, c } = modern(t, '18650 (60)');
   t.scan(tag('Joliet', 'Synthsurm', '6475501', 1, 3));
-  t.scan(tag('Joliet', 'Synthother', '6475900', 1, 1));
+  t.scan(tag('Joliet', 'Synthother', '7779901', 1, 1));
   t.scan(tag('Joliet', 'Synthsurim', '6475502', 2, 3));
   assert.equal(sh.get(3, c.TICKET), '6475502', 'the misread-name tag still fills the held row');
-  assert.equal(sh.get(5, c.TICKET), '6475900');
+  assert.equal(sh.get(5, c.TICKET), '7779901');
 });
 
 test('a one- or two-letter last name keeps the name as written ("Ann B" pattern)', () => {
