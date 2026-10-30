@@ -27,7 +27,7 @@ Phone page (Apps Script HTML) ──photo──▶ Apps Script web app ──▶
   measured best for accuracy per dollar (~$0.015 per tag, ~$25 in the busiest month).
 - **Never guess silently.** A misread size or QTY never bills by itself; the tag's own dollar totals
   or consistent QTY rows can settle it, otherwise billing stays blank. A ticket that doesn't fit the
-  store's sequential ticket book gets a "likely 8169725" note. The value is never auto-changed.
+  store's sequential ticket book gets a "likely 8339725" note. The value is never auto-changed.
 - **Review levels tuned on real data.** On the first month of real scans, 72% of rows were flagged
   yellow but only 14% had a money or placement problem. Flags now come in three levels (whole row,
   one cell, log only). Every ticket the owner corrected is still marked.

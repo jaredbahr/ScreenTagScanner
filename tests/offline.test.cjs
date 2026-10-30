@@ -246,7 +246,7 @@ test('injection: hostile text in every field is written as plain text, never a f
 });
 test('injection: safeCell_ leaves ordinary values alone', () => {
   const { ctx } = load();
-  for (const v of ['Smith', '630-555-0100', '8169183', 115, 17.25, '', null, 'O\'Brien (?)']) assert.equal(ctx.safeCell_(v), v);
+  for (const v of ['Smith', '630-555-0100', '8339183', 115, 17.25, '', null, 'O\'Brien (?)']) assert.equal(ctx.safeCell_(v), v);
   assert.equal(ctx.safeCell_('=1+1'), "'=1+1");
   assert.equal(ctx.safeCell_('\t=1'), "'\t=1");
 });
@@ -529,14 +529,14 @@ test('HTML page served, explicit health endpoint preserved', () => {
 });
 test('a ticket that is not 7 digits is flagged (a staple hid the leading 8 on a real Homer tag)', () => {
   const t = load();
-  const r = t.scan({ ticket_number: '169725' });
+  const r = t.scan({ ticket_number: '339725' });
   assert.doesNotMatch(r.message, /Check on the sheet:/, 'one value to glance at, not a row flag');
   assert.match(t.ss.tabs['Homer Glen'].notes.get('2,5'), /Glance at this value:\n- Ticket # has 6 digits \(Ace tickets have 7\)/);
   assert.equal(t.ss.tabs['Homer Glen'].bg.get('2,5'), t.ctx.HINT_COLOR);
   assert.notEqual(t.ss.tabs['Homer Glen'].bg.get('2,2'), t.ctx.FLAG_COLOR, 'row stays white');
-  assert.equal(t.ss.tabs['Homer Glen'].get(2, 5), '169725', 'written as read, never guessed');
+  assert.equal(t.ss.tabs['Homer Glen'].get(2, 5), '339725', 'written as read, never guessed');
   const u = load();
-  assert.equal(u.scan({ ticket_number: '8169725' }).message.includes('Check on the sheet:'), false);
+  assert.equal(u.scan({ ticket_number: '8339725' }).message.includes('Check on the sheet:'), false);
   assert.equal(u.ss.tabs['Homer Glen'].bg.get('2,5'), undefined);
   assert.match(t.ctx.SYSTEM_PROMPT, /staple,/); assert.match(t.ctx.SYSTEM_PROMPT, /blank rows under the printed SKU list/);
 });
@@ -552,16 +552,16 @@ test('settle inches: $ totals that agree with width + height bill the job (real 
 
 test('settle inches: consistent QTY rows bill even when the size is misread (real Homer tag, 46 read as 96)', () => {
   const t = load(), sh = t.ss.tabs['Homer Glen'];
-  t.scan({ ticket_number: '8169728', width_in: 32, height_in: 96, billable_inches: 78, qty_rows: '78, 78, 78', line_totals: '' });
+  t.scan({ ticket_number: '8339728', width_in: 32, height_in: 96, billable_inches: 78, qty_rows: '78, 78, 78', line_totals: '' });
   assert.equal(sh.get(2, 6), 78); assert.equal(sh.get(2, 7), 11.7); assert.equal(sh.get(2, 8), 13.26);
   assert.match(sh.notes.get('2,3'), /Billed from QTY-row majority 78" \(rows read 78, 78, 78\); rounded written size is 128"/);
   // A clear majority with one odd row still bills, and says which rows it saw.
-  const u = load(); u.scan({ ticket_number: '8169728', width_in: 32, height_in: 96, billable_inches: 78, qty_rows: '78, 70, 78' });
+  const u = load(); u.scan({ ticket_number: '8339728', width_in: 32, height_in: 96, billable_inches: 78, qty_rows: '78, 70, 78' });
   assert.equal(u.ss.tabs['Homer Glen'].get(2, 6), 78); assert.match(u.ss.tabs['Homer Glen'].notes.get('2,3'), /rows read 78, 70, 78/);
 });
 
 test('settle inches: still held when the tag cannot settle it', () => {
-  const held = (x) => { const t = load(); t.scan({ ticket_number: '8169001', width_in: 32, height_in: 96, billable_inches: 78, ...x });
+  const held = (x) => { const t = load(); t.scan({ ticket_number: '8339001', width_in: 32, height_in: 96, billable_inches: 78, ...x });
     const sh = t.ss.tabs['Homer Glen']; return { ui: sh.get(2, 6), note: sh.notes.get('2,3') || '' }; };
   for (const x of [
     { qty_rows: '78, 70', line_totals: '' },                       // no majority
@@ -571,7 +571,7 @@ test('settle inches: still held when the tag cannot settle it', () => {
     { qty_rows: '78, 78, 78', quantity_conflict: true, quantity_conflict_details: 'Slip lists another size' }, // explicit conflict
   ]) { const r = held(x); assert.equal(r.ui, '', JSON.stringify(x)); assert.match(r.note, /Inches left blank, values disagree/, JSON.stringify(x)); }
   // No conflict at all: unchanged behavior.
-  const t = load(); t.scan({ ticket_number: '8169002', qty_rows: '115, 115, 115', line_totals: '' });
+  const t = load(); t.scan({ ticket_number: '8339002', qty_rows: '115, 115, 115', line_totals: '' });
   assert.equal(t.ss.tabs['Homer Glen'].get(2, 6), 115); assert.equal(t.ss.tabs['Homer Glen'].notes.get('2,3'), undefined);
 });
 
@@ -604,7 +604,7 @@ test('review levels: money/placement turns the row yellow; one-value doubts tint
   };
   for (const [reason, want] of Object.entries(cases)) assert.equal(tier(reason), want, reason);
   // On the sheet: a phone-only doubt leaves the row clean, and the phone isn't told it was flagged.
-  const r = t.scan({ ticket_number: '8169500', phone: '5175550100' });
+  const r = t.scan({ ticket_number: '8339500', phone: '5175550100' });
   const sh = t.ss.tabs['Homer Glen'];
   assert.doesNotMatch(r.message, /Check on the sheet:/); assert.equal(sh.bg.get('2,2'), undefined); assert.equal(sh.notes.get('2,3'), undefined);
   const log = t.ss.tabs.Scans, H = t.ctx.HEADERS;
@@ -624,13 +624,13 @@ test('store tabs named by store ("Downers Grove") work the same as the template 
 
 test('ticket book: a ticket that doesn\'t fit the store\'s sequence gets a likely fix in its note (real October misreads)', () => {
   const t = load(), sh = t.ss.tabs['Homer Glen'];
-  for (const [i, tk] of ['8169712', '8169736', '8169740'].entries()) t.scan({ ticket_number: tk, width_in: 20 + i, billable_inches: 99 + i });
+  for (const [i, tk] of ['8339712', '8339736', '8339740'].entries()) t.scan({ ticket_number: tk, width_in: 20 + i, billable_inches: 99 + i });
   const note = (tk, extra) => { const u = t; u.scan({ ticket_number: tk, ...extra }); const row = rowsWith(sh, tk)[0]; return { row, note: sh.notes.get(row + ',5') || '', value: sh.get(row, 5) }; };
-  let r = note('169725', { width_in: 30, billable_inches: 109 });
-  assert.match(r.note, /likely 8169725/); assert.equal(r.value, '169725', 'value is never changed');
-  r = note('6169751', { width_in: 31, billable_inches: 110 });
-  assert.match(r.note, /looks off for this store \(8169xxx\): likely 8169751/);
-  r = note('8169735', { width_in: 32, billable_inches: 111 });
+  let r = note('339725', { width_in: 30, billable_inches: 109 });
+  assert.match(r.note, /likely 8339725/); assert.equal(r.value, '339725', 'value is never changed');
+  r = note('6339751', { width_in: 31, billable_inches: 110 });
+  assert.match(r.note, /looks off for this store \(8339xxx\): likely 8339751/);
+  r = note('8339735', { width_in: 32, billable_inches: 111 });
   assert.doesNotMatch(r.note, /likely/, 'a ticket that fits the book gets no hint');
   const d = load(), dg = d.ss.tabs['18559-(500)'];
   for (const [i, tk] of ['8159012', '8159068'].entries()) d.scan({ store: 'DG', ticket_number: tk, width_in: 20 + i, billable_inches: 99 + i });
@@ -665,7 +665,7 @@ test('a tag rescanned with a different ticket reading is flagged as a possible d
 test('saved photos: a Drive failure never stops the scan; file names carry no customer name; cleanup once a day', () => {
   const t = load({ props: { SAVE_IMAGES: 'true' } });
   t.ctx.DriveApp = undefined; // Drive unavailable
-  const r = t.scan({ ticket_number: '8169601' });
+  const r = t.scan({ ticket_number: '8339601' });
   assert.equal(r.status, 'ok'); assert.match(r.message, /Added/);
   const u = load({ props: { SAVE_IMAGES: 'true' } }), made = [], trashed = [];
   // Ages use the script's frozen clock, not the real one (the real clock made this fail after 2026-10-22).
@@ -675,7 +675,7 @@ test('saved photos: a Drive failure never stops the scan; file names carry no cu
     getFiles: () => { let i = 0; return { hasNext: () => i < old.length, next: () => old[i++] }; } };
   u.ctx.DriveApp = { getFoldersByName: () => { let done = false; return { hasNext: () => !done, next: () => { done = true; return folder; } }; } };
   u.ctx.Utilities.newBlob = (bytes, type, name) => ({ name });
-  u.scan({ ticket_number: '8169602', last_name: 'Synthname' }); u.scan({ ticket_number: '8169603', last_name: 'Synthname', width_in: 30, billable_inches: 109 });
+  u.scan({ ticket_number: '8339602', last_name: 'Synthname' }); u.scan({ ticket_number: '8339603', last_name: 'Synthname', width_in: 30, billable_inches: 109 });
   assert.equal(made.length, 2); assert.doesNotMatch(made.join(' '), /Synthname/); assert.match(made[0], /^\d{4}-\d{2}-\d{2}_\d{4}_[a-f0-9]+\.jpg$/);
   assert.deepEqual(trashed, ['old'], 'only the 40-day-old photo, and only once that day');
   assert.equal(u.ss.tabs.Scans.get(2, u.ctx.HEADERS.indexOf('Photo') + 1), 'https://drive.example/1');

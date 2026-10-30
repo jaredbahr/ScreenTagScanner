@@ -54,9 +54,9 @@ test('a loose match whose "k of N" is already on the tab does not take a hold', 
 test('group check: the same surname three weeks later is not called a duplicate or a ticket mismatch', () => {
   const t = load({ now: new Date('2026-10-01T17:00:00Z') }), { sh, c } = modern(t, 'Homer Glen');
   const h = (n, tk, i) => ({ ...job(n, tk, i, 2), store: 'Homer Glen' });
-  t.scan(h('Smith', '8169450', 1)); t.scan(h('Smith', '8169450', 2));
+  t.scan(h('Smith', '8339450', 1)); t.scan(h('Smith', '8339450', 2));
   t.setNow(new Date('2026-10-22T17:00:00Z'));
-  t.scan(h('Smith', '8169730', 1)); t.scan(h('Smith', '8169730', 2));
+  t.scan(h('Smith', '8339730', 1)); t.scan(h('Smith', '8339730', 2));
   for (const r of [4, 5]) assert.doesNotMatch(cellNotes(sh, r), /Group check/, 'row ' + r);
 });
 
