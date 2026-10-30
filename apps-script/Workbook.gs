@@ -568,8 +568,26 @@ function sameGroup_(a, b) {
  * and "x of N" disagreements. Notes only: values are never changed. Siblings: same N, close name, and a close
  * ticket (or within 1000, since sequential books drift and misreads land nearby).
  */
+/** Two 7-digit tickets that differ in exactly one position. */
+function oneDigitApart_(a, b) {
+  if (!/^\d{7}$/.test(a) || !/^\d{7}$/.test(b)) return false;
+  var d = 0; for (var i = 0; i < 7; i++) if (a.charAt(i) !== b.charAt(i)) d++;
+  return d === 1;
+}
+/** A tab where most "x of N" tags (N >= 2) share their ticket with another tag of that N: one ticket per order. */
+function oneTicketStore_(seqs, tickets) {
+  var count = {}, rows = [];
+  for (var i = 0; i < seqs.length; i++) {
+    var m = /^(\d+) of (\d+)$/.exec(String(seqs[i][0]).trim()), t = String(tickets[i][0]).trim();
+    if (!m || Number(m[2]) < 2 || !/^\d{7}$/.test(t)) continue;
+    var k = m[2] + '|' + t; count[k] = (count[k] || 0) + 1; rows.push(k);
+  }
+  var shared = rows.filter(function (k) { return count[k] >= 2; }).length;
+  return rows.length >= 6 && shared / rows.length >= 0.6;
+}
 function groupCheck_(sh, c, x, endRow) {
   var seq = verifiedSequence_(tagOf_(x)), out = [];
+  out.back = []; // notes for earlier tags of the group, written after this tag's row
   if (!c.SEQUENCE || !seq || !(x.tag_count >= 2 && x.tag_count <= 100)) return out;
   var me = { name: sequenceIdentity_(sheetName_(x)), ticket: String(x.ticket_number || '').trim(), index: Number(x.tag_index), of: Number(x.tag_count) };
   var names = sh.getRange(2, c.NAME, endRow - 1, 1).getValues(), seqs = sh.getRange(2, c.SEQUENCE, endRow - 1, 1).getValues();
@@ -608,6 +626,21 @@ function groupCheck_(sh, c, x, endRow) {
   if (shared && shared !== me.ticket) {
     var agree = firm.filter(function (s) { return s.ticket === shared; });
     out.push('Group check (ticket): this tag reads ' + me.ticket + '; ' + agree.length + ' other tags in this group read ' + shared + ' (rows ' + rowsOf(agree) + ').');
+  } else if (!shared && oneTicketStore_(seqs, tickets)) {
+    // One ticket per order (most group tags on this tab share their ticket, as at Homer Glen): an order's tags whose
+    // tickets differ in one digit are one ticket misread. The earlier tag gets a note too (10/30: tag 3 read …944 and
+    // tag 6 read …994; neither was noted, because this check needed two agreeing tags).
+    var same = firm.filter(function (s) { return s.ticket === me.ticket; }).length + 1, byT = {};
+    firm.forEach(function (s) { if (s.ticket !== me.ticket && oneDigitApart_(s.ticket, me.ticket)) (byT[s.ticket] = byT[s.ticket] || []).push(s); });
+    Object.keys(byT).forEach(function (t) {
+      var odd = byT[t];
+      if (same > odd.length) {
+        odd.forEach(function (s) { out.back.push({ row: s.row, text: 'Group check (ticket): this tag reads ' + t + '; ' + same + ' tags of this order read ' + me.ticket + ' (one ticket per order): likely ' + me.ticket + ', check the tag.' }); });
+      } else if (same === odd.length) {
+        out.push('Group check (ticket): this tag reads ' + me.ticket + '; row ' + rowsOf(odd) + ' reads ' + t + ' (one digit apart; one ticket per order): one of them is misread, check both tags.');
+        odd.forEach(function (s) { out.back.push({ row: s.row, text: 'Group check (ticket): this tag reads ' + t + '; a later tag of this order reads ' + me.ticket + ' (one digit apart; one ticket per order): one of them is misread, check both tags.' }); });
+      }
+    });
   } else if (!shared && me.ticket && !nearAny) {
     var nums = sibs.map(function (s) { return s.ticket; }).filter(Boolean).sort();
     out.push('Group check (ticket): ' + me.ticket + ' is far from the rest of this group (' + nums[0] + (nums.length > 1 ? '–' + nums[nums.length - 1] : '') + ', rows ' + rowsOf(sibs) + ').');
@@ -1142,7 +1175,8 @@ function writeToStoreTab_(ss, x, reasons) {
     flags = flags.filter(function (f) { return f !== 'No customer name'; });
     flags.push('Group check (name): no name on this tag; filled from the group\'s other tags ("' + fromGroup + '"). Check the tag.');
   }
-  groupCheck_(sh, c, x, end).forEach(function (f) { if (flags.indexOf(f) < 0) flags.push(f); });
+  var checked = groupCheck_(sh, c, x, end);
+  checked.forEach(function (f) { if (flags.indexOf(f) < 0) flags.push(f); });
   var group = count === 1 ? groupKey_(holdX, c) : null, heldRow = group ? takeGroupHold_(sh, c, group, end, flags) : -1;
   if (heldRow > 0) rows.push(heldRow);
   for (var r = 2; rows.length < count; r++) {
@@ -1258,6 +1292,7 @@ function writeToStoreTab_(ss, x, reasons) {
     applyExtraLabor_(sh, row, c, x, i === 0, labor, flags);
     showReview_(sh,row,c,flags);
   });
+  (checked.back || []).forEach(function (b) { appendReviewNote_(sh.getRange(b.row, c.TICKET), 'Glance at this value:\n- ' + b.text); });
   if (group && heldRow < 0) holdGroupRows_(sh, c, group, rows[0], end, x);
   if (namedOnScan) fillGroupNames_(sh, c, x, end, rows[0]);
   return { ok: true, store: store, tab: store.tab, row: rows.join(', '), block: 'screens', flags: flags };

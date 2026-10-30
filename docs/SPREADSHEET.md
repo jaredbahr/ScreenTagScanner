@@ -196,6 +196,10 @@ Window mapping is built from Kirsten's description and the first real October wi
     that one cell (pale, not yellow). Values are never changed. Since 0.13.26 a looser match (ticket
     within 1000, the exact same name, or a close name the same day) only counts when that row's Date out is within 14
     days, and only for the name and "far from the rest" notes, never "already on row" or a shared-ticket note.
+24b. **One ticket per order** (0.13.33, Jared 2026-10-30): on a tab where most "x of N" tags (N >= 2, 6+ tags) share
+    their ticket with another tag of that N (Homer Glen), tags of an order (strong group match) whose 7-digit tickets
+    differ in one digit get a ticket-cell note on both rows; when one side has more tags, the odd rows get "likely" the
+    shared ticket. Values are never changed.
 25. **Short last names** (2026-10-23): a last name of one or two letters keeps the name as written ("Ann B").
 26. **Look-alike ticket digits** (2026-10-23): when swapping confusable digits (2/7, 1/7, 3/8, 4/9, 5/6) in the first
     four digits gives the store's ticket series, the ticket cell gets a "likely …" note. Values are never changed. No note when the

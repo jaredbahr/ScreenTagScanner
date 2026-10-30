@@ -14,6 +14,13 @@ match, hand-typed spellings were right 13 of 16 times; spelling alone would have
 day-by-day replay of October with her corrections applied each evening: 1 replacement, matching her spelling; the
 same replay without corrections changes nothing. This month's sheet only; earlier months come next.
 
+Also in 0.13.33 (Jared, 2026-10-30, after the 10/30 review): on a one-ticket-per-order tab (most "x of N" tags share
+their ticket, as at Homer Glen), tags of an order whose tickets differ in one digit get notes on both rows; once the
+other side has more tags, the odd row gets "likely" the shared ticket. Before, the existing check needed two agreeing
+tags and only ever noted the tag being scanned, so a misread scanned first was never marked (10/30: tag 3 of 7 read
+…944, tag 6 read …994). October replay: 6 notes on 3 orders, covering the 2 fixes Kirsten made by hand there; the
+third order points at a tag she kept that differs from its order's other tags.
+
 ## 0.13.32-draft — a digit read three times
 
 Kirsten (2026-10-28, Homer, on live 0.13.31): a clearly written ticket with "99" was read with "999" (8 digits);
