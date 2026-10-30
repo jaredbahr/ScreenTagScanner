@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.13.33-draft — repeat customers keep Kirsten's spelling
+
+Jared (2026-10-30): "give confidence to repeat names." When a tag's phone (last 7 digits) matches earlier rows on the
+same store tab where Kirsten typed the name herself (the cell differs from what the scanner wrote and has no "(?)"),
+those rows agree on one spelling, and the reading is a close misspelling of it (a letter or two), her spelling is
+written with a name-cell note ("Repeat customer (name): read as …; same phone as row N …"). Never on a phone alone,
+never from a scanner-written or "(?)" name, never from another store tab. Data behind it (October): with a phone
+match, hand-typed spellings were right 13 of 16 times; spelling alone would have changed 12 of 161 correct names. A
+day-by-day replay of October with her corrections applied each evening: 1 replacement, matching her spelling; the
+same replay without corrections changes nothing. This month's sheet only; earlier months come next.
+
 ## 0.13.32-draft — a digit read three times
 
 Kirsten (2026-10-28, Homer, on live 0.13.31): a clearly written ticket with "99" was read with "999" (8 digits);

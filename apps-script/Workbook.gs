@@ -137,6 +137,7 @@ function reviewTier_(reason, routed) {
   // "digit group" in an OCR doubt is about handwriting, not a group of tags (0.13.22, October data).
   var r = String(reason || '').replace(/\bdigit groups?\b/ig, 'digits');
   if (/^Group check \(name\)/.test(r)) return {tier:'cell',field:'NAME'};
+  if (/^Repeat customer \(name\)/.test(r)) return {tier:'cell',field:'NAME'};
   // Kirsten (2026-10-23): she doesn't use the tag year, so a year doubt alone is kept in the Scans log only.
   if (/^(?:Tag year \d{4} looks off|Two-digit tag year)/.test(r) && !/after the scan date|left blank|invalid|unreadable/i.test(r)) return {tier:'log'};
   if (/^Group check \(ticket\)/.test(r)) return {tier:'cell',field:'TICKET'};
@@ -1044,6 +1045,33 @@ function cents_(n) {
  * Kirsten works: flagged rows get a yellow fill and a note on the Name cell.
  * Window tags go to the N–W block (writeWindowRow_).
  */
+/**
+ * Repeat customers (Jared, 2026-10-30): when this tag's phone matches earlier rows on this tab where Kirsten typed the
+ * name herself (the cell differs from what the scanner wrote, and has no "(?)"), and the read is a close misspelling of
+ * that one spelling, write her spelling with a note. Never on a phone alone, never from a name the scanner wrote, never
+ * when her spellings for that phone disagree. October: phone-matched, hand-typed spellings were right 13 of 16 times;
+ * spelling alone would have changed 12 of 161 correct names. This month's sheet only, for now.
+ */
+function repeatCustomerName_(sh, layout, x) {
+  var mine = phoneKey_(x.phone), read = String(sheetName_(x) || '').replace(/ \(\?\)$/, '').trim();
+  if (!mine || !read || x.form_type === 'patio_door' || typeof x._log_rows !== 'function') return null;
+  var tab = sh.getName(), seen = {}, spellings = {}, rowOf = {};
+  x._log_rows().forEach(function (r) {
+    if (r.tab !== tab || r.phone !== mine) return;
+    var col = (r.block === 'windows' ? layout.windows : layout.screens).NAME, key = r.block + '|' + r.row;
+    if (!col || seen[key]) return;
+    seen[key] = true;
+    var now = String(sh.getRange(r.row, col).getValues()[0][0] || '').trim();
+    var wrote = sequenceIdentity_(sheetName_({ customer_name: r.customer, last_name: r.last }));
+    if (!now || / \(\?\)$/.test(now) || sequenceIdentity_(now) === wrote) return; // blank, unsure, or the scanner's own
+    var k = sequenceIdentity_(now);
+    if (!spellings[k]) { spellings[k] = now; rowOf[k] = r.row; }
+  });
+  var keys = Object.keys(spellings), me = sequenceIdentity_(read);
+  if (keys.length !== 1 || me === keys[0] || !namesClose_(me, keys[0])) return null;
+  return { name: spellings[keys[0]], row: rowOf[keys[0]], read: read };
+}
+
 function writeToStoreTab_(ss, x, reasons) {
   var routing = resolveJobRouting_(x);
   if (!routing.type) return { ok: false, problem: 'item type is unknown; review the tag before placing it' };
@@ -1069,6 +1097,12 @@ function writeToStoreTab_(ss, x, reasons) {
   // Some stores (Homer) use one ticket number for a whole group of tags, so a ticket
   // already on the tab is normal when the tag says "Qty x of N". Exact rescans are
   // caught earlier against the Scans log (Code.gs). Here we only flag the ambiguous case.
+  var repeat = repeatCustomerName_(sh, layout, x);
+  if (repeat) {
+    x = Object.assign({}, x, { customer_name: repeat.name, last_name: repeat.name, name_unclear: false });
+    flags = flags.filter(function (f) { return f !== 'No customer name'; });
+    flags.push('Repeat customer (name): read as "' + repeat.read + '"; same phone as row ' + repeat.row + ', where the name was typed "' + repeat.name + '". Check the tag.');
+  }
   var bookHint = groupTicketHint_(sh, c, x, screenBlockEnd_(sh)) || ticketBookHint_(sh, layout, x.ticket_number);
   if (bookHint) flags.push(bookHint);
   if (ticketInStoreTab_(sh, x.ticket_number, layout) && !(x.tag_count > 1)) {

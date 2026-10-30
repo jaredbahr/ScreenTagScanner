@@ -183,6 +183,10 @@ Window mapping is built from Kirsten's description and the first real October wi
     blank, this tag included) mean two groups: nothing is borrowed or filled. A borrowed name takes the group's saved
     row only when the ticket is within 10 of a clearly read name's (not "(?)"); otherwise the tag goes to the next free row. The "No
     customer name" flag is dropped when a name is filled.
+23c. **Repeat customers** (0.13.33, Jared 2026-10-30): when the tag's phone matches earlier rows on the same tab where
+    Kirsten typed the name herself (the cell differs from the scanner's reading and has no "(?)"), those rows agree on
+    one spelling, and the reading is a close misspelling of it, her spelling is written, with a note on the name cell.
+    Never on a phone alone, from a scanner-written or "(?)" name, or from another store tab.
 24. **Group check** (2026-10-23, from the October 22 scans). A group tag is compared with its group's tags already
     on the tab (same N, close name, ticket close or within 1000). Disagreeing name, ticket or "x of N" gets a note on
     that one cell (pale, not yellow). Values are never changed. Since 0.13.26 a looser match (ticket

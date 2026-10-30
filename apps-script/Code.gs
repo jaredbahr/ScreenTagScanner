@@ -309,6 +309,20 @@ function saveScan_(x, user, reasons, photoUrl, scanId, admittedId, leaseId) {
       }
       return phonesByRow[storeName + '|' + row] || '';
     };
+    var logRows = null; // read once, only if a repeat-customer lookup needs it
+    x._log_rows = function () {
+      if (!logRows) {
+        logRows = [];
+        var last = log.getLastRow(), ph = HEADERS.indexOf('Phone'), cu = HEADERS.indexOf('Customer'), ln = HEADERS.indexOf('Last Name');
+        if (last >= 2) log.getRange(2, 1, last - 1, HEADERS.length).getValues().forEach(function (r) {
+          var m = /^(.*?) (screens|windows) rows? ([\d, ]+)$/.exec(String(r[COL.WRITTEN_TO - 1])), p = phoneKey_(r[ph]);
+          if (m && p) m[3].split(/\s*,\s*/).forEach(function (n) {
+            logRows.push({ tab: m[1], block: m[2], row: Number(n), phone: p, customer: r[cu], last: r[ln] });
+          });
+        });
+      }
+      return logRows;
+    };
     x._parts_plan = preparePartsEarnings_(ss, x);
     x._parts_plan.flags.forEach(function (f) { if (reasons.indexOf(f) < 0) reasons.push(f); });
     // Dates are written as serial day numbers (correct in any time zone), but a mismatched
