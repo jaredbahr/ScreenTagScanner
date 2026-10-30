@@ -192,7 +192,7 @@ test('review of #27: the first-name fit is exact; a full-name hold keeps its ful
   const hold = (name, full) => ({ name, full, of: 4, ticket: '7772772', day: 9, phone: ph });
   const key = (name, full) => ({ name, full, of: 4, ticket: '7772770', phone: ph });
   assert.equal(r(hold('rob'), key('synthelder', 'rob synthelder'), 9), 2, 'Plainfield');
-  assert.equal(r(hold('k', 'ann k'), key('synthmith', 'kevin synthmith'), 9), 0, 'an initial against a first name');
+  assert.equal(r(hold('k', 'ann k'), key('synthmith', 'kaz synthmith'), 9), 0, 'an initial against a first name');
   assert.equal(r(hold('synthjones', 'rob synthjones'), key('synthmith', 'rob synthmith'), 9), 0, 'same first name, other surnames');
   assert.equal(r(hold('synthsmith', 'rob j synthsmith'), key('synthdoe', 'jane synthdoe'), 9), 0, 'a middle initial');
   assert.equal(r(hold('ed'), key('synthsmith', 'ed synthsmith'), 9), 0, 'two-letter first names never fit');
