@@ -110,7 +110,7 @@
     "tests/group-ticket-hints.test.cjs": 13,
     "tests/parts-shorthand.test.cjs": 5,
     "tests/ticket-space.test.cjs": 4,
-    "tests/repeat-customer.test.cjs": 9
+    "tests/repeat-customer.test.cjs": 11
   },
   "allowWorkflowDefinitions": true
 }

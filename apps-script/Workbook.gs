@@ -1057,7 +1057,7 @@ function cents_(n) {
 function repeatCustomerName_(sh, layout, x) {
   var mine = phoneKey_(x.phone), read = String(sheetName_(x) || '').replace(/ \(\?\)$/, '').trim();
   if (!mine || !read || x.form_type === 'patio_door' || typeof x._log_rows !== 'function') return null;
-  var store = (storeByTabName_(sh.getName()) || {}).name || sh.getName(), cells = {}, seen = {}, spellings = {}, typedBy = {}, rowOf = {};
+  var store = (storeByTabName_(sh.getName()) || {}).name || sh.getName(), cells = {}, seen = {}, spellings = {}, typedBy = {}, rowOf = {}, any = {};
   var col = function (block) { // name and ticket columns of one block, read once
     if (!cells[block]) {
       var L = layout[block], end = block === 'windows' ? WINDOW_LAST_ROW : screenBlockEnd_(sh);
@@ -1066,20 +1066,25 @@ function repeatCustomerName_(sh, layout, x) {
     return cells[block];
   };
   x._log_rows().forEach(function (r) {
-    if (r.tab !== store || r.phone !== mine || r.form === 'patio_door') return;
-    var key = r.block + '|' + r.row, b = seen[key] ? null : col(r.block);
-    seen[key] = true;
+    if (r.tab !== store || r.phone !== mine) return;
+    var b = col(r.block);
     if (!b || r.row < 2 || r.row - 2 >= b.names.length) return;
-    if (String(b.tickets[r.row - 2][0]).trim() !== String(r.ticket || '').trim()) return; // the row moved or was reused
     var now = String(b.names[r.row - 2][0] || '').trim();
     if (!now || / \(\?\)$/.test(now)) return;
     var k = sequenceIdentity_(now);
-    if (!spellings[k]) { spellings[k] = now; rowOf[k] = r.row; }
+    any[k] = true; // every name on this phone's rows can veto, even rows that are not evidence (review round 2)
+    if (r.form === 'patio_door' || String(b.tickets[r.row - 2][0]).trim() !== String(r.ticket || '').trim()) return;
+    var key = r.block + '|' + r.row + '|' + String(r.ticket || '').trim();
+    if (seen[key]) return;
+    seen[key] = true;
+    if (!spellings[k]) { spellings[k] = now; rowOf[k] = (r.block === 'windows' ? 'windows row ' : 'row ') + r.row; }
     if (k !== sequenceIdentity_(sheetName_({ customer_name: r.customer, last_name: r.last }))) typedBy[k] = true;
   });
   var keys = Object.keys(spellings), me = sequenceIdentity_(read), letters = function (v) { return v.replace(/[^a-z]/g, '').length; };
-  if (keys.length !== 1 || !typedBy[keys[0]] || me === keys[0]) return null;
+  if (keys.length !== 1 || !typedBy[keys[0]] || me === keys[0] || Object.keys(any).some(function (n) { return n !== keys[0]; })) return null;
   if (letters(me) < 5 || letters(keys[0]) < 5 || !namesClose_(me, keys[0])) return null;
+  var w1 = me.split(/\s+/), w2 = keys[0].split(/\s+/); // two-word names: the first words must agree ("Amy Bo" is not "Ann Bo")
+  if (w1.length > 1 && w2.length > 1 && w1[0] !== w2[0]) return null;
   return { name: spellings[keys[0]], row: rowOf[keys[0]], read: read };
 }
 
@@ -1111,7 +1116,7 @@ function writeToStoreTab_(ss, x, reasons) {
   var repeat = repeatCustomerName_(sh, layout, x);
   if (repeat) {
     x = Object.assign({}, x, { customer_name: repeat.name, last_name: repeat.name, name_unclear: false });
-    flags.push('Repeat customer (name): read as "' + repeat.read + '"; same phone as row ' + repeat.row + ', where the name was typed "' + repeat.name + '". Check the tag.');
+    flags.push('Repeat customer (name): read as "' + repeat.read + '"; same phone as ' + repeat.row + ', where the name was typed "' + repeat.name + '". Check the tag.');
   }
   var bookHint = groupTicketHint_(sh, c, x, screenBlockEnd_(sh)) || ticketBookHint_(sh, layout, x.ticket_number);
   if (bookHint) flags.push(bookHint);

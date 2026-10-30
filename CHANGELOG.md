@@ -7,7 +7,9 @@ same store's tab, all their names (non-blank, no "(?)") are one spelling, Kirste
 what the scanner wrote), and the reading is a close misspelling of it (a letter or two, both 5+ letters), her spelling
 is written with a name-cell note ("Repeat customer (name): read as …; same phone as row N …"). Review: an unchanged
 scanner-written name for the phone counts against it (two people on one phone); a row must still hold its logged
-ticket (rows she inserted never mislead); numbered store tabs match by store name; patio forms are never evidence. Data behind it (October): with a phone
+ticket (rows she inserted never mislead); numbered store tabs match by store name; patio forms are never evidence. Round 2: any other name on the phone's rows (a reused
+or moved row, a corrected ticket, a patio form) blocks the change; two-word names must share the first word; the note
+says "windows row N" for a window row. Data behind it (October): with a phone
 match, hand-typed spellings were right 13 of 16 times; spelling alone would have changed 12 of 161 correct names. A
 day-by-day replay of October with her corrections applied each evening: 1 replacement, matching her spelling; the
 same replay without corrections changes nothing. This month's sheet only; earlier months come next.

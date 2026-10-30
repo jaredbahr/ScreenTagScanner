@@ -189,6 +189,8 @@ Window mapping is built from Kirsten's description and the first real October wi
     written with a note on the name cell. A row counts only while it still holds its logged ticket (rows inserted or
     deleted never mislead), and patio forms are never evidence (they may carry the shop's phone). A spelling she kept as
     the scanner wrote it (or only removed "(?)") is not counted as hers, so it never triggers a change.
+    Any other name on that phone's rows (even a moved row or a patio form) blocks the change, and two-word names must
+    share the first word.
 24. **Group check** (2026-10-23, from the October 22 scans). A group tag is compared with its group's tags already
     on the tab (same N, close name, ticket close or within 1000). Disagreeing name, ticket or "x of N" gets a note on
     that one cell (pale, not yellow). Values are never changed. Since 0.13.26 a looser match (ticket

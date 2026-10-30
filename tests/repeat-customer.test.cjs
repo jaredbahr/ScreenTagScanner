@@ -117,4 +117,37 @@ test('review: a patio form row is not evidence (it may carry the shop phone); sh
   assert.equal(nameOf(v.sh, v.c, '7779155'), 'Bynthe', 'a patio form itself is never changed');
 });
 
+test('review round 2: rows that are not evidence (reused, ticket corrected, patio) still veto a change', () => {
+  const a = setup(); // reused row: the current entry holds the unchanged other name
+  a.t.scan(tag('Synthwood', '7779101')); const r = rowOfTicket(a.sh, a.c, '7779101');
+  a.sh.set(r, a.c.NAME, ''); a.sh.set(r, a.c.TICKET, ''); // she cleared it; the next scan reuses the row
+  a.t.scan(tag('Synthwood', '7779102'));
+  a.t.scan(tag('Synthwood', '7779103')); a.sh.set(rowOfTicket(a.sh, a.c, '7779103'), a.c.NAME, 'Synthward');
+  a.t.scan(tag('Synthwood', '7779155'));
+  assert.equal(nameOf(a.sh, a.c, '7779155'), 'Synthwood', 'reused row');
+  const b = setup(); // she corrected the other person's ticket
+  b.t.scan(tag('Synthwood', '7779101')); b.sh.set(rowOfTicket(b.sh, b.c, '7779101'), b.c.TICKET, '7779111');
+  b.t.scan(tag('Synthwood', '7779103')); b.sh.set(rowOfTicket(b.sh, b.c, '7779103'), b.c.NAME, 'Synthward');
+  b.t.scan(tag('Synthwood', '7779155'));
+  assert.equal(nameOf(b.sh, b.c, '7779155'), 'Synthwood', 'ticket corrected on the other row');
+  const d = setup(); // the other person's untouched row is a patio form
+  d.t.scan(tag('Synthwood', '7779101', { form_type: 'patio_door', width_in: 48, height_in: 75.5, billable_inches: null, material: null }));
+  d.t.scan(tag('Synthwood', '7779103')); d.sh.set(rowOfTicket(d.sh, d.c, '7779103'), d.c.NAME, 'Synthward');
+  d.t.scan(tag('Synthwood', '7779155'));
+  assert.equal(nameOf(d.sh, d.c, '7779155'), 'Synthwood', 'patio row');
+});
+
+test('review round 2: two-word names need the same first word; window rows are named in the note', () => {
+  const a = setup();
+  a.t.scan(tag('Ann Synthbo', '7779101')); a.sh.set(rowOfTicket(a.sh, a.c, '7779101'), a.c.NAME, 'Amy Synthbo');
+  a.t.scan(tag('Ann Synthbo', '7779155'));
+  assert.equal(nameOf(a.sh, a.c, '7779155'), 'Ann Synthbo');
+  const { t, sh } = setup(), l = t.ctx.storeLayout_(sh);
+  t.scan(tag('Bynthe', '7779101', { item_type: 'window', panes: 1, glass_price: 20, job_evidence: 'window pane glass' }));
+  const wr = [...Array(10).keys()].map(k => k + 2).find(r => String(sh.get(r, l.windows.TICKET)) === '7779101');
+  sh.set(wr, l.windows.NAME, 'Rynthe');
+  t.scan(tag('Bynthe', '7779155'));
+  assert.match(noteOf(sh, l.screens, '7779155'), /same phone as windows row \d+/);
+});
+
 console.log(`${passed} repeat customer tests passed`);
