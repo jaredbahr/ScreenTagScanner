@@ -938,7 +938,8 @@ function writeWindowRow_(sh, store, x, flags, layout) {
   var c = (layout || storeLayout_(sh)).windows;
   var row = firstEmptyWindowRow_(sh, layout);
   if (row < 0) return { ok: false, store: store, problem: 'the ' + store.name + ' windows section is full' };
-  flags.push('Window tag: new to the scanner, please check glass, panes and labor');
+  // The "Window tag: new to the scanner" flag was retired 2026-10-30 (Jared): windows are routine now, and the 3-day audit
+  // found it on 4 rows that needed no change. Specific window flags (panes, balance due) stay.
   var perPane = x.thermopane ? WINDOW_LABOR_PER_PANE.thermopane : WINDOW_LABOR_PER_PANE.standard;
   var labor = x.panes ? cents_(x.panes * perPane) : '';
   if (!x.panes) flags.push('Window LB Earn not filled: panes unknown');
