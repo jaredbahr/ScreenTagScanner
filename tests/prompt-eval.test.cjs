@@ -186,4 +186,84 @@ test('round 2: API errors are recorded with their code and left out of the score
   assert.equal(w.t.ctx.runPromptEval_().of, 1, 'the moved row is not a case');
 });
 
+test('public entry point declares only the reviewed identity scope and stays out of scanner RPC calls', () => {
+  const fs = require('node:fs'), path = require('node:path');
+  const manifest = JSON.parse(fs.readFileSync(path.join(__dirname, '../apps-script/appsscript.json'), 'utf8'));
+  assert.deepEqual(manifest.oauthScopes, [
+    'https://www.googleapis.com/auth/spreadsheets.currentonly',
+    'https://www.googleapis.com/auth/spreadsheets',
+    'https://www.googleapis.com/auth/script.external_request',
+    'https://www.googleapis.com/auth/script.scriptapp',
+    'https://www.googleapis.com/auth/drive',
+    'https://www.googleapis.com/auth/userinfo.email',
+  ]);
+  assert.deepEqual(manifest.webapp, { executeAs: 'USER_DEPLOYING', access: 'ANYONE_ANONYMOUS' });
+  const { t } = setup(); assert.equal(typeof t.ctx.runPromptEval, 'function');
+  const policy = JSON.parse(fs.readFileSync(path.join(__dirname, '../release/manifest.json'), 'utf8'));
+  assert.ok(policy.allowedPublicFunctions.includes('runPromptEval'));
+  const script = fs.readFileSync(path.join(__dirname, '../apps-script/Upload.html'), 'utf8').match(/<script>([\s\S]*?)<\/script>/)[1];
+  assert.doesNotMatch(script, /runPromptEval/, 'scanner never invokes admin work');
+});
+
+const syntheticOwner = 'operator@example.invalid';
+function identity(t, active, effective) {
+  t.ctx.Session.getActiveUser = () => ({ getEmail: () => typeof active === 'function' ? active() : active });
+  t.ctx.Session.getEffectiveUser = () => ({ getEmail: () => typeof effective === 'function' ? effective() : effective });
+}
+const identityFailure = () => { throw Error('synthetic identity/permission detail must not escape'); };
+for (const [name, active, effective] of [
+  ['anonymous blank active caller despite owner execution', '', syntheticOwner],
+  ['whitespace effective identity', syntheticOwner, '  '],
+  ['signed-in non-owner despite owner execution', 'other@example.invalid', syntheticOwner],
+  ['null active identity', null, syntheticOwner],
+  ['undefined effective identity', syntheticOwner, undefined],
+  ['malformed numeric active identity', 123, syntheticOwner],
+  ['active identity authorization failure', identityFailure, syntheticOwner],
+  ['effective identity lookup failure', syntheticOwner, identityFailure],
+]) test('public entry point denies ' + name + ' before any engine access', () => {
+  const { t } = setup(); identity(t, active, effective);
+  t.props.PROMPT_EVAL_APPROVED = 'yes'; // Global approval cannot authenticate a caller.
+  const accessed = [];
+  const forbidden = name => () => { accessed.push(name); throw Error('engine access before identity'); };
+  t.ctx.PropertiesService.getScriptProperties = forbidden('properties');
+  t.ctx.LockService.getUserLock = forbidden('lock');
+  t.ctx.DriveApp.getFoldersByName = forbidden('Drive');
+  t.ctx.UrlFetchApp.fetch = forbidden('fetch'); t.ctx.UrlFetchApp.fetchAll = forbidden('fetchAll');
+  t.ctx.SpreadsheetApp.getActiveSpreadsheet = forbidden('workbook');
+  assert.throws(() => t.ctx.runPromptEval(), e => e.message === 'Prompt test requires a verified authorized caller');
+  assert.deepEqual(accessed, []); assert.equal(t.props.PROMPT_EVAL_APPROVED, 'yes');
+});
+
+test('matching authorized identities still require approval before lock, Drive or paid work', () => {
+  const { t } = setup(); identity(t, syntheticOwner, syntheticOwner);
+  let work = 0;
+  const forbidden = () => { work++; throw Error('unexpected work'); };
+  t.ctx.LockService.getUserLock = forbidden; t.ctx.DriveApp.getFoldersByName = forbidden;
+  t.ctx.UrlFetchApp.fetchAll = forbidden;
+  assert.throws(() => t.ctx.runPromptEval(), /PROMPT_EVAL_APPROVED/); assert.equal(work, 0);
+});
+
+test('authorized public entry point keeps locked batch resume, counts, no workbook writes and cleanup', () => {
+  const { t, files } = setup(); scans(t, 6);
+  identity(t, '  OPERATOR@EXAMPLE.INVALID ', syntheticOwner);
+  const workbook = () => JSON.stringify(Object.entries(t.ss.tabs).map(([name, sh]) => [name, [...sh.cells]]));
+  const before = workbook(); let fetched = 0;
+  t.ctx.UrlFetchApp.fetchAll = reqs => { fetched += reqs.length; return reqs.map(() => ok(t)); };
+  t.holdUserLock(true);
+  assert.throws(() => t.ctx.runPromptEval(), /already running/); assert.equal(fetched, 0);
+  t.holdUserLock(false);
+  const realNow = t.ctx.Date.now; let clock = 0; t.ctx.Date.now = () => (clock += 3 * 60 * 1000);
+  try {
+    const first = t.ctx.runPromptEval(); assert.equal(first.done, 4); assert.equal(first.of, 6);
+    assert.equal(t.props.PROMPT_EVAL_CURSOR, '4'); assert.equal(t.props.PROMPT_EVAL_APPROVED, 'yes');
+    clock = 0;
+    const second = t.ctx.runPromptEval(); assert.equal(second.done, 6); assert.equal(second.of, 6);
+  } finally { t.ctx.Date.now = realNow; }
+  assert.equal(fetched, 12, 'six synthetic photos, once per prompt, no repeats');
+  assert.equal(JSON.parse(files['prompt-eval-sevens.json']).rows.length, 6);
+  assert.equal(workbook(), before);
+  for (const k of ['PROMPT_EVAL_APPROVED', 'PROMPT_EVAL_CURSOR', 'PROMPT_EVAL_CASES']) assert.equal(t.props[k], undefined);
+  assert.throws(() => t.ctx.runPromptEval(), /PROMPT_EVAL_APPROVED/); assert.equal(fetched, 12);
+});
+
 console.log(`${passed} prompt eval tests passed`);

@@ -255,8 +255,8 @@ function extractTag_(imageB64, props) {
 }
 
 /**
- * One-time, paid A/B test of a prompt variant on Kirsten's saved tag photos (Jared, 2026-10-31). Run privately from
- * the editor, only with Script Property PROMPT_EVAL_APPROVED = 'yes'; it deletes that property when it finishes, so it
+ * One-time, paid A/B test of a prompt variant on Kirsten's saved tag photos (Jared, 2026-10-31). The guarded public
+ * entry point below calls the private engine, only with PROMPT_EVAL_APPROVED = 'yes'; it deletes that property when it finishes, so it
  * never pays twice. Picks scans of the active month that have a saved photo: those whose ticket or "x of N" Kirsten
  * corrected (the sheet now differs from the reading), then controls whose reading has a 1, 2 or 7 and was kept. The case
  * list is fixed on the first run (PROMPT_EVAL_CASES, compact) so resuming never skips or repeats. Each photo is read with
@@ -265,6 +265,28 @@ function extractTag_(imageB64, props) {
  * the script lock (scans keep working). Runs in batches under the 6-minute limit; run again to continue
  * (PROMPT_EVAL_CURSOR).
  */
+/**
+ * Runnable admin entry point. Public Apps Script functions are also RPC-callable:
+ * authenticate the active caller before reading approval or touching the evaluator.
+ * A self-running editor or the signed-in deployer is allowed, not anonymous clients.
+ */
+function runPromptEval() {
+  assertPromptEvalCaller_();
+  return runPromptEval_();
+}
+function assertPromptEvalCaller_() {
+  var allowed = false;
+  try {
+    var active = Session.getActiveUser().getEmail();
+    var effective = Session.getEffectiveUser().getEmail();
+    allowed = typeof active === 'string' && typeof effective === 'string' &&
+      active.trim() !== '' && effective.trim() !== '' &&
+      active.trim().toLowerCase() === effective.trim().toLowerCase();
+  } catch (err) {
+    // Missing authorization/identity must never fall through or expose identities.
+  }
+  if (!allowed) throw new Error('Prompt test requires a verified authorized caller');
+}
 function runPromptEval_() {
   var props = PropertiesService.getScriptProperties();
   if (props.getProperty('PROMPT_EVAL_APPROVED') !== 'yes') throw new Error('Set Script Property PROMPT_EVAL_APPROVED = yes (Jared approves the spend) first');

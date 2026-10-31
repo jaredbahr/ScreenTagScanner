@@ -1,5 +1,19 @@
 # Changelog
 
+## 0.13.35-draft - guarded prompt-test entry point (review only)
+
+Adds runnable runPromptEval for the existing private evaluator. Before reading approval or touching
+Drive/API work, it requires nonblank active and effective identities to match; identity lookup failures
+deny with a generic error. Effective identity alone is never accepted. A project editor running as
+themselves or the authenticated deployer can run it; other scanner clients cannot. The existing approval,
+user lock, 60-photo limit, resume, results and cleanup behavior are unchanged. No production prompt or
+sheet-write rule changes.
+
+**New permission proposed, not granted live:** userinfo.email. Jared authorized preparing this design
+in a draft PR on October 31; this is not deployment or live permission approval. The unchanged release
+gate intentionally blocks the manifest/scope delta until explicit release review. See
+[PROMPT_EVAL.md](docs/PROMPT_EVAL.md). No live test has run, and version 21 / 0.13.34 remains deployed.
+
 ## 0.13.34-draft — prompt caching; order ticket and look-alike counts
 
 Kirsten (2026-10-31), approved by Jared: on a one-ticket-per-order tab (Homer Glen), a tag whose 7-digit ticket is one
