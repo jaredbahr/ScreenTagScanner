@@ -237,14 +237,31 @@ function supportsFallbacks_(model) {
  * Build the Messages API request body. Shared by Apps Script and the test harness.
  * Returns { body, betas } so each caller can attach headers its own way.
  */
-function buildRequest_(model, imageBase64, mediaType) {
+// Candidate instruction for the one-time prompt test (runPromptEval_, Code.gs). Production reads SYSTEM_PROMPT only.
+// Kirsten (2026-10-31): 7s read as 2s in tickets (a leading 77 read as 22) and Qty boxes ("2 of 2" for "7 of 7").
+var SEVENS_OLD_LINE = '  A handwritten 7 with a curled foot is often misread as 2 in ticket numbers: look twice before reading a 2.';
+var SEVENS_NEW_LINES = [
+  '  Handwritten 7s on these tags are often misread as 2 (a 7 with a curled or hooked foot) or as 1 (a 7 with a',
+  '  short top bar), in ticket numbers, the Qty "x of N" box, sizes and quantities alike. A 2 has a rounded top and',
+  '  a flat base stroke; a 7 has a top bar and one diagonal stroke down, even when its foot curls. Before reading a',
+  '  2 or a 1, compare it with the same writer\'s other digits on this tag (phone, date, sizes, Qty box).'
+].join('\n');
+function promptVariant_(name) {
+  if (!name || name === 'current') return SYSTEM_PROMPT;
+  if (name !== 'sevens') throw new Error('Unknown prompt variant: ' + name);
+  var p = SYSTEM_PROMPT.replace(SEVENS_OLD_LINE, SEVENS_NEW_LINES);
+  if (p === SYSTEM_PROMPT) throw new Error('Prompt variant "sevens" no longer applies: its line changed');
+  return p;
+}
+
+function buildRequest_(model, imageBase64, mediaType, systemPrompt) {
   var body = {
     model: model,
     max_tokens: 4000,
     // Prompt caching (Jared, 2026-10-31): the instructions are identical on every scan, so they are cached (5-minute
     // entry, refreshed by each read). Scans in a burst read them at a tenth of the input price. Keep SYSTEM_PROMPT
     // byte-stable: no dates or IDs in it, or every scan misses the cache.
-    system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
+    system: [{ type: 'text', text: systemPrompt || SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
     output_config: {
       effort: 'low',
       format: { type: 'json_schema', schema: TAG_SCHEMA }

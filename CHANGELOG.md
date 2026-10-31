@@ -2,6 +2,12 @@
 
 ## 0.13.34-draft — prompt caching
 
+Prompt test tool (Jared, 2026-10-31, no API key outside Google): private `runPromptEval_` reads saved tag photos of
+the active month with the current prompt and a candidate variant ("sevens": 7 vs 2/1 guidance) in parallel, using
+the script's own key. It needs Script Property PROMPT_EVAL_APPROVED = yes, is capped at 60 photos (about $4), never
+writes to the workbook, and saves results (tickets and "x of N" only) as a JSON file in the photo folder. Production
+still reads SYSTEM_PROMPT only.
+
 Prompt caching (Jared, 2026-10-31). The scanner's instructions (about 3,500 tokens, identical on every
 scan) are sent as one system block marked for caching (5-minute entry, refreshed by each read). Scans in a burst read
 them at a tenth of the input price: about 20-25% off a scan (October: about $3.20 per 100 tags). No change to what is
