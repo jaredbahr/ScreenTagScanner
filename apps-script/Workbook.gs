@@ -612,6 +612,11 @@ function oneTicketStore_(seqs, tickets) {
 function orderTicketFix_(sh, c, x, endRow) {
   var t = String(x.ticket_number || '').trim(), n = Number(x.tag_count), me = sequenceIdentity_(sheetName_(x)), mine = phoneKey_(x.phone);
   if (!/^\d{7}$/.test(t) || !c.SEQUENCE || !verifiedSequence_(tagOf_(x)) || !(n >= 2) || !mine || !me || typeof x._row_phone !== 'function') return null;
+  if (x.form_type === 'patio_door') return null; // a patio form may carry the shop's phone
+  // Earnings receipts are planned before the write with the ticket as read; a changed ticket would make them invalid
+  // (review). Tags with parts or additional labor keep their reading (the group note still names the order's ticket).
+  var pp = x._parts_plan || {}, lp = x._extra_labor_plan || {};
+  if ((pp.items || []).length || (pp.posted || []).length || (pp.references || []).length || (lp.items || []).length) return null;
   var names = sh.getRange(2, c.NAME, endRow - 1, 1).getValues(), seqs = sh.getRange(2, c.SEQUENCE, endRow - 1, 1).getValues();
   var tickets = sh.getRange(2, c.TICKET, endRow - 1, 1).getValues(), outs = c.DATE_OUT ? sh.getRange(2, c.DATE_OUT, endRow - 1, 1).getValues() : [];
   if (!oneTicketStore_(seqs, tickets)) return null;
@@ -627,7 +632,20 @@ function orderTicketFix_(sh, c, x, endRow) {
   if (!order.length || order.some(function (s) { return s.ticket === t || s.index === Number(x.tag_index); })) return null;
   var T = order[0].ticket;
   if (order.some(function (s) { return s.ticket !== T; })) return null;
-  var same = order.filter(function (s) { return x._row_phone(store, s.row) === mine; });
+  // Only a look-alike digit (4/9, 2/7, 1/7, 3/8, 5/6, 0/6): never neighbouring tickets of two orders (review).
+  for (var p = 0; p < 7; p++) if (T.charAt(p) !== t.charAt(p) && (LOOK_ALIKE[t.charAt(p)] || '').indexOf(T.charAt(p)) < 0) return null;
+  // Evidence must be readings or Kirsten's hand fixes, never this rule's own corrections (review: a misread scanned
+  // first must not spread). If this rule already overrode a reading equal to this one, the order is disputed: stop.
+  var logged = {};
+  if (typeof x._log_rows === 'function') x._log_rows().forEach(function (r) { if (r.tab === store && r.block === 'screens') logged[r.row] = String(r.ticket || '').trim(); });
+  var tnotes = sh.getRange(2, c.TICKET, endRow - 1, 1).getNotes();
+  var byRule = function (s) { return /so it is written as theirs/.test(String(tnotes[s.row - 2][0] || '')); };
+  // Kirsten's own fix of an order row to T (read otherwise, changed by hand) settles a dispute: the misread repeats.
+  var handFixed = order.some(function (s) { return !byRule(s) && logged[s.row] !== undefined && logged[s.row] !== T; });
+  if (!handFixed && order.some(function (s) { return byRule(s) && logged[s.row] === t; })) return null;
+  var same = order.filter(function (s) {
+    return x._row_phone(store, s.row) === mine && !byRule(s);
+  });
   if (same.length < 2) return null;
   return { ticket: T, read: t, rows: same.map(function (s) { return s.row; }) };
 }
@@ -663,12 +681,14 @@ function groupCheck_(sh, c, x, endRow) {
     var samePhone = function (row) { return !!myPhone && typeof x._row_phone === 'function' && x._row_phone(store, row) === myPhone; };
     for (var j = 0; j < names.length; j++) {
       var mm = /^(\d+) of (\d+)$/.exec(String(seqs[j][0]).trim()), tk = String(tickets[j][0]).trim();
-      if (!mm || like.indexOf(mm[2]) < 0 || !namesClose_(sequenceIdentity_(names[j][0]), me.name) || !(ticketsClose_(tk, me.ticket) || samePhone(j + 2))) continue;
+      if (!mm || mm[2].length !== 1 || like.indexOf(mm[2]) < 0 || !namesClose_(sequenceIdentity_(names[j][0]), me.name) || !(ticketsClose_(tk, me.ticket) || samePhone(j + 2))) continue;
       var dj = outs[j] ? daySerial_(outs[j][0]) : NaN;
       if (!(today - dj >= 0 && today - dj <= GROUP_HOLD_DAYS)) continue;
       (orders[mm[2]] = orders[mm[2]] || { rows: [], have: {} }).rows.push(j + 2);
       orders[mm[2]].have[mm[1]] = true;
     }
+    // Kept even beside other "of N" tags: misread tags of one order look like a real small order (10/31: three "of 2"
+    // tags of a 7-tag order). A real 2-tag order beside the same customer's 7-tag order gets a note to check; accepted.
     Object.keys(orders).forEach(function (N2) {
       var o = orders[N2], ks = [String(me.index)].concat((me.index < 10 ? LOOK_ALIKE[String(me.index)] || '' : '').split('')).filter(Boolean);
       if (me.index === me.of) ks.push(N2);

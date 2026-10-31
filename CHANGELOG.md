@@ -11,6 +11,11 @@ fixes applied each evening): 5 tickets written, all matching her fix, none wrong
 A tag whose count is a look-alike of the same customer's order on the tab ("of 2" vs "of 7", 2+ tags of that order,
 close ticket or the same phone) gets a count-cell note naming the likely "x of N" (values unchanged). 10/31: four tags
 read "of 2" for "of 7". Replay: 5 notes; 2 match her fix, 3 are on rows she hasn't corrected.
+Review of #46: the ticket is written only for a look-alike digit (4/9, 2/7, 1/7, 3/8, 5/6, 0/6), never on a patio form,
+and never when the tag has parts or additional labor (their receipts are planned with the ticket as read). Evidence is
+readings or Kirsten's hand fixes, never this rule's own corrections; if the rule already overrode a reading equal to
+this one and no row of the order was fixed by hand, it stops (a misread scanned first overwrites at most one row).
+Count notes compare single-digit counts only. Replay after review: 4 tickets written, all right.
 
 Prompt caching (Jared, 2026-10-31). The scanner's instructions (about 3,500 tokens, identical on every
 scan) are sent as one system block marked for caching (5-minute entry, refreshed by each read). Scans in a burst read

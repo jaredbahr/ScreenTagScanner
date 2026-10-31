@@ -86,6 +86,40 @@ test('no count note for another customer, a far ticket, or a real 2-tag order', 
   const u = load(), m = modern(u, 'New Lenox'); // only one tag of the other count on the tab: not yet an order
   write(u, tag('New Lenox', 'Synthsigma', '7777710', 6, 7)); write(u, tag('New Lenox', 'Synthsigma', '7777711', 2, 2));
   for (let r = 2; r < 8; r++) assert.doesNotMatch(note(m.sh, m.c.SEQUENCE, r), /look alike/, 'one tag, row ' + r);
+  const v = load(), w = modern(v, 'New Lenox'); // "of 21" is not a look-alike of "of 7" (single digits only)
+  [1, 2].forEach(i => write(v, tag('New Lenox', 'Synthtau', '77777' + (10 + i), i, 21)));
+  write(v, tag('New Lenox', 'Synthtau', '7777715', 3, 7));
+  for (let r = 2; r < 8; r++) assert.doesNotMatch(note(w.sh, w.c.SEQUENCE, r), /look alike/, 'of 21, row ' + r);
+});
+
+test('review: tags with parts or additional labor keep their reading (earnings receipts carry the read ticket)', () => {
+  const { t, sh, c } = homer();
+  write(t, tag('HOMER', 'Synthgamma', '8339994', 3, 7)); write(t, tag('HOMER', 'Synthgamma', '8339994', 6, 7));
+  write(t, tag('HOMER', 'Synthgamma', '8339944', 2, 7, { extras: '2 580404 rollers', parts: [{ sku: '580404', quantity: 2, unit: 'each', group_wide: false, raw: '2 580404 rollers' }] }));
+  assert.equal(String(sh.get(rowOf(sh, c, '2 of 7'), c.TICKET)), '8339944');
+});
+
+test('review: only a look-alike digit (consecutive tickets of two orders are left), and never on a patio form', () => {
+  const a = homer();
+  write(a.t, tag('HOMER', 'Synthgamma', '8339994', 1, 4)); write(a.t, tag('HOMER', 'Synthgamma', '8339994', 3, 4));
+  write(a.t, tag('HOMER', 'Synthgamma', '8339995', 2, 4));
+  assert.equal(String(a.sh.get(rowOf(a.sh, a.c, '2 of 4'), a.c.TICKET)), '8339995', '4/5 are not look-alikes');
+  const b = homer();
+  write(b.t, tag('HOMER', 'Synthgamma', '8339994', 3, 7)); write(b.t, tag('HOMER', 'Synthgamma', '8339994', 6, 7));
+  write(b.t, tag('HOMER', 'Synthgamma', '8339944', 2, 7, { form_type: 'patio_door', width_in: 48, height_in: 75.5, billable_inches: null, material: null }));
+  assert.equal(String(b.sh.get(rowOf(b.sh, b.c, '2 of 7'), b.c.TICKET)), '8339944', 'patio form');
+});
+
+test('review: a misread scanned first can overwrite at most one correct reading; a hand-confirmed order keeps fixing', () => {
+  const { t, sh, c } = homer(); // misreads first: tags 3 and 6 read 944, then 2 and 1 read the true 994
+  write(t, tag('HOMER', 'Synthgamma', '8339944', 3, 7)); write(t, tag('HOMER', 'Synthgamma', '8339944', 6, 7));
+  write(t, tag('HOMER', 'Synthgamma', '8339994', 2, 7)); write(t, tag('HOMER', 'Synthgamma', '8339994', 1, 7));
+  assert.equal(String(sh.get(rowOf(sh, c, '1 of 7'), c.TICKET)), '8339994', 'the second correct read is kept');
+  const u = homer(); // the 10/31 order: tag 3 read 944 and fixed by hand to 994; tag 6 read 994; then 2, 4, 5 read 944
+  write(u.t, tag('HOMER', 'Synthgamma', '8339944', 3, 7)); u.sh.set(rowOf(u.sh, u.c, '3 of 7'), u.c.TICKET, '8339994');
+  write(u.t, tag('HOMER', 'Synthgamma', '8339994', 6, 7));
+  for (const i of [2, 4, 5]) write(u.t, tag('HOMER', 'Synthgamma', '8339944', i, 7));
+  for (const i of [2, 4, 5]) assert.equal(String(u.sh.get(rowOf(u.sh, u.c, i + ' of 7'), u.c.TICKET)), '8339994', 'tag ' + i);
 });
 
 console.log(`${passed} order ticket/count tests passed`);

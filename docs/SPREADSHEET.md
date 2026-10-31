@@ -208,7 +208,9 @@ Window mapping is built from Kirsten's description and the first real October wi
 24c. **One ticket per order, written** (0.13.34, Jared 2026-10-31): on a one-ticket tab (rule 24b), a tag whose ticket is
     one digit off the ticket 2+ tags of its order agree on, with the same phone as those tags, is written with the
     order's ticket and a note; the Scans log keeps the reading. Not when the order disagrees, when a tag already has
-    this reading, or when a tag has this tag's own "x of N".
+    this reading, or when a tag has this tag's own "x of N". Only a look-alike digit; never a patio form or a tag with
+    parts or additional labor; this rule's own corrections are not evidence, and a dispute it created stops it unless
+    Kirsten fixed a row of the order by hand.
 24d. **Look-alike tag counts** (0.13.34, Jared 2026-10-31): when a tag's N is a look-alike (2/7, 1/7, ...) of the same
     customer's order on the tab (2+ tags, close name, close ticket or the same phone, within 14 days), the count cell
     gets a note naming the likely "x of N" (the order's missing tags only). Values are never changed.
