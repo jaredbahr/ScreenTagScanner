@@ -113,7 +113,8 @@
     "tests/repeat-customer.test.cjs": 11,
     "tests/one-ticket-mismatch.test.cjs": 7,
     "tests/quiet-ticket-notes.test.cjs": 4,
-    "tests/prompt-eval.test.cjs": 9
+    "tests/prompt-eval.test.cjs": 9,
+    "tests/order-ticket-count.test.cjs": 8
   },
   "allowWorkflowDefinitions": true
 }

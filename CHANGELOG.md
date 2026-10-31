@@ -1,6 +1,21 @@
 # Changelog
 
-## 0.13.34-draft — prompt caching
+## 0.13.34-draft — prompt caching; order ticket and look-alike counts
+
+Kirsten (2026-10-31), approved by Jared: on a one-ticket-per-order tab (Homer Glen), a tag whose 7-digit ticket is one
+digit off the ticket 2+ tags of its order agree on (same N, close name, within 14 days), with the same phone as those
+tags (Scans log), is written with the order's ticket and a ticket-cell note; the Scans log keeps the reading. Never when
+a tag of the order already has this reading, when the order's tags disagree, or when one has this tag's own "x of N".
+10/31: one order's ticket was read with a 4 for a 9 on 5 tags, each fixed by hand. October replay (day by day, her
+fixes applied each evening): 5 tickets written, all matching her fix, none wrong.
+A tag whose count is a look-alike of the same customer's order on the tab ("of 2" vs "of 7", 2+ tags of that order,
+close ticket or the same phone) gets a count-cell note naming the likely "x of N" (values unchanged). 10/31: four tags
+read "of 2" for "of 7". Replay: 5 notes; 2 match her fix, 3 are on rows she hasn't corrected.
+Review of #46: the ticket is written only for a look-alike digit (4/9, 2/7, 1/7, 3/8, 5/6, 0/6), never on a patio form,
+and never when the tag has parts or additional labor (their receipts are planned with the ticket as read). Evidence is
+readings or Kirsten's hand fixes, never this rule's own corrections; if the rule already overrode a reading equal to
+this one and no row of the order was fixed by hand, it stops (a misread scanned first overwrites at most one row).
+Count notes compare single-digit counts only. Replay after review: 4 tickets written, all right.
 
 Prompt test tool (Jared, 2026-10-31, no API key outside Google): private `runPromptEval_` reads saved tag photos of
 the active month with the current prompt and a candidate variant ("sevens": 7 vs 2/1 guidance) in parallel, using
