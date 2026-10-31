@@ -256,50 +256,78 @@ function extractTag_(imageB64, props) {
 
 /**
  * One-time, paid A/B test of a prompt variant on Kirsten's saved tag photos (Jared, 2026-10-31). Run privately from
- * the editor, only with Script Property PROMPT_EVAL_APPROVED = 'yes'. Picks scans of the active month that have a saved
- * photo: those whose ticket or "x of N" Kirsten corrected (the sheet now differs from the reading), then controls whose
- * reading has a 1, 2 or 7 and was kept. Each photo is read with the current prompt and the variant in parallel. Results
- * (tickets and "x of N" only: no names, phones or IDs of customers) go to a JSON file in the photo folder. Never writes
- * to the workbook. Runs in batches under the 6-minute limit; run again to continue (PROMPT_EVAL_CURSOR).
+ * the editor, only with Script Property PROMPT_EVAL_APPROVED = 'yes'; it deletes that property when it finishes, so it
+ * never pays twice. Picks scans of the active month that have a saved photo: those whose ticket or "x of N" Kirsten
+ * corrected (the sheet now differs from the reading), then controls whose reading has a 1, 2 or 7 and was kept. The case
+ * list is fixed on the first run (PROMPT_EVAL_CASES) so resuming never skips or repeats. Each photo is read with the
+ * current prompt and the variant in parallel. Results (tickets and "x of N" only: no names, phones or photo IDs) go to a
+ * JSON file in the photo folder, saved after every batch. Never writes to the workbook. Runs in batches under the
+ * 6-minute limit; run again to continue (PROMPT_EVAL_CURSOR).
  */
 function runPromptEval_() {
   var props = PropertiesService.getScriptProperties();
   if (props.getProperty('PROMPT_EVAL_APPROVED') !== 'yes') throw new Error('Set Script Property PROMPT_EVAL_APPROVED = yes (Jared approves the spend) first');
   var apiKey = props.getProperty('ANTHROPIC_API_KEY'), model = props.getProperty('MODEL') || DEFAULT_MODEL;
   var variant = props.getProperty('PROMPT_EVAL_VARIANT') || 'sevens', max = Math.min(60, Number(props.getProperty('PROMPT_EVAL_MAX')) || 60);
-  var cases = promptEvalCases_(getWorkbook_(), max), start = Number(props.getProperty('PROMPT_EVAL_CURSOR')) || 0;
   var folders = DriveApp.getFoldersByName(PHOTO_FOLDER); if (!folders.hasNext()) throw new Error('No photo folder');
-  var folder = folders.next(), fileName = 'prompt-eval-' + variant + '.json';
-  var existing = folder.getFilesByName(fileName), out = existing.hasNext() && start > 0 ? JSON.parse(existing.next().getBlob().getDataAsString()) : { variant: variant, model: model, rows: [] };
+  var folder = folders.next(), fileName = 'prompt-eval-' + variant + '.json', start = Number(props.getProperty('PROMPT_EVAL_CURSOR')) || 0;
+  var existing = folder.getFilesByName(fileName);
+  if (!start && existing.hasNext()) throw new Error(fileName + ' already exists: the test ran. Trash it first to run again (paid).');
+  var cases = start ? JSON.parse(props.getProperty('PROMPT_EVAL_CASES') || '[]') : promptEvalCases_(getWorkbook_(), max);
+  if (!start) props.setProperty('PROMPT_EVAL_CASES', JSON.stringify(cases));
+  var out = start && existing.hasNext() ? JSON.parse(existing.next().getBlob().getDataAsString()) : { variant: variant, model: model, rows: [] };
   var began = Date.now(), prompts = { a: promptVariant_('current'), b: promptVariant_(variant) };
   var headersFor = function (betas) { var h = { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' }; if (betas.length) h['anthropic-beta'] = betas.join(','); return h; };
-  for (var i = start; i < cases.length; i += 4) {
-    if (Date.now() - began > 4 * 60 * 1000) { props.setProperty('PROMPT_EVAL_CURSOR', String(i)); break; }
-    var batch = cases.slice(i, i + 4), reqs = [];
+  var save = function () {
+    var tally = function (kind, side, f) { return out.rows.filter(function (r) { return r.kind === kind && r.truth[f] && r[side][f] === r.truth[f]; }).length; };
+    var total = function (kind, f) { return out.rows.filter(function (r) { return r.kind === kind && r.truth[f]; }).length; };
+    out.summary = { done: out.rows.length, of: cases.length, errors: out.rows.filter(function (r) { return r.a.error || r.b.error; }).length };
+    ['corrected', 'control'].forEach(function (kind) {
+      out.summary[kind] = {};
+      ['ticket', 'seq'].forEach(function (f) { out.summary[kind][f] = { total: total(kind, f), current: tally(kind, 'a', f), variant: tally(kind, 'b', f) }; });
+    });
+    var old = folder.getFilesByName(fileName); while (old.hasNext()) old.next().setTrashed(true);
+    folder.createFile(fileName, JSON.stringify(out), 'application/json');
+  };
+  var read = function (r) {
+    try { var x = normalizeJobInput_(parseResponse_(JSON.parse(r.getContentText()))); return { ticket: x.ticket_number || '', seq: tagOf_(x) || '' }; }
+    catch (e) { return { error: (e && e.name) || 'Error' }; }
+  };
+  var i = start;
+  for (; i < cases.length; i += 4) {
+    if (Date.now() - began > 4 * 60 * 1000) break;
+    var batch = cases.slice(i, i + 4), reqs = [], sent = [];
     batch.forEach(function (c) {
-      var b64 = Utilities.base64Encode(DriveApp.getFileById(c.photo).getBlob().getBytes());
+      var b64; try { b64 = Utilities.base64Encode(DriveApp.getFileById(c.photo).getBlob().getBytes()); } catch (e) { c.missing = true; return; }
+      sent.push(c);
       ['a', 'b'].forEach(function (side) {
         var built = buildRequest_(model, b64, 'image/jpeg', prompts[side]);
         reqs.push({ url: 'https://api.anthropic.com/v1/messages', method: 'post', contentType: 'application/json', headers: headersFor(built.betas), payload: JSON.stringify(built.body), muteHttpExceptions: true });
       });
     });
-    var res = UrlFetchApp.fetchAll(reqs);
-    batch.forEach(function (c, k) {
-      var read = function (r) { try { var x = normalizeJobInput_(parseResponse_(JSON.parse(r.getContentText()))); return { ticket: x.ticket_number || '', seq: tagOf_(x) || '' }; } catch (e) { return { error: String(e.message || e).slice(0, 80) }; } };
-      out.rows.push({ kind: c.kind, store: c.store, truth: { ticket: c.ticket, seq: c.seq }, logged: { ticket: c.readTicket, seq: c.readSeq }, a: read(res[2 * k]), b: read(res[2 * k + 1]) });
+    var res = [];
+    try { res = reqs.length ? UrlFetchApp.fetchAll(reqs) : []; } catch (e) { res = null; }
+    batch.forEach(function (c) {
+      var k = sent.indexOf(c), row = { kind: c.kind, store: c.store, truth: { ticket: c.ticket, seq: c.seq }, logged: { ticket: c.readTicket, seq: c.readSeq } };
+      if (c.missing) { row.a = row.b = { error: 'photo missing' }; }
+      else if (!res) { row.a = row.b = { error: 'fetch failed' }; }
+      else { row.a = read(res[2 * k]); row.b = read(res[2 * k + 1]); }
+      out.rows.push(row);
     });
-    if (i + 4 >= cases.length) props.deleteProperty('PROMPT_EVAL_CURSOR');
+    props.setProperty('PROMPT_EVAL_CURSOR', String(i + 4));
+    save();
   }
-  var tally = function (side, f) { return out.rows.filter(function (r) { return r[side][f] === r.truth[f]; }).length; };
-  out.summary = { done: out.rows.length, of: cases.length, ticket: { current: tally('a', 'ticket'), variant: tally('b', 'ticket') }, seq: { current: tally('a', 'seq'), variant: tally('b', 'seq') } };
-  var again = folder.getFilesByName(fileName); if (again.hasNext()) again.next().setTrashed(true);
-  folder.createFile(fileName, JSON.stringify(out), 'application/json');
+  if (i >= cases.length) { // finished: never runs (or pays) again until someone approves a new run
+    ['PROMPT_EVAL_CURSOR', 'PROMPT_EVAL_CASES', 'PROMPT_EVAL_APPROVED'].forEach(function (k) { props.deleteProperty(k); });
+    save();
+  }
   console.log(JSON.stringify(out.summary));
   return out.summary;
 }
 /** The test set: corrected scans first, then kept controls with a 1, 2 or 7; each with its saved photo and Kirsten's values. */
 function promptEvalCases_(ss, max) {
-  var log = getScansSheet_(ss), last = log.getLastRow(); if (last < 2) return [];
+  var log = ss.getSheetByName(SCANS_TAB); if (!log) return []; // read only: never create or move the Scans tab
+  var last = log.getLastRow(); if (last < 2) return [];
   var rows = log.getRange(2, 1, last - 1, HEADERS.length).getValues(), fixed = [], kept = [], tabs = {};
   var col = function (name) { return HEADERS.indexOf(name); };
   rows.forEach(function (r) {
