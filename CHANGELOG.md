@@ -1,6 +1,16 @@
 # Changelog
 
-## 0.13.34-draft — prompt caching
+## 0.13.34-draft — prompt caching; order ticket and look-alike counts
+
+Kirsten (2026-10-31), approved by Jared: on a one-ticket-per-order tab (Homer Glen), a tag whose 7-digit ticket is one
+digit off the ticket 2+ tags of its order agree on (same N, close name, within 14 days), with the same phone as those
+tags (Scans log), is written with the order's ticket and a ticket-cell note; the Scans log keeps the reading. Never when
+a tag of the order already has this reading, when the order's tags disagree, or when one has this tag's own "x of N".
+10/31: one order's ticket was read with a 4 for a 9 on 5 tags, each fixed by hand. October replay (day by day, her
+fixes applied each evening): 5 tickets written, all matching her fix, none wrong.
+A tag whose count is a look-alike of the same customer's order on the tab ("of 2" vs "of 7", 2+ tags of that order,
+close ticket or the same phone) gets a count-cell note naming the likely "x of N" (values unchanged). 10/31: four tags
+read "of 2" for "of 7". Replay: 5 notes; 2 match her fix, 3 are on rows she hasn't corrected.
 
 Prompt caching (Jared, 2026-10-31). The scanner's instructions (about 3,500 tokens, identical on every
 scan) are sent as one system block marked for caching (5-minute entry, refreshed by each read). Scans in a burst read

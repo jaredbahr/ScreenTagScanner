@@ -602,6 +602,35 @@ function oneTicketStore_(seqs, tickets) {
   var orders = Object.keys(count).filter(function (k) { return count[k] >= 2; }).length; // review: 2+ different shared tickets
   return rows.length >= 6 && orders >= 2 && shared / rows.length >= 0.6;
 }
+/**
+ * One ticket per order (Homer Glen), approved by Jared 2026-10-31: a tag whose ticket is one digit off the ticket 2+
+ * tags of its order agree on, with the same phone, is written with the order's ticket and a note (10/31: one order's
+ * ticket was read with a 4 for a 9 on 5 tags; each time the group note named the right ticket and Kirsten typed it).
+ * Never when a tag of the order already has this reading, when the order's tags disagree among themselves, or when a
+ * tag of the order has this tag's own "x of N" (a second order).
+ */
+function orderTicketFix_(sh, c, x, endRow) {
+  var t = String(x.ticket_number || '').trim(), n = Number(x.tag_count), me = sequenceIdentity_(sheetName_(x)), mine = phoneKey_(x.phone);
+  if (!/^\d{7}$/.test(t) || !c.SEQUENCE || !verifiedSequence_(tagOf_(x)) || !(n >= 2) || !mine || !me || typeof x._row_phone !== 'function') return null;
+  var names = sh.getRange(2, c.NAME, endRow - 1, 1).getValues(), seqs = sh.getRange(2, c.SEQUENCE, endRow - 1, 1).getValues();
+  var tickets = sh.getRange(2, c.TICKET, endRow - 1, 1).getValues(), outs = c.DATE_OUT ? sh.getRange(2, c.DATE_OUT, endRow - 1, 1).getValues() : [];
+  if (!oneTicketStore_(seqs, tickets)) return null;
+  var store = (storeByTabName_(sh.getName()) || {}).name || sh.getName(), today = scanDateSerial_(), order = [];
+  for (var i = 0; i < names.length; i++) {
+    var m = /^(\d+) of (\d+)$/.exec(String(seqs[i][0]).trim()), k = String(tickets[i][0]).trim();
+    if (!m || Number(m[2]) !== n || !namesClose_(sequenceIdentity_(names[i][0]), me)) continue;
+    var day = outs[i] ? daySerial_(outs[i][0]) : NaN;
+    if (!(today - day >= 0 && today - day <= GROUP_HOLD_DAYS)) continue;
+    if (k !== t && !oneDigitApart_(k, t)) continue;
+    order.push({ row: i + 2, index: Number(m[1]), ticket: k });
+  }
+  if (!order.length || order.some(function (s) { return s.ticket === t || s.index === Number(x.tag_index); })) return null;
+  var T = order[0].ticket;
+  if (order.some(function (s) { return s.ticket !== T; })) return null;
+  var same = order.filter(function (s) { return x._row_phone(store, s.row) === mine; });
+  if (same.length < 2) return null;
+  return { ticket: T, read: t, rows: same.map(function (s) { return s.row; }) };
+}
 function groupCheck_(sh, c, x, endRow) {
   var seq = verifiedSequence_(tagOf_(x)), out = [];
   out.back = []; // notes for earlier tags of the group, written after this tag's row
@@ -624,6 +653,30 @@ function groupCheck_(sh, c, x, endRow) {
     var sameDay = namesClose_(s.name, me.name) && s.index !== me.index && out_ === today;
     s.strong = strong;
     if (strong || (recent && (near || exact || sameDay))) sibs.push(s);
+  }
+  // The same customer's order on this tab under a look-alike count (Jared, 2026-10-31: "of 7" read as "of 2" on 4 tags
+  // in one day). Names the likely "x of N"; values are never changed.
+  var like = me.of < 10 ? (LOOK_ALIKE[String(me.of)] || '') : '';
+  if (like) {
+    var orders = {}, myPhone = phoneKey_(x.phone), store = (storeByTabName_(sh.getName()) || {}).name || sh.getName();
+    // The order's other tags may carry their own misread tickets (10/31): the same phone also ties them to this tag.
+    var samePhone = function (row) { return !!myPhone && typeof x._row_phone === 'function' && x._row_phone(store, row) === myPhone; };
+    for (var j = 0; j < names.length; j++) {
+      var mm = /^(\d+) of (\d+)$/.exec(String(seqs[j][0]).trim()), tk = String(tickets[j][0]).trim();
+      if (!mm || like.indexOf(mm[2]) < 0 || !namesClose_(sequenceIdentity_(names[j][0]), me.name) || !(ticketsClose_(tk, me.ticket) || samePhone(j + 2))) continue;
+      var dj = outs[j] ? daySerial_(outs[j][0]) : NaN;
+      if (!(today - dj >= 0 && today - dj <= GROUP_HOLD_DAYS)) continue;
+      (orders[mm[2]] = orders[mm[2]] || { rows: [], have: {} }).rows.push(j + 2);
+      orders[mm[2]].have[mm[1]] = true;
+    }
+    Object.keys(orders).forEach(function (N2) {
+      var o = orders[N2], ks = [String(me.index)].concat((me.index < 10 ? LOOK_ALIKE[String(me.index)] || '' : '').split('')).filter(Boolean);
+      if (me.index === me.of) ks.push(N2);
+      var cand = ks.filter(function (k, i) { return ks.indexOf(k) === i && Number(k) >= 1 && Number(k) <= Number(N2) && !o.have[k]; });
+      if (o.rows.length < 2 || !cand.length || cand.length > 3) return; // a real order: 2+ of its tags on the tab
+      out.push('Group check (tag): this tag says ' + me.index + ' of ' + me.of + ', but this customer\'s order on rows ' + o.rows.join(', ') +
+        ' is "of ' + N2 + '" (' + me.of + ' and ' + N2 + ' look alike): likely ' + cand.map(function (k) { return k + ' of ' + N2; }).join(' or ') + ', check the tag.');
+    });
   }
   if (!sibs.length) return out;
   var firm = sibs.filter(function (s) { return s.strong; });
@@ -1174,6 +1227,12 @@ function writeToStoreTab_(ss, x, reasons) {
   // Some stores (Homer) use one ticket number for a whole group of tags, so a ticket
   // already on the tab is normal when the tag says "Qty x of N". Exact rescans are
   // caught earlier against the Scans log (Code.gs). Here we only flag the ambiguous case.
+  var orderFix = x.item_type === 'window' ? null : orderTicketFix_(sh, c, x, screenBlockEnd_(sh));
+  if (orderFix) {
+    x = Object.assign({}, x, { ticket_number: orderFix.ticket });
+    flags.push('Ticket # ' + orderFix.ticket + ': read as ' + orderFix.read + '; ' + orderFix.rows.length + ' tags of this order with the same phone read ' +
+      orderFix.ticket + ' (rows ' + orderFix.rows.join(', ') + '; one ticket per order), so it is written as theirs, check the tag');
+  }
   var repeat = repeatCustomerName_(sh, layout, x);
   if (repeat) {
     x = Object.assign({}, x, { customer_name: repeat.name, last_name: repeat.name, name_unclear: false });

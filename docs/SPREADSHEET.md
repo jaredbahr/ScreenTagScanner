@@ -205,6 +205,13 @@ Window mapping is built from Kirsten's description and the first real October wi
     enough to be consecutive tickets of one order (within N; a last-digit misread within N of the right ticket is
     therefore not caught, a trade made on October's data: 1 consecutive-ticket order against 8 misreads). The "far from the rest" note still applies when no
     one-digit mismatch is noted. Values are never changed.
+24c. **One ticket per order, written** (0.13.34, Jared 2026-10-31): on a one-ticket tab (rule 24b), a tag whose ticket is
+    one digit off the ticket 2+ tags of its order agree on, with the same phone as those tags, is written with the
+    order's ticket and a note; the Scans log keeps the reading. Not when the order disagrees, when a tag already has
+    this reading, or when a tag has this tag's own "x of N".
+24d. **Look-alike tag counts** (0.13.34, Jared 2026-10-31): when a tag's N is a look-alike (2/7, 1/7, ...) of the same
+    customer's order on the tab (2+ tags, close name, close ticket or the same phone, within 14 days), the count cell
+    gets a note naming the likely "x of N" (the order's missing tags only). Values are never changed.
 25. **Short last names** (2026-10-23): a last name of one or two letters keeps the name as written ("Ann B").
 26. **Look-alike ticket digits** (2026-10-23): when swapping confusable digits (2/7, 1/7, 3/8, 4/9, 5/6) in the first
     four digits gives the store's ticket series, the ticket cell gets a "likely …" note. Values are never changed. No note when the
