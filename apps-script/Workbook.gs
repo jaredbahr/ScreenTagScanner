@@ -183,14 +183,12 @@ function appendReviewNote_(cell, note) {
   cell.setNote(existing ? existing + '\n\n' + note : note);
 }
 
-/**
- * Each store uses sequential ticket books (Homer 8169xxx, Downers Grove 8159xxx, ...). When the read
- * ticket isn't near any 7-digit ticket already on that store's tab, suggest the one-digit fix that is
- * (a staple hiding the first digit was the most common October correction). Never changes the value.
- */
-function ticketBookHint_(sh, layout, ticket) {
-  var t = String(ticket || '');
-  if (!/^\d{4,8}$/.test(t)) return null;
+/** The flags shown on the sheet: all of them, less a quieted bare ticket doubt (it stays in the Scans log). */
+function sheetFlags_(flags, x) {
+  return x && x._quiet_bare_ticket ? flags.filter(function (f) { return f !== 'ticket_number'; }) : flags;
+}
+/** The 7-digit tickets on both blocks of a store tab. */
+function knownTickets_(sh, layout) {
   var known = [];
   ['screens', 'windows'].forEach(function (block) {
     var end = block === 'screens' ? screenBlockEnd_(sh) : WINDOW_LAST_ROW;
@@ -198,6 +196,24 @@ function ticketBookHint_(sh, layout, ticket) {
       var v = String(r[0]).trim(); if (/^\d{7}$/.test(v)) known.push(Number(v));
     });
   });
+  return known;
+}
+/** A 7-digit ticket within 300 of another ticket on the tab (2+ known; itself never counts): it fits the series. */
+function ticketFitsSeries_(sh, layout, ticket) {
+  var t = String(ticket || '').trim();
+  if (!/^\d{7}$/.test(t)) return false;
+  var known = knownTickets_(sh, layout);
+  return known.length >= 2 && known.some(function (k) { return k !== Number(t) && Math.abs(k - Number(t)) <= 300; });
+}
+/**
+ * Each store uses sequential ticket books (one series per store, ...). When the read
+ * ticket isn't near any 7-digit ticket already on that store's tab, suggest the one-digit fix that is
+ * (a staple hiding the first digit was the most common October correction). Never changes the value.
+ */
+function ticketBookHint_(sh, layout, ticket) {
+  var t = String(ticket || '');
+  if (!/^\d{4,8}$/.test(t)) return null;
+  var known = knownTickets_(sh, layout);
   if (known.length < 2) return null;
   var near = function (s) { var n = Number(s); return known.some(function (k) { return Math.abs(k - n) <= 300; }); };
   if (t.length === 7 && near(t)) return null;
@@ -583,7 +599,8 @@ function oneTicketStore_(seqs, tickets) {
     var k = m[2] + '|' + t; count[k] = (count[k] || 0) + 1; rows.push(k);
   }
   var shared = rows.filter(function (k) { return count[k] >= 2; }).length;
-  return rows.length >= 6 && shared / rows.length >= 0.6;
+  var orders = Object.keys(count).filter(function (k) { return count[k] >= 2; }).length; // review: 2+ different shared tickets
+  return rows.length >= 6 && orders >= 2 && shared / rows.length >= 0.6;
 }
 function groupCheck_(sh, c, x, endRow) {
   var seq = verifiedSequence_(tagOf_(x)), out = [];
@@ -623,6 +640,7 @@ function groupCheck_(sh, c, x, endRow) {
   var ranked = Object.keys(tks).sort(function (p, q) { return tks[q] - tks[p]; });
   var shared = ranked.length && tks[ranked[0]] >= 2 && (ranked.length === 1 || tks[ranked[0]] > tks[ranked[1]]) ? ranked[0] : null;
   var nearAny = sibs.some(function (s) { return s.ticket === me.ticket || (/^\d{7}$/.test(s.ticket) && /^\d{7}$/.test(me.ticket) && Math.abs(Number(s.ticket) - Number(me.ticket)) <= 50); });
+  var oneTicketNoted = false;
   if (shared && shared !== me.ticket) {
     var agree = firm.filter(function (s) { return s.ticket === shared; });
     out.push('Group check (ticket): this tag reads ' + me.ticket + '; ' + agree.length + ' other tags in this group read ' + shared + ' (rows ' + rowsOf(agree) + ').');
@@ -631,9 +649,16 @@ function groupCheck_(sh, c, x, endRow) {
     // tickets differ in one digit are one ticket misread. The earlier tag gets a note too (10/30: tag 3 read …944 and
     // tag 6 read …994; neither was noted, because this check needed two agreeing tags).
     var same = firm.filter(function (s) { return s.ticket === me.ticket; }).length + 1, byT = {};
-    firm.forEach(function (s) { if (s.ticket !== me.ticket && oneDigitApart_(s.ticket, me.ticket)) (byT[s.ticket] = byT[s.ticket] || []).push(s); });
+    // Review: not another tag with this tag's own "k of N" (a second order), and not tickets close enough to be
+    // consecutive tickets of one order (an order given a ticket per tag, seen once at Homer in October).
+    firm.forEach(function (s) {
+      if (s.ticket === me.ticket || s.index === me.index || !oneDigitApart_(s.ticket, me.ticket)) return;
+      if (Math.abs(Number(s.ticket) - Number(me.ticket)) <= me.of) return;
+      (byT[s.ticket] = byT[s.ticket] || []).push(s);
+    });
     Object.keys(byT).forEach(function (t) {
       var odd = byT[t];
+      oneTicketNoted = true;
       if (same > odd.length) {
         odd.forEach(function (s) { out.back.push({ row: s.row, text: 'Group check (ticket): this tag reads ' + t + '; ' + same + ' tags of this order read ' + me.ticket + ' (one ticket per order): likely ' + me.ticket + ', check the tag.' }); });
       } else if (same === odd.length) {
@@ -641,7 +666,9 @@ function groupCheck_(sh, c, x, endRow) {
         odd.forEach(function (s) { out.back.push({ row: s.row, text: 'Group check (ticket): this tag reads ' + t + '; a later tag of this order reads ' + me.ticket + ' (one digit apart; one ticket per order): one of them is misread, check both tags.' }); });
       }
     });
-  } else if (!shared && me.ticket && !nearAny) {
+  }
+  // The far note still applies on a one-ticket tab when no one-digit mismatch was noted (review: it was lost there).
+  if (!shared && !oneTicketNoted && me.ticket && !nearAny) {
     var nums = sibs.map(function (s) { return s.ticket; }).filter(Boolean).sort();
     out.push('Group check (ticket): ' + me.ticket + ' is far from the rest of this group (' + nums[0] + (nums.length > 1 ? '–' + nums[nums.length - 1] : '') + ', rows ' + rowsOf(sibs) + ').');
   }
@@ -1002,7 +1029,7 @@ function writeWindowRow_(sh, store, x, flags, layout) {
   }
   applyPartsEarnings_(sh, row, c, x, true, 0);
   applyExtraLabor_(sh, row, c, x, true, labor, flags);
-  showReview_(sh,row,c,flags);
+  showReview_(sh,row,c,sheetFlags_(flags,x));
   return { ok: true, store: store, tab: store.tab, row: row, block: 'windows', flags: flags };
 }
 
@@ -1153,6 +1180,10 @@ function writeToStoreTab_(ss, x, reasons) {
   }
   var bookHint = groupTicketHint_(sh, c, x, screenBlockEnd_(sh)) || ticketBookHint_(sh, layout, x.ticket_number);
   if (bookHint) flags.push(bookHint);
+  // A bare "ticket_number" doubt (the reader gave no detail) on a ticket that already fits this tab's series is not a
+  // sheet note (Jared, 2026-10-30): since 10/20 such notes led to a fix 4 times in 77. Only the note is left out: the
+  // flags list stays whole, because saveScan_ copies the sheet-only flags back to the log by position (review).
+  else if (flags.indexOf('ticket_number') >= 0 && ticketFitsSeries_(sh, layout, x.ticket_number)) x = Object.assign({}, x, { _quiet_bare_ticket: true });
   if (ticketInStoreTab_(sh, x.ticket_number, layout) && !(x.tag_count > 1)) {
     flags.push('Ticket already on the ' + store.name + ' tab: another tag in the group, or a duplicate?');
   }
@@ -1290,7 +1321,7 @@ function writeToStoreTab_(ss, x, reasons) {
       if (had === '' || /^new patio door/.test(had)) ex.setValue(safeCell_(had ? had + ', ' + shorthand : shorthand));
     }
     applyExtraLabor_(sh, row, c, x, i === 0, labor, flags);
-    showReview_(sh,row,c,flags);
+    showReview_(sh,row,c,sheetFlags_(flags,x));
   });
   (checked.back || []).forEach(function (b) { appendReviewNote_(sh.getRange(b.row, c.TICKET), 'Glance at this value:\n- ' + b.text); });
   if (group && heldRow < 0) holdGroupRows_(sh, c, group, rows[0], end, x);

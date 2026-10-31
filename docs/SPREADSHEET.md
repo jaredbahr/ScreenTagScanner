@@ -146,6 +146,8 @@ Window mapping is built from Kirsten's description and the first real October wi
     share those last digits. Notes stay on the cell until someone clears them; correcting the value doesn't remove them.
     Since 0.13.32 a reading with one space inside ("123456 7") that is exactly 7 digits without it is written as the 7
     digits, with a ticket-cell note showing the reading (Jared, 2026-10-30). Anything else is left as read.
+    Since 0.13.33 a bare "ticket_number" doubt from the reader (no detail) on a ticket that fits the tab's series is kept
+    in the Scans log only, not as a sheet note.
     Since 0.13.31 a 6-digit group tag uses its group's tickets. When siblings with at least two different "x of N"
     all read one ticket (one ticket per order, as at Homer Glen) that ticket is "likely". Otherwise candidates sit inside the siblings' ticket clusters (gap
     10 or less), widened by the number of tags still missing only when the open tickets inside can't hold them, and
@@ -196,10 +198,12 @@ Window mapping is built from Kirsten's description and the first real October wi
     that one cell (pale, not yellow). Values are never changed. Since 0.13.26 a looser match (ticket
     within 1000, the exact same name, or a close name the same day) only counts when that row's Date out is within 14
     days, and only for the name and "far from the rest" notes, never "already on row" or a shared-ticket note.
-24b. **One ticket per order** (0.13.33, Jared 2026-10-30): on a tab where most "x of N" tags (N >= 2, 6+ tags) share
-    their ticket with another tag of that N (Homer Glen), tags of an order (strong group match) whose 7-digit tickets
-    differ in one digit get a ticket-cell note on both rows; when one side has more tags, the odd rows get "likely" the
-    shared ticket. Values are never changed.
+24b. **One ticket per order** (0.13.33, Jared 2026-10-30): on a tab where most "x of N" tags (N >= 2, 6+ tags, 60%+)
+    share their ticket with another tag of that N, across 2+ orders (Homer Glen), tags of an order (strong group match)
+    whose 7-digit tickets differ in one digit get a ticket-cell note on both rows; when one side has more tags, the odd
+    rows get "likely" the shared ticket. Not between tags with the same "x of N" (two orders), and not for tickets close
+    enough to be consecutive tickets of one order (within N). The "far from the rest" note still applies when no
+    one-digit mismatch is noted. Values are never changed.
 25. **Short last names** (2026-10-23): a last name of one or two letters keeps the name as written ("Ann B").
 26. **Look-alike ticket digits** (2026-10-23): when swapping confusable digits (2/7, 1/7, 3/8, 4/9, 5/6) in the first
     four digits gives the store's ticket series, the ticket cell gets a "likely …" note. Values are never changed. No note when the

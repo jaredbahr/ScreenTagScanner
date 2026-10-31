@@ -19,7 +19,13 @@ their ticket, as at Homer Glen), tags of an order whose tickets differ in one di
 other side has more tags, the odd row gets "likely" the shared ticket. Before, the existing check needed two agreeing
 tags and only ever noted the tag being scanned, so a misread scanned first was never marked (10/30: tag 3 of 7 read
 …944, tag 6 read …994). October replay: 6 notes on 3 orders, covering the 2 fixes Kirsten made by hand there; the
-third order points at a tag she kept that differs from its order's other tags.
+third order points at a tag she kept that differs from its order's other tags. Review: the "far from the rest" note
+still fires on one-ticket tabs; a second order (same "x of N") and consecutive tickets (within N, one Homer order in
+October used a ticket per tag) get no mismatch note; the one-ticket test needs 2+ shared orders.
+Also in 0.13.33 (Jared, 2026-10-30, after the 10/30 review): a bare "ticket_number" doubt (the reader gave no detail) on a
+ticket that already fits the tab's series (7 digits, within 300 of a ticket on the tab) is no longer a sheet note; it
+stays in the Scans log. Since 10/20 such notes appeared on 77 in-series tickets and led to a fix 4 times. Doubts with
+detail, tickets outside the series and every scanner hint stay.
 
 ## 0.13.32-draft — a digit read three times
 
