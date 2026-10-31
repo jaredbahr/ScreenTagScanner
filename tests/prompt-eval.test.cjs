@@ -143,12 +143,12 @@ test('round 2: a stop between saving and the cursor resumes from the saved rows;
   t.ctx.UrlFetchApp.fetchAll = reqs => { fetched += reqs.length; return reqs.map(() => ok(t)); };
   const realNow = t.ctx.Date.now; let clock = 0; t.ctx.Date.now = () => (clock += 3 * 60 * 1000);
   try { t.ctx.runPromptEval_(); } finally { t.ctx.Date.now = realNow; }
-  delete t.props.PROMPT_EVAL_CURSOR; // a lost cursor reads as 0
-  assert.throws(() => t.ctx.runPromptEval_(), /already exists/, 'no cursor and a results file: refuse, never start over');
-  t.props.PROMPT_EVAL_CURSOR = '2'; // cursor behind the file (stopped before the cursor moved)
+  delete t.props.PROMPT_EVAL_CURSOR; // stopped before the first cursor write: the saved case list says a run is under way
   t.ctx.runPromptEval_();
   assert.equal(fetched, 12, 'no photo read twice');
   assert.equal(JSON.parse(files['prompt-eval-sevens.json']).rows.length, 6);
+  t.props.PROMPT_EVAL_APPROVED = 'yes'; // a finished run, approved again, with the results still there
+  assert.throws(() => t.ctx.runPromptEval_(), /already exists/, 'never starts over on top of results');
   const u = setup(); scans(u.t, 3); u.t.props.PROMPT_EVAL_CURSOR = '4';
   let paid = 0; u.t.ctx.UrlFetchApp.fetchAll = reqs => { paid += reqs.length; return []; };
   assert.throws(() => u.t.ctx.runPromptEval_(), /Cannot resume/); assert.equal(paid, 0);

@@ -284,7 +284,8 @@ function promptEvalRun_(props) {
   var folders = DriveApp.getFoldersByName(PHOTO_FOLDER); if (!folders.hasNext()) throw new Error('No photo folder');
   var folder = folders.next(), fileName = 'prompt-eval-' + variant + '.json', start = Number(props.getProperty('PROMPT_EVAL_CURSOR')) || 0;
   var file = promptEvalFile_(folder, fileName), cases, out;
-  if (!start) {
+  // A saved case list means a run is under way, even if it stopped before its first cursor write (review).
+  if (!start && !props.getProperty('PROMPT_EVAL_CASES')) {
     if (file) throw new Error(fileName + ' already exists: the test ran. Trash it first to run again (paid).');
     cases = promptEvalCases_(getWorkbook_(), max);
     if (!cases.length) throw new Error('No scans with a saved photo to test (is SAVE_IMAGES on?)');
