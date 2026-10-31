@@ -210,6 +210,8 @@ test('caching: the instructions go as one cached system block, unchanged, ahead 
   assert.equal(JSON.stringify(a.system[0].cache_control), JSON.stringify({ type: 'ephemeral' }));
   assert.equal(JSON.stringify(a.system), JSON.stringify(b.system), 'byte-identical across scans');
   assert.ok(ctx.SYSTEM_PROMPT.length > 2000, 'well above the minimum cacheable size');
+  assert.equal(a.messages[0].content[0].type, 'image', 'the photo comes after the cached block');
+  assert.doesNotMatch(ctx.SYSTEM_PROMPT, /\d{4}-\d{2}-\d{2}T|\d{1,2}:\d{2}:\d{2}/, 'no timestamp in the cached text');
 });
 test('schema: request body carries the schema via output_config.format', () => {
   const { ctx } = load(); const { body } = ctx.buildRequest_('claude-sonnet-5-5', 'AAAA', 'image/jpeg');

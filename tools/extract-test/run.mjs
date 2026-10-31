@@ -76,7 +76,8 @@ for (const model of models) {
     try {
       const resp = await client.beta.messages.create({ ...body, betas });
       const x = X.parseResponse_(resp);
-      inTok += resp.usage.input_tokens;
+      // Cached prompt tokens are billed apart from input_tokens: writes at 1.25x, reads at 0.1x (0.13.34 caching).
+      inTok += resp.usage.input_tokens + 1.25 * (resp.usage.cache_creation_input_tokens || 0) + 0.1 * (resp.usage.cache_read_input_tokens || 0);
       outTok += resp.usage.output_tokens;
       row = { ...row, ms: Date.now() - started, usage: resp.usage, extracted: x, review: X.reviewReasons_(x) };
 
@@ -111,7 +112,7 @@ for (const model of models) {
   const p = PRICES[model];
   const cost = p ? (inTok * p.in + outTok * p.out) / 1e6 : NaN;
   const n = photos.length || 1;
-  console.log(`\nTokens: ${inTok} in / ${outTok} out  →  $${cost.toFixed(4)} total, $${(cost / n).toFixed(5)} per tag`);
+  console.log(`\nTokens: ${Math.round(inTok)} input-priced in / ${outTok} out  →  $${cost.toFixed(4)} total, $${(cost / n).toFixed(5)} per tag`);
   if (truth) {
     for (const [k, [ok, tot]] of Object.entries(score)) {
       console.log(`  ${k.padEnd(10)} ${ok}/${tot}${tot ? ` (${Math.round((100 * ok) / tot)}%)` : ""}`);
