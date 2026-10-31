@@ -102,6 +102,7 @@
   <div class="notes">
     <h3>0.13.33 &middot; Oct 30</h3>
     <ul>
+      <li>Homer-style orders (one ticket for the whole order): when two tags of an order read tickets one digit apart, both rows get a note, and once more tags agree the odd one gets "likely" the shared ticket. Before, the first tag scanned was never marked.</li>
       <li>Fewer ticket notes: when the scanner was only vaguely unsure of a ticket that already fits the store's ticket numbers, there's no note on the sheet any more (it's still in the Scans log). Notes that name a likely ticket stay.</li>
       <li>Repeat customers: when a tag's phone matches an earlier row on the same store tab where you typed the name yourself, and the scanner's reading is a close misspelling of it, your spelling is used. The name cell gets a note with what was read and the earlier row. It only acts when every name for that phone is your one spelling, so two people sharing a phone are left alone.</li>
     </ul>
