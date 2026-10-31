@@ -254,6 +254,142 @@ function extractTag_(imageB64, props) {
   return x;
 }
 
+/**
+ * One-time, paid A/B test of a prompt variant on Kirsten's saved tag photos (Jared, 2026-10-31). Run privately from
+ * the editor, only with Script Property PROMPT_EVAL_APPROVED = 'yes'; it deletes that property when it finishes, so it
+ * never pays twice. Picks scans of the active month that have a saved photo: those whose ticket or "x of N" Kirsten
+ * corrected (the sheet now differs from the reading), then controls whose reading has a 1, 2 or 7 and was kept. The case
+ * list is fixed on the first run (PROMPT_EVAL_CASES, compact) so resuming never skips or repeats. Each photo is read with
+ * the current prompt and the variant in parallel. Results (tickets and "x of N" only: no names, phones or photo IDs) go
+ * to one JSON file in the photo folder, updated in place after every batch. Never writes to the workbook and never takes
+ * the script lock (scans keep working). Runs in batches under the 6-minute limit; run again to continue
+ * (PROMPT_EVAL_CURSOR).
+ */
+function runPromptEval_() {
+  var props = PropertiesService.getScriptProperties();
+  if (props.getProperty('PROMPT_EVAL_APPROVED') !== 'yes') throw new Error('Set Script Property PROMPT_EVAL_APPROVED = yes (Jared approves the spend) first');
+  var lock = LockService.getUserLock(); // two editor runs at once would both pay; the user lock never blocks scans
+  if (!lock.tryLock(0)) throw new Error('The prompt test is already running');
+  try { return promptEvalRun_(props); } finally { lock.releaseLock(); }
+}
+/** The results file that is not in the trash (Drive lists trashed files by name too), or null. */
+function promptEvalFile_(folder, name) {
+  var it = folder.getFilesByName(name);
+  while (it.hasNext()) { var f = it.next(); if (!f.isTrashed()) return f; }
+  return null;
+}
+function promptEvalRun_(props) {
+  var apiKey = props.getProperty('ANTHROPIC_API_KEY'), model = props.getProperty('MODEL') || DEFAULT_MODEL;
+  var variant = props.getProperty('PROMPT_EVAL_VARIANT') || 'sevens', max = Math.max(1, Math.min(60, Number(props.getProperty('PROMPT_EVAL_MAX')) || 60));
+  var folders = DriveApp.getFoldersByName(PHOTO_FOLDER); if (!folders.hasNext()) throw new Error('No photo folder');
+  var folder = folders.next(), fileName = 'prompt-eval-' + variant + '.json', start = Number(props.getProperty('PROMPT_EVAL_CURSOR')) || 0;
+  var file = promptEvalFile_(folder, fileName), cases, out;
+  // A saved case list means a run is under way, even if it stopped before its first cursor write (review).
+  if (!start && !props.getProperty('PROMPT_EVAL_CASES')) {
+    if (file) throw new Error(fileName + ' already exists: the test ran. Trash it first to run again (paid).');
+    cases = promptEvalCases_(getWorkbook_(), max);
+    if (!cases.length) throw new Error('No scans with a saved photo to test (is SAVE_IMAGES on?)');
+    var packed = JSON.stringify(cases.map(function (c) { return [c.kind, c.store, c.photo, c.ticket, c.seq, c.readTicket, c.readSeq]; }));
+    if (packed.length > 8500) throw new Error('Case list too large for a Script Property (' + packed.length + ' bytes): lower PROMPT_EVAL_MAX. Nothing was sent.');
+    props.setProperty('PROMPT_EVAL_CASES', packed); // about 110 bytes a case: 60 fit under the 9 KB limit
+    out = { variant: variant, model: model, rows: [] };
+    file = folder.createFile(fileName, JSON.stringify(out), 'application/json'); // exists before anything is paid
+  } else {
+    // Resuming: the saved list and the results so far must both be there, or paid reads would be lost or repeated.
+    var saved = props.getProperty('PROMPT_EVAL_CASES');
+    if (!saved || !file) throw new Error('Cannot resume: PROMPT_EVAL_CASES or ' + fileName + ' is missing. Nothing was sent.');
+    cases = JSON.parse(saved).map(function (a) { return { kind: a[0], store: a[1], photo: a[2], ticket: a[3], seq: a[4], readTicket: a[5], readSeq: a[6] }; });
+    out = JSON.parse(file.getBlob().getDataAsString());
+    if (out.rows.length < start) throw new Error('Cannot resume: ' + fileName + ' has ' + out.rows.length + ' rows, cursor says ' + start + '. Nothing was sent.');
+    start = out.rows.length; // a run stopped between saving and moving the cursor: the saved rows are the truth
+  }
+  var began = Date.now(), prompts = { a: promptVariant_('current'), b: promptVariant_(variant) };
+  var headersFor = function (betas) { var h = { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' }; if (betas.length) h['anthropic-beta'] = betas.join(','); return h; };
+  var save = function () {
+    // Scored only where both prompts returned a reading: an outage on one side must not count as a misread.
+    var both = function (r) { return !r.a.error && !r.b.error; };
+    var tally = function (kind, side, f) { return out.rows.filter(function (r) { return r.kind === kind && r.truth[f] && both(r) && r[side][f] === r.truth[f]; }).length; };
+    var total = function (kind, f) { return out.rows.filter(function (r) { return r.kind === kind && r.truth[f] && both(r); }).length; };
+    out.summary = { done: out.rows.length, of: cases.length, errors: out.rows.filter(function (r) { return !both(r); }).length };
+    ['corrected', 'control'].forEach(function (kind) {
+      out.summary[kind] = {};
+      ['ticket', 'seq'].forEach(function (f) { out.summary[kind][f] = { total: total(kind, f), current: tally(kind, 'a', f), variant: tally(kind, 'b', f) }; });
+    });
+    file.setContent(JSON.stringify(out)); // one file, updated in place: a failed save never drops earlier rows
+  };
+  var read = function (r) {
+    var code = typeof r.getResponseCode === 'function' ? r.getResponseCode() : 200;
+    if (code !== 200) return { error: 'HTTP ' + code };
+    try { var x = normalizeJobInput_(parseResponse_(JSON.parse(r.getContentText()))); return { ticket: x.ticket_number || '', seq: tagOf_(x) || '' }; }
+    catch (e) { return { error: (e && e.name) || 'Error' }; }
+  };
+  var i = start;
+  for (; i < cases.length; i += 4) {
+    if (Date.now() - began > 4 * 60 * 1000) break;
+    var batch = cases.slice(i, i + 4), reqs = [], sent = [];
+    batch.forEach(function (c) {
+      var b64; try { b64 = Utilities.base64Encode(DriveApp.getFileById(c.photo).getBlob().getBytes()); } catch (e) { c.missing = true; return; }
+      sent.push(c);
+      ['a', 'b'].forEach(function (side) {
+        var built = buildRequest_(model, b64, 'image/jpeg', prompts[side]);
+        reqs.push({ url: 'https://api.anthropic.com/v1/messages', method: 'post', contentType: 'application/json', headers: headersFor(built.betas), payload: JSON.stringify(built.body), muteHttpExceptions: true });
+      });
+    });
+    var res = [];
+    try { res = reqs.length ? UrlFetchApp.fetchAll(reqs) : []; } catch (e) { res = null; }
+    batch.forEach(function (c) {
+      var k = sent.indexOf(c), row = { kind: c.kind, store: c.store, truth: { ticket: c.ticket, seq: c.seq }, logged: { ticket: c.readTicket, seq: c.readSeq } };
+      if (c.missing) { row.a = row.b = { error: 'photo missing' }; }
+      else if (!res) { row.a = row.b = { error: 'fetch failed' }; }
+      else { row.a = read(res[2 * k]); row.b = read(res[2 * k + 1]); }
+      out.rows.push(row);
+    });
+    save(); // results first, then the cursor: a failed save stops here and the next run refuses to resume blind
+    props.setProperty('PROMPT_EVAL_CURSOR', String(i + batch.length));
+  }
+  if (i >= cases.length) { // finished: never runs (or pays) again until someone approves a new run
+    save();
+    ['PROMPT_EVAL_CURSOR', 'PROMPT_EVAL_CASES', 'PROMPT_EVAL_APPROVED'].forEach(function (k) { props.deleteProperty(k); });
+  }
+  console.log(JSON.stringify(out.summary));
+  return out.summary;
+}
+/**
+ * The test set: corrected scans first, then kept controls with a 1, 2 or 7; each with its saved photo and Kirsten's
+ * values. A scan counts only while its store row still holds the same customer (rows moved since would give another
+ * job's values). Read only, in memory.
+ */
+function promptEvalCases_(ss, max) {
+  var log = ss.getSheetByName(SCANS_TAB); if (!log) return []; // read only: never create or move the Scans tab
+  var last = log.getLastRow(); if (last < 2) return [];
+  var rows = log.getRange(2, 1, last - 1, HEADERS.length).getValues(), fixed = [], kept = [], tabs = {};
+  var col = function (name) { return HEADERS.indexOf(name); };
+  var word = function (s) { return String(s || '').toLowerCase().replace(/[^a-z]/g, ''); };
+  rows.forEach(function (r) {
+    var m = /^(.*?) screens rows? (\d+)/.exec(String(r[COL.WRITTEN_TO - 1])), photo = /[-\w]{25,}/.exec(String(r[col('Photo')] || ''));
+    if (!m || !photo) return;
+    var tab = tabs[m[1]];
+    if (tab === undefined) { // each store's ticket, count and name columns are read once
+      var store = STORES.filter(function (s) { return s.name === m[1]; })[0], sh = store ? storeSheet_(ss, store) : null;
+      if (sh) { var c = storeLayout_(sh).screens, end = screenBlockEnd_(sh);
+        tab = { t: sh.getRange(1, c.TICKET, end, 1).getValues(), s: c.SEQUENCE ? sh.getRange(1, c.SEQUENCE, end, 1).getValues() : null,
+          n: sh.getRange(1, c.NAME, end, 1).getValues() }; }
+      tabs[m[1]] = tab = tab || null;
+    }
+    var row = Number(m[2]); if (!tab || row > tab.t.length) return;
+    var lastName = word(r[col('Last Name')]);
+    if (lastName && word(tab.n[row - 1][0]).indexOf(lastName) < 0) return; // the row now holds another job
+    var ticket = String(tab.t[row - 1][0]).trim(), seq = tab.s ? String(tab.s[row - 1][0]).trim() : '';
+    var readTicket = String(r[col('Ticket #')]).trim(), readSeq = String(r[col('Tag x of N')]).trim();
+    var item = { kind: '', store: m[1], photo: photo[0], ticket: ticket, seq: seq, readTicket: readTicket, readSeq: readSeq };
+    if ((/^\d{7}$/.test(ticket) && ticket !== readTicket) || (seq && readSeq && seq !== readSeq)) { item.kind = 'corrected'; fixed.push(item); }
+    else if (/^\d{7}$/.test(readTicket) && /[127]/.test(readTicket + readSeq)) { item.kind = 'control'; kept.push(item); }
+  });
+  var step = Math.max(1, Math.floor(kept.length / Math.max(1, max - Math.min(fixed.length, max))));
+  var controls = kept.filter(function (k, i) { return i % step === 0; });
+  return fixed.slice(0, max).concat(controls).slice(0, max);
+}
+
 function getWorkbook_(admittedId) {
   var id = admittedId || PropertiesService.getScriptProperties().getProperty('SHEET_ID');
   var ss = id ? SpreadsheetApp.openById(id) : SpreadsheetApp.getActiveSpreadsheet();

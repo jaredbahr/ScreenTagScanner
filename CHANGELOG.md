@@ -17,6 +17,17 @@ readings or Kirsten's hand fixes, never this rule's own corrections; if the rule
 this one and no row of the order was fixed by hand, it stops (a misread scanned first overwrites at most one row).
 Count notes compare single-digit counts only. Replay after review: 4 tickets written, all right.
 
+Prompt test tool (Jared, 2026-10-31, no API key outside Google): private `runPromptEval_` reads saved tag photos of
+the active month with the current prompt and a candidate variant ("sevens": 7 vs 2/1 guidance) in parallel, using
+the script's own key. It needs Script Property PROMPT_EVAL_APPROVED = yes, is capped at 60 photos (about $4), never
+writes to the workbook, and saves results (tickets and "x of N" only) as a JSON file in the photo folder after every
+batch (one file, updated in place; a resume refuses if the file or case list is missing). The case list is fixed on
+the first run (compact, under the 9 KB property limit) so resuming never skips or repeats a photo; a finished run
+deletes its approval, a second run refuses while a live results file exists, and a user lock (never the script lock,
+so scans keep working) stops two runs at once. A missing photo, failed fetch or HTTP error is recorded and left out of
+the scores. A scan whose store row now holds another customer is not used. Production still reads SYSTEM_PROMPT only. One synthetic test ticket in
+offline.test.cjs was renumbered (it matched a real ticket).
+
 Prompt caching (Jared, 2026-10-31). The scanner's instructions (about 3,500 tokens, identical on every
 scan) are sent as one system block marked for caching (5-minute entry, refreshed by each read). Scans in a burst read
 them at a tenth of the input price: about 20-25% off a scan (October: about $3.20 per 100 tags). No change to what is
