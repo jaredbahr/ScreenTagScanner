@@ -636,10 +636,16 @@ function orderTicketFix_(sh, c, x, endRow) {
   for (var p = 0; p < 7; p++) if (T.charAt(p) !== t.charAt(p) && (LOOK_ALIKE[t.charAt(p)] || '').indexOf(T.charAt(p)) < 0) return null;
   // Evidence must be readings or Kirsten's hand fixes, never this rule's own corrections (review: a misread scanned
   // first must not spread). If this rule already overrode a reading equal to this one, the order is disputed: stop.
-  var logged = {};
-  if (typeof x._log_rows === 'function') x._log_rows().forEach(function (r) { if (r.tab === store && r.block === 'screens') logged[r.row] = String(r.ticket || '').trim(); });
+  // This rule's corrections are found in the Scans log's Review Reason, which Kirsten doesn't edit (review: a cleared
+  // cell note must not turn a correction into evidence), and in the ticket cell's note.
+  var logged = {}, ruled = {}, mark = /so it is written as theirs/;
+  if (typeof x._log_rows === 'function') x._log_rows().forEach(function (r) {
+    if (r.tab !== store || r.block !== 'screens') return;
+    logged[r.row] = String(r.ticket || '').trim();
+    if (mark.test(r.reason || '')) ruled[r.row] = true;
+  });
   var tnotes = sh.getRange(2, c.TICKET, endRow - 1, 1).getNotes();
-  var byRule = function (s) { return /so it is written as theirs/.test(String(tnotes[s.row - 2][0] || '')); };
+  var byRule = function (s) { return ruled[s.row] || mark.test(String(tnotes[s.row - 2][0] || '')); };
   // Kirsten's own fix of an order row to T (read otherwise, changed by hand) settles a dispute: the misread repeats.
   var handFixed = order.some(function (s) { return !byRule(s) && logged[s.row] !== undefined && logged[s.row] !== T; });
   if (!handFixed && order.some(function (s) { return byRule(s) && logged[s.row] === t; })) return null;

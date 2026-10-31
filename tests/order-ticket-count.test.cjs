@@ -115,6 +115,14 @@ test('review: a misread scanned first can overwrite at most one correct reading;
   write(t, tag('HOMER', 'Synthgamma', '8339944', 3, 7)); write(t, tag('HOMER', 'Synthgamma', '8339944', 6, 7));
   write(t, tag('HOMER', 'Synthgamma', '8339994', 2, 7)); write(t, tag('HOMER', 'Synthgamma', '8339994', 1, 7));
   assert.equal(String(sh.get(rowOf(sh, c, '1 of 7'), c.TICKET)), '8339994', 'the second correct read is kept');
+  const v = homer(); // review round 2: the overwritten row's cell note is cleared; the Scans log still knows the rule wrote it
+  write(v.t, tag('HOMER', 'Synthgamma', '8339944', 3, 7)); write(v.t, tag('HOMER', 'Synthgamma', '8339944', 6, 7));
+  write(v.t, tag('HOMER', 'Synthgamma', '8339994', 2, 7));
+  const r2 = rowOf(v.sh, v.c, '2 of 7');
+  assert.equal(String(v.sh.get(r2, v.c.TICKET)), '8339944'); assert.match(note(v.sh, v.c.TICKET, r2), /written as theirs/);
+  v.sh.notes.delete(v.sh.key(r2, v.c.TICKET));
+  for (const i of [1, 4, 5]) write(v.t, tag('HOMER', 'Synthgamma', '8339994', i, 7));
+  for (const i of [1, 4, 5]) assert.equal(String(v.sh.get(rowOf(v.sh, v.c, i + ' of 7'), v.c.TICKET)), '8339994', 'cleared note: tag ' + i + ' kept');
   const u = homer(); // the 10/31 order: tag 3 read 944 and fixed by hand to 994; tag 6 read 994; then 2, 4, 5 read 944
   write(u.t, tag('HOMER', 'Synthgamma', '8339944', 3, 7)); u.sh.set(rowOf(u.sh, u.c, '3 of 7'), u.c.TICKET, '8339994');
   write(u.t, tag('HOMER', 'Synthgamma', '8339994', 6, 7));
