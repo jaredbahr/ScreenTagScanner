@@ -6,9 +6,11 @@ Prompt test tool (Jared, 2026-10-31, no API key outside Google): private `runPro
 the active month with the current prompt and a candidate variant ("sevens": 7 vs 2/1 guidance) in parallel, using
 the script's own key. It needs Script Property PROMPT_EVAL_APPROVED = yes, is capped at 60 photos (about $4), never
 writes to the workbook, and saves results (tickets and "x of N" only) as a JSON file in the photo folder after every
-batch. The case list is fixed on the first run so resuming never skips or repeats a photo; a finished run deletes its
-approval, and a second run refuses while the results file exists, so it never pays twice. A missing photo or failed
-fetch is recorded as an error. Production still reads SYSTEM_PROMPT only. One synthetic test ticket in
+batch (one file, updated in place; a resume refuses if the file or case list is missing). The case list is fixed on
+the first run (compact, under the 9 KB property limit) so resuming never skips or repeats a photo; a finished run
+deletes its approval, a second run refuses while a live results file exists, and a user lock (never the script lock,
+so scans keep working) stops two runs at once. A missing photo, failed fetch or HTTP error is recorded and left out of
+the scores. A scan whose store row now holds another customer is not used. Production still reads SYSTEM_PROMPT only. One synthetic test ticket in
 offline.test.cjs was renumbered (it matched a real ticket).
 
 Prompt caching (Jared, 2026-10-31). The scanner's instructions (about 3,500 tokens, identical on every

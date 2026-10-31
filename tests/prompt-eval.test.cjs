@@ -7,19 +7,26 @@ let passed = 0;
 function test(name, fn) { fn(); passed++; console.log('PASS ' + name); }
 
 function setup() {
-  const t = load({ props: { SAVE_IMAGES: 'true' } }), files = {}, made = [];
+  const t = load({ props: { SAVE_IMAGES: 'true' } }), files = {}, drive = [];
   let n = 0;
+  const fileObj = (name, content) => { const f = { name, content, trashed: false, failSave: false,
+    getBlob: () => ({ getDataAsString: () => f.content }), isTrashed: () => f.trashed, setTrashed(v) { f.trashed = v; },
+    setContent(c) { if (f.failSave) throw new Error('Drive save failed'); f.content = c; files[name] = c; } };
+    drive.push(f); files[name] = content; return f; };
   const folder = {
-    createFile: (a, content) => { if (typeof a === 'string') { files[a] = content; made.push(a); return {}; }
+    createFile: (a, content) => { if (typeof a === 'string') return fileObj(a, content);
       const id = 'synthphotoid' + String(++n).padStart(21, '0'); return { getUrl: () => 'https://drive.example/file/d/' + id + '/view' }; },
     getFiles: () => ({ hasNext: () => false }),
-    getFilesByName: name => { let done = !(name in files); return { hasNext: () => !done, next: () => { done = true; return { getBlob: () => ({ getDataAsString: () => files[name] }), setTrashed() { delete files[name]; } }; } }; },
+    getFilesByName: name => { const list = drive.filter(f => f.name === name); let k = 0; return { hasNext: () => k < list.length, next: () => list[k++] }; }, // trashed files too, as Drive does
   };
   t.ctx.DriveApp = { getFoldersByName: () => { let done = false; return { hasNext: () => !done, next: () => { done = true; return folder; } }; },
     getFileById: () => ({ getBlob: () => ({ getBytes: () => [255, 216, 1, 2] }) }) };
   t.ctx.Utilities.newBlob = (bytes, type, name) => ({ name });
   t.ctx.Utilities.base64Encode = bytes => Buffer.from(bytes).toString('base64');
-  return { t, files, made };
+  let held = false;
+  t.ctx.LockService.getUserLock = () => ({ tryLock() { if (held) return false; held = true; return true; }, releaseLock() { held = false; } });
+  t.holdUserLock = v => { held = v; };
+  return { t, files, drive };
 }
 
 test('the variant changes only the 7s line; production keeps the current prompt', () => {
@@ -107,6 +114,76 @@ test('resumes from the cursor with the saved case list, without repeating or ski
   const logged = JSON.parse(files['prompt-eval-sevens.json']).rows.map(r => r.logged.ticket).sort();
   assert.deepEqual(logged, ['7777610', '7777611', '7777612', '7777613', '7777614', '7777615'], 'every scan once');
   assert.equal(t.props.PROMPT_EVAL_CURSOR, undefined);
+});
+
+const ok = (t, ticket) => ({ getResponseCode: () => 200, getContentText: () => JSON.stringify({ stop_reason: 'end_turn', content: [{ type: 'text', text: JSON.stringify({ ...require('./offline.test.cjs').BASE, store: 'New Lenox', ...(ticket ? { ticket_number: ticket } : {}) }) }] }) });
+function scans(t, k) { for (let i = 0; i < k; i++) t.scan({ store: 'New Lenox', ticket_number: '777761' + i, width_in: 30 + i, billable_inches: 70 + i }); t.props.PROMPT_EVAL_APPROVED = 'yes'; }
+
+test('round 2: a failed save loses no paid rows; the next run resumes from what was saved', () => {
+  const { t, files, drive } = setup();
+  scans(t, 6);
+  let saves = 0;
+  t.ctx.UrlFetchApp.fetchAll = reqs => reqs.map(() => ok(t));
+  const origCreate = t.ctx.DriveApp.getFoldersByName().next().createFile;
+  t.ctx.DriveApp.getFoldersByName().next().createFile = (a, c) => { const f = origCreate(a, c); if (typeof a === 'string') { const set = f.setContent; f.setContent = x => { if (++saves === 2) throw new Error('Drive save failed'); set(x); }; } return f; };
+  assert.throws(() => t.ctx.runPromptEval_(), /Drive save failed/);
+  assert.equal(JSON.parse(files['prompt-eval-sevens.json']).rows.length, 4, 'first batch kept');
+  assert.equal(t.props.PROMPT_EVAL_CURSOR, '4'); assert.equal(t.props.PROMPT_EVAL_APPROVED, 'yes');
+  const sum = t.ctx.runPromptEval_();
+  assert.equal(sum.done, 6); assert.equal(sum.of, 6);
+  const logged = JSON.parse(files['prompt-eval-sevens.json']).rows.map(r => r.logged.ticket).sort();
+  assert.deepEqual(logged, ['7777610', '7777611', '7777612', '7777613', '7777614', '7777615']);
+  assert.equal(drive.filter(f => f.name === 'prompt-eval-sevens.json').length, 1, 'one results file, updated in place');
+});
+
+test('round 2: a stop between saving and the cursor resumes from the saved rows; a missing file or list refuses', () => {
+  const { t, files } = setup();
+  scans(t, 6);
+  let fetched = 0;
+  t.ctx.UrlFetchApp.fetchAll = reqs => { fetched += reqs.length; return reqs.map(() => ok(t)); };
+  const realNow = t.ctx.Date.now; let clock = 0; t.ctx.Date.now = () => (clock += 3 * 60 * 1000);
+  try { t.ctx.runPromptEval_(); } finally { t.ctx.Date.now = realNow; }
+  delete t.props.PROMPT_EVAL_CURSOR; // a lost cursor reads as 0
+  assert.throws(() => t.ctx.runPromptEval_(), /already exists/, 'no cursor and a results file: refuse, never start over');
+  t.props.PROMPT_EVAL_CURSOR = '2'; // cursor behind the file (stopped before the cursor moved)
+  t.ctx.runPromptEval_();
+  assert.equal(fetched, 12, 'no photo read twice');
+  assert.equal(JSON.parse(files['prompt-eval-sevens.json']).rows.length, 6);
+  const u = setup(); scans(u.t, 3); u.t.props.PROMPT_EVAL_CURSOR = '4';
+  let paid = 0; u.t.ctx.UrlFetchApp.fetchAll = reqs => { paid += reqs.length; return []; };
+  assert.throws(() => u.t.ctx.runPromptEval_(), /Cannot resume/); assert.equal(paid, 0);
+});
+
+test('round 2: a trashed results file does not block or feed a new approved run; the user lock stops a second run', () => {
+  const { t, files, drive } = setup();
+  scans(t, 2);
+  t.ctx.UrlFetchApp.fetchAll = reqs => reqs.map(() => ok(t));
+  t.ctx.runPromptEval_();
+  drive.forEach(f => f.setTrashed(true));
+  t.props.PROMPT_EVAL_APPROVED = 'yes';
+  assert.equal(t.ctx.runPromptEval_().done, 2, 'a fresh run after trashing');
+  t.props.PROMPT_EVAL_APPROVED = 'yes'; drive.forEach(f => f.setTrashed(true)); t.holdUserLock(true);
+  let paid = 0; t.ctx.UrlFetchApp.fetchAll = reqs => { paid += reqs.length; return []; };
+  assert.throws(() => t.ctx.runPromptEval_(), /already running/); assert.equal(paid, 0);
+});
+
+test('round 2: API errors are recorded with their code and left out of the scores; no cases or moved rows refuse or skip', () => {
+  const { t, files } = setup();
+  scans(t, 2);
+  t.ctx.UrlFetchApp.fetchAll = reqs => reqs.map((r, k) => k === 1 ? { getResponseCode: () => 529, getContentText: () => '{}' } : ok(t, k < 2 ? '7777610' : '7777611'));
+  const sum = t.ctx.runPromptEval_();
+  const rows = JSON.parse(files['prompt-eval-sevens.json']).rows;
+  assert.equal(rows[0].b.error, 'HTTP 529'); assert.equal(sum.errors, 1);
+  assert.equal(sum.control.ticket.total, 1, 'the errored photo is not scored');
+  assert.equal(sum.control.ticket.current, 1, 'nor its other side');
+  const u = setup(); u.t.props.PROMPT_EVAL_APPROVED = 'yes';
+  assert.throws(() => u.t.ctx.runPromptEval_(), /No scans with a saved photo/);
+  assert.equal(u.t.props.PROMPT_EVAL_APPROVED, 'yes', 'approval kept: nothing ran');
+  const w = setup(); scans(w.t, 2);
+  const sh = w.t.ss.tabs['New Lenox'], c = w.t.ctx.storeLayout_(sh).screens;
+  sh.set(2, c.NAME, 'Someone Else'); // the row was reused for another job since the scan
+  w.t.ctx.UrlFetchApp.fetchAll = reqs => reqs.map(() => ok(w.t));
+  assert.equal(w.t.ctx.runPromptEval_().of, 1, 'the moved row is not a case');
 });
 
 console.log(`${passed} prompt eval tests passed`);
