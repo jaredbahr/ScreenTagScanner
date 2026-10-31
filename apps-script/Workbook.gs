@@ -658,10 +658,11 @@ function groupCheck_(sh, c, x, endRow) {
     });
     Object.keys(byT).forEach(function (t) {
       var odd = byT[t];
-      oneTicketNoted = true;
       if (same > odd.length) {
+        oneTicketNoted = true;
         odd.forEach(function (s) { out.back.push({ row: s.row, text: 'Group check (ticket): this tag reads ' + t + '; ' + same + ' tags of this order read ' + me.ticket + ' (one ticket per order): likely ' + me.ticket + ', check the tag.' }); });
       } else if (same === odd.length) {
+        oneTicketNoted = true;
         out.push('Group check (ticket): this tag reads ' + me.ticket + '; row ' + rowsOf(odd) + ' reads ' + t + ' (one digit apart; one ticket per order): one of them is misread, check both tags.');
         odd.forEach(function (s) { out.back.push({ row: s.row, text: 'Group check (ticket): this tag reads ' + t + '; a later tag of this order reads ' + me.ticket + ' (one digit apart; one ticket per order): one of them is misread, check both tags.' }); });
       }

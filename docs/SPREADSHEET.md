@@ -202,7 +202,8 @@ Window mapping is built from Kirsten's description and the first real October wi
     share their ticket with another tag of that N, across 2+ orders (Homer Glen), tags of an order (strong group match)
     whose 7-digit tickets differ in one digit get a ticket-cell note on both rows; when one side has more tags, the odd
     rows get "likely" the shared ticket. Not between tags with the same "x of N" (two orders), and not for tickets close
-    enough to be consecutive tickets of one order (within N). The "far from the rest" note still applies when no
+    enough to be consecutive tickets of one order (within N; a last-digit misread within N of the right ticket is
+    therefore not caught, a trade made on October's data: 1 consecutive-ticket order against 8 misreads). The "far from the rest" note still applies when no
     one-digit mismatch is noted. Values are never changed.
 25. **Short last names** (2026-10-23): a last name of one or two letters keeps the name as written ("Ann B").
 26. **Look-alike ticket digits** (2026-10-23): when swapping confusable digits (2/7, 1/7, 3/8, 4/9, 5/6) in the first
