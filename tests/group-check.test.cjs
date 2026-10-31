@@ -108,7 +108,7 @@ test('look-alike digits: 7s read as 2s get the store-series fix (New Lenox patte
   t.scan(tag('New Lenox', 'Synththree', '2208120', 1, 1));
   const r = rowOf(sh, t.ctx.storeLayout_(sh).screens, '2208120');
   assert.match(sh.notes.get(r + ',5') || '', /Ticket # 2208120 looks off for this store \(7708xxx\): likely 7708120 \(2\/7 look alike\)/);
-  assert.match(t.ctx.SYSTEM_PROMPT, /2\/7/); assert.match(t.ctx.SYSTEM_PROMPT, /misread as 2 in ticket numbers/);
+  assert.match(t.ctx.SYSTEM_PROMPT, /2\/7/); assert.match(t.ctx.SYSTEM_PROMPT, /Handwritten 7s on these tags are often misread as 2/);
   t.scan(tag('New Lenox', 'Synthfour', '7708130', 1, 1));
   assert.doesNotMatch(sh.notes.get(rowOf(sh, t.ctx.storeLayout_(sh).screens, '7708130') + ',5') || '', /look alike/, 'a ticket that fits gets no note');
 });
