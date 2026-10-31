@@ -3,13 +3,13 @@
 Living notes so any session (Claude Code or Codex) can pick up where the last one stopped. Update this
 file whenever the state below changes. No customer data, emails, Google IDs or secrets here.
 
-_Last updated: 2026-10-31 (version 20 receipt verified at 2026-10-31T04:03:42.366Z)._
+_Last updated: 2026-10-31 (version 21 health/release notes verified at 2026-10-31T20:25:22Z; prompt test blocked)._
 
 ## Where things stand
 | | |
 |---|---|
-| Live in Google | Immutable version 20 / **0.13.33-draft**, source `71dfed8dc9b288e1a7846e87674df1e2fe5f0ec9`. Submitted 2026-10-31 04:02:58.175 UTC / October 30 23:02:58.175 America/Chicago; success 04:03:05.218; verified 04:03:42.366 UTC. Actual prior baseline was version 19/1cb66ce; stale version 18 instructions and unmerged PR #39 prerequisite were explicitly overridden by Jared before the four-file update. Full twelve-file baseline and post-save/reload checks passed: eleven raw matches plus only the untouched manifest's approved missing final LF. Same endpoint/identity/access. Health/release notes and normal 1180x757 Scanner/Back verified; required phone-sized/actual-phone QA remains pending. No permission/property/sharing/scope/trigger/data actions. |
-| Ready to deploy | The approved issue #40 pin is deployed; required phone QA and Claude/user review of this metadata record remain pending. PR #39 still records the prior version 19 deployment and remains unmerged. Future runtime changes require a new reviewed main pin and release validation. |
+| Live in Google | Immutable version 21 / **0.13.34-draft**, source `6d84c5f70eebbbed611545ae132ae10f14bd93e6`. Submitted 2026-10-31 20:25:03.585 UTC / 15:25:03.585 America/Chicago; confirmed 20:25:09; health/notes verified 20:25:22 UTC. All twelve baseline and post-reload source checks passed, with only the known unchanged manifest missing final LF. Same endpoint/identity/access; normal 1180x757 scanner/Back passed. Required phone QA remains pending. Prompt test **NOT RUN**: editor does not offer private runPromptEval_; zero runs/spend, no final counts summary. PROMPT_EVAL_APPROVED=yes remains set; cleanup not confirmed. No result file opened or other property/sharing/scope/trigger/data changes. |
+| Ready to deploy | Issue #45 code deployment is complete; prompt test is blocked on the unavailable editor entry point, phone QA remains pending, and this metadata record awaits Claude/user review. No runtime entry-point fix is included here. |
 | Who deploys | Codex, per [DEPLOYMENT.md](DEPLOYMENT.md) and the release gate, recorded as a `deployment` issue |
 | Lesson (2026-10-22) | Google ran Codex's unmerged PR line for a week while the default branch moved on separately. Rule now: deploy only from the default branch; the release gate fails a candidate that lacks the deployed source's history |
 | Workbook in use | "October 2026" in the shared monthly folder; tabs named by store ("Downers Grove", …); a "Tag x of N" column after Name in both blocks |
