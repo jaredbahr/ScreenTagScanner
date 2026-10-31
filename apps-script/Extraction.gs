@@ -241,7 +241,10 @@ function buildRequest_(model, imageBase64, mediaType) {
   var body = {
     model: model,
     max_tokens: 4000,
-    system: SYSTEM_PROMPT,
+    // Prompt caching (Jared, 2026-10-31): the instructions are identical on every scan, so they are cached (5-minute
+    // entry, refreshed by each read). Scans in a burst read them at a tenth of the input price. Keep SYSTEM_PROMPT
+    // byte-stable: no dates or IDs in it, or every scan misses the cache.
+    system: [{ type: 'text', text: SYSTEM_PROMPT, cache_control: { type: 'ephemeral' } }],
     output_config: {
       effort: 'low',
       format: { type: 'json_schema', schema: TAG_SCHEMA }

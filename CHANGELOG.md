@@ -27,6 +27,11 @@ ticket that already fits the tab's series (7 digits, within 300 of a ticket on t
 stays in the Scans log. Since 10/20 such notes appeared on 77 in-series tickets and led to a fix 4 times. Doubts with
 detail, tickets outside the series and every scanner hint stay.
 
+Also in 0.13.33 (Jared, 2026-10-31): prompt caching. The scanner's instructions (about 3,500 tokens, identical on every
+scan) are sent as one system block marked for caching (5-minute entry, refreshed by each read). Scans in a burst read
+them at a tenth of the input price: about 20-25% off a scan (October: about $3.20 per 100 tags). No change to what is
+read or written. Keep SYSTEM_PROMPT byte-stable: a date or ID in it would make every scan miss.
+
 ## 0.13.32-draft — a digit read three times
 
 Kirsten (2026-10-28, Homer, on live 0.13.31): a clearly written ticket with "99" was read with "999" (8 digits);

@@ -204,6 +204,13 @@ test('schema: every property required, no extra properties, quantity_conflict_de
   assert.deepEqual(JSON.parse(JSON.stringify(sch.properties.quantity_conflict_details)), { type: 'string' });
   assert.match(ctx.SYSTEM_PROMPT, /quantity_conflict_details is always a string: use "" \(empty string\)/);
 });
+test('caching: the instructions go as one cached system block, unchanged, ahead of the photo', () => {
+  const { ctx } = load(); const a = ctx.buildRequest_('claude-sonnet-5-5', 'AAAA', 'image/jpeg').body, b = ctx.buildRequest_('claude-sonnet-5-5', 'BBBB', 'image/jpeg').body;
+  assert.equal(a.system.length, 1); assert.equal(a.system[0].type, 'text'); assert.equal(a.system[0].text, ctx.SYSTEM_PROMPT);
+  assert.equal(JSON.stringify(a.system[0].cache_control), JSON.stringify({ type: 'ephemeral' }));
+  assert.equal(JSON.stringify(a.system), JSON.stringify(b.system), 'byte-identical across scans');
+  assert.ok(ctx.SYSTEM_PROMPT.length > 2000, 'well above the minimum cacheable size');
+});
 test('schema: request body carries the schema via output_config.format', () => {
   const { ctx } = load(); const { body } = ctx.buildRequest_('claude-sonnet-5-5', 'AAAA', 'image/jpeg');
   assert.equal(body.output_config.format.type, 'json_schema');

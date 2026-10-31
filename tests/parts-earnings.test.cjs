@@ -68,7 +68,7 @@ test('raw provider payload uses supported schema keywords while local parts boun
   const schema=body.output_config.format.schema;
   function check(v){if(!v||typeof v!=='object')return;for(const [k,x] of Object.entries(v)){assert.ok(!['minimum','maximum','maxItems','minItems','minLength','maxLength'].includes(k),'unsupported provider keyword '+k);check(x);}}
   check(schema);assert.equal(schema.properties.parts.type,'array');assert.equal(schema.properties.parts.items.properties.quantity.type,'integer');
-  assert.match(body.system,/at most 30 parts lines/i);
+  assert.match(body.system[0].text,/at most 30 parts lines/i);
   const tooMany=t.ctx.calculateParts_({...BASE,parts:Array.from({length:31},()=>part('580602',1))});assert.equal(tooMany.items.length,0);assert.match(tooMany.flags.join(';'),/More than 30/);
   for(const qty of [-1,0,1.5,1001]){const p=t.ctx.calculateParts_({...BASE,parts:[part('580602',qty)]});assert.equal(p.items.length,0);assert.ok(p.flags.length);}
   assert.equal(t.ctx.calculateParts_({...BASE,parts:[part('580602',1000)]}).items[0].amount,500);assert.equal(t.fetches(),1,'one inert fake-provider call only');
