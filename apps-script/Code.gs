@@ -271,8 +271,8 @@ function runPromptEval() {
  * corrected (the sheet now differs from the reading), then controls whose reading has a 1, 2 or 7 and was kept. The case
  * list is fixed on the first run (PROMPT_EVAL_CASES, compact) so resuming never skips or repeats. Each photo is read with
  * the current prompt and the variant in parallel. Results (tickets and "x of N" only: no names, phones or photo IDs) go
- * to one JSON file in the photo folder, updated in place after every batch. Never writes to the workbook and never takes
- * the script lock (scans keep working). Runs in batches under the 6-minute limit; run again to continue
+ * to one JSON file in the photo folder, updated in place after every batch. Never writes to the workbook; takes the
+ * script lock only for milliseconds to claim the run (scans keep working). Runs in batches under the 6-minute limit; run again to continue
  * (PROMPT_EVAL_CURSOR).
  */
 function runPromptEval_() {
