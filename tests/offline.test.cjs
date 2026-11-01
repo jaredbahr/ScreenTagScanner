@@ -527,7 +527,7 @@ test('only intended public server functions are remotely callable', () => {
     const s=fs.readFileSync(path.join(ROOT,f),'utf8');
     for(const m of s.matchAll(/^function (\w+)\(/gm)) if(!m[1].endsWith('_')) names.push(m[1]);
   }
-  assert.deepEqual(names.sort(),['doGet','doPost','getMonthSettings','scanTag','startMonth']);
+  assert.deepEqual(names.sort(),['doGet','doPost','getMonthSettings','runPromptEval','scanTag','startMonth']);
 });
 test('HTML page served, explicit health endpoint preserved', () => {
   const t=load();let name,meta,title;

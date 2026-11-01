@@ -23,9 +23,8 @@ function setup() {
     getFileById: () => ({ getBlob: () => ({ getBytes: () => [255, 216, 1, 2] }) }) };
   t.ctx.Utilities.newBlob = (bytes, type, name) => ({ name });
   t.ctx.Utilities.base64Encode = bytes => Buffer.from(bytes).toString('base64');
-  let held = false;
-  t.ctx.LockService.getUserLock = () => ({ tryLock() { if (held) return false; held = true; return true; }, releaseLock() { held = false; } });
-  t.holdUserLock = v => { held = v; };
+  const scriptLock = t.ctx.LockService.getScriptLock;
+  t.ctx.LockService.getScriptLock = () => { const l = scriptLock(); l.tryLock = () => { try { l.waitLock(0); return true; } catch (e) { return false; } }; return l; };
   return { t, files, drive };
 }
 
@@ -154,7 +153,7 @@ test('round 2: a stop between saving and the cursor resumes from the saved rows;
   assert.throws(() => u.t.ctx.runPromptEval_(), /Cannot resume/); assert.equal(paid, 0);
 });
 
-test('round 2: a trashed results file does not block or feed a new approved run; the user lock stops a second run', () => {
+test('round 2: a trashed results file does not block or feed a new approved run; a running claim stops a second caller', () => {
   const { t, files, drive } = setup();
   scans(t, 2);
   t.ctx.UrlFetchApp.fetchAll = reqs => reqs.map(() => ok(t));
@@ -162,9 +161,14 @@ test('round 2: a trashed results file does not block or feed a new approved run;
   drive.forEach(f => f.setTrashed(true));
   t.props.PROMPT_EVAL_APPROVED = 'yes';
   assert.equal(t.ctx.runPromptEval_().done, 2, 'a fresh run after trashing');
-  t.props.PROMPT_EVAL_APPROVED = 'yes'; drive.forEach(f => f.setTrashed(true)); t.holdUserLock(true);
+  t.props.PROMPT_EVAL_APPROVED = 'yes'; drive.forEach(f => f.setTrashed(true)); t.props.PROMPT_EVAL_RUNNING = String(t.ctx.Date.now() - 60 * 1000); // another caller claimed it a minute ago
   let paid = 0; t.ctx.UrlFetchApp.fetchAll = reqs => { paid += reqs.length; return []; };
   assert.throws(() => t.ctx.runPromptEval_(), /already running/); assert.equal(paid, 0);
+  assert.ok(t.props.PROMPT_EVAL_RUNNING, 'a refused caller leaves the other run\'s claim alone');
+  t.props.PROMPT_EVAL_RUNNING = String(t.ctx.Date.now() - 8 * 60 * 1000); // a killed run's stale claim
+  t.ctx.UrlFetchApp.fetchAll = reqs => { paid += reqs.length; return reqs.map(() => ok(t)); };
+  assert.equal(t.ctx.runPromptEval().done, 2, 'a stale claim expires'); assert.equal(paid, 4);
+  assert.equal(t.props.PROMPT_EVAL_RUNNING, undefined, 'the claim is released when the run ends');
 });
 
 test('round 2: API errors are recorded with their code and left out of the scores; no cases or moved rows refuse or skip', () => {
@@ -184,6 +188,23 @@ test('round 2: API errors are recorded with their code and left out of the score
   sh.set(2, c.NAME, 'Someone Else'); // the row was reused for another job since the scan
   w.t.ctx.UrlFetchApp.fetchAll = reqs => reqs.map(() => ok(w.t));
   assert.equal(w.t.ctx.runPromptEval_().of, 1, 'the moved row is not a case');
+});
+
+test('issue #45: runPromptEval is the editor entry point; it adds no guard bypass and the scanner never calls it', () => {
+  const { t, files } = setup(), fs = require('node:fs'), path = require('node:path');
+  const policy = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'release', 'manifest.json'), 'utf8'));
+  assert.ok(policy.allowedPublicFunctions.includes('runPromptEval'));
+  assert.doesNotMatch(fs.readFileSync(path.join(__dirname, '..', 'apps-script', 'Upload.html'), 'utf8'), /runPromptEval/, 'the scanner page never calls it');
+  let paid = 0; t.ctx.UrlFetchApp.fetchAll = reqs => { paid += reqs.length; return reqs.map(() => ok(t)); };
+  scans(t, 2); delete t.props.PROMPT_EVAL_APPROVED;
+  assert.throws(() => t.ctx.runPromptEval('yes', { force: true }), /PROMPT_EVAL_APPROVED/, 'arguments change nothing');
+  assert.equal(paid, 0); assert.equal(Object.keys(files).length, 0, 'nothing written without approval');
+  t.props.PROMPT_EVAL_APPROVED = 'yes';
+  const sum = t.ctx.runPromptEval();
+  assert.equal(sum.done, 2); assert.equal(paid, 4);
+  assert.deepEqual(Object.keys(sum).sort(), ['control', 'corrected', 'done', 'errors', 'of'], 'counts only');
+  assert.throws(() => t.ctx.runPromptEval(), /PROMPT_EVAL_APPROVED/, 'a finished run cannot be started again');
+  assert.equal(paid, 4);
 });
 
 console.log(`${passed} prompt eval tests passed`);
