@@ -265,6 +265,16 @@ function extractTag_(imageB64, props) {
  * the script lock (scans keep working). Runs in batches under the 6-minute limit; run again to continue
  * (PROMPT_EVAL_CURSOR).
  */
+/**
+ * Editor entry point for the prompt test: the editor's Run menu hides names ending in "_" (issue #45). Like every
+ * public function of this anonymous web app it can also be called through the web app, so it relies on the guards
+ * of runPromptEval_ alone (Jared, 2026-11-01): without PROMPT_EVAL_APPROVED = yes it throws before any read or spend,
+ * and an approved run is capped at 60 photos, deletes its approval when done and refuses to run twice. Takes no
+ * arguments and returns only the counts summary. The scanner page never calls it.
+ */
+function runPromptEval() {
+  return runPromptEval_();
+}
 function runPromptEval_() {
   var props = PropertiesService.getScriptProperties();
   if (props.getProperty('PROMPT_EVAL_APPROVED') !== 'yes') throw new Error('Set Script Property PROMPT_EVAL_APPROVED = yes (Jared approves the spend) first');

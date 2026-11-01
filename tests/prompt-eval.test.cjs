@@ -186,4 +186,21 @@ test('round 2: API errors are recorded with their code and left out of the score
   assert.equal(w.t.ctx.runPromptEval_().of, 1, 'the moved row is not a case');
 });
 
+test('issue #45: runPromptEval is the editor entry point; it adds no guard bypass and the scanner never calls it', () => {
+  const { t, files } = setup(), fs = require('node:fs'), path = require('node:path');
+  const policy = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'release', 'manifest.json'), 'utf8'));
+  assert.ok(policy.allowedPublicFunctions.includes('runPromptEval'));
+  assert.doesNotMatch(fs.readFileSync(path.join(__dirname, '..', 'apps-script', 'Upload.html'), 'utf8'), /runPromptEval/, 'the scanner page never calls it');
+  let paid = 0; t.ctx.UrlFetchApp.fetchAll = reqs => { paid += reqs.length; return reqs.map(() => ok(t)); };
+  scans(t, 2); delete t.props.PROMPT_EVAL_APPROVED;
+  assert.throws(() => t.ctx.runPromptEval('yes', { force: true }), /PROMPT_EVAL_APPROVED/, 'arguments change nothing');
+  assert.equal(paid, 0); assert.equal(Object.keys(files).length, 0, 'nothing written without approval');
+  t.props.PROMPT_EVAL_APPROVED = 'yes';
+  const sum = t.ctx.runPromptEval();
+  assert.equal(sum.done, 2); assert.equal(paid, 4);
+  assert.deepEqual(Object.keys(sum).sort(), ['control', 'corrected', 'done', 'errors', 'of'], 'counts only');
+  assert.throws(() => t.ctx.runPromptEval(), /PROMPT_EVAL_APPROVED/, 'a finished run cannot be started again');
+  assert.equal(paid, 4);
+});
+
 console.log(`${passed} prompt eval tests passed`);

@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.13.35-draft — prompt test entry point
+
+Issue #45: the editor's Run menu hides functions whose names end in "_", so the deployed prompt test could not be
+started. Public `runPromptEval()` (no arguments) calls `runPromptEval_()`. Jared chose the approval-only guard
+(2026-11-01): like every public function of this anonymous web app it is reachable through the web app, and it relies
+on the existing guards (no read or spend without PROMPT_EVAL_APPROVED = yes; one capped run that deletes its own
+approval and refuses to run twice; counts-only summary). No new scope or permission. The scanner never calls it.
+Supersedes the identity-check proposal in #49.
+
 ## 0.13.34-draft — prompt caching; order ticket and look-alike counts
 
 Kirsten (2026-10-31), approved by Jared: on a one-ticket-per-order tab (Homer Glen), a tag whose 7-digit ticket is one
