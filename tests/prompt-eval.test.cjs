@@ -23,9 +23,8 @@ function setup() {
     getFileById: () => ({ getBlob: () => ({ getBytes: () => [255, 216, 1, 2] }) }) };
   t.ctx.Utilities.newBlob = (bytes, type, name) => ({ name });
   t.ctx.Utilities.base64Encode = bytes => Buffer.from(bytes).toString('base64');
-  let held = false;
-  t.ctx.LockService.getUserLock = () => ({ tryLock() { if (held) return false; held = true; return true; }, releaseLock() { held = false; } });
-  t.holdUserLock = v => { held = v; };
+  const scriptLock = t.ctx.LockService.getScriptLock;
+  t.ctx.LockService.getScriptLock = () => { const l = scriptLock(); l.tryLock = () => { try { l.waitLock(0); return true; } catch (e) { return false; } }; return l; };
   return { t, files, drive };
 }
 
@@ -154,7 +153,7 @@ test('round 2: a stop between saving and the cursor resumes from the saved rows;
   assert.throws(() => u.t.ctx.runPromptEval_(), /Cannot resume/); assert.equal(paid, 0);
 });
 
-test('round 2: a trashed results file does not block or feed a new approved run; the user lock stops a second run', () => {
+test('round 2: a trashed results file does not block or feed a new approved run; a running claim stops a second caller', () => {
   const { t, files, drive } = setup();
   scans(t, 2);
   t.ctx.UrlFetchApp.fetchAll = reqs => reqs.map(() => ok(t));
@@ -162,9 +161,14 @@ test('round 2: a trashed results file does not block or feed a new approved run;
   drive.forEach(f => f.setTrashed(true));
   t.props.PROMPT_EVAL_APPROVED = 'yes';
   assert.equal(t.ctx.runPromptEval_().done, 2, 'a fresh run after trashing');
-  t.props.PROMPT_EVAL_APPROVED = 'yes'; drive.forEach(f => f.setTrashed(true)); t.holdUserLock(true);
+  t.props.PROMPT_EVAL_APPROVED = 'yes'; drive.forEach(f => f.setTrashed(true)); t.props.PROMPT_EVAL_RUNNING = String(t.ctx.Date.now() - 60 * 1000); // another caller claimed it a minute ago
   let paid = 0; t.ctx.UrlFetchApp.fetchAll = reqs => { paid += reqs.length; return []; };
   assert.throws(() => t.ctx.runPromptEval_(), /already running/); assert.equal(paid, 0);
+  assert.ok(t.props.PROMPT_EVAL_RUNNING, 'a refused caller leaves the other run\'s claim alone');
+  t.props.PROMPT_EVAL_RUNNING = String(t.ctx.Date.now() - 8 * 60 * 1000); // a killed run's stale claim
+  t.ctx.UrlFetchApp.fetchAll = reqs => { paid += reqs.length; return reqs.map(() => ok(t)); };
+  assert.equal(t.ctx.runPromptEval().done, 2, 'a stale claim expires'); assert.equal(paid, 4);
+  assert.equal(t.props.PROMPT_EVAL_RUNNING, undefined, 'the claim is released when the run ends');
 });
 
 test('round 2: API errors are recorded with their code and left out of the scores; no cases or moved rows refuse or skip', () => {

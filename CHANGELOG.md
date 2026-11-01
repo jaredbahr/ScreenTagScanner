@@ -7,7 +7,9 @@ started. Public `runPromptEval()` (no arguments) calls `runPromptEval_()`. Jared
 (2026-11-01): like every public function of this anonymous web app it is reachable through the web app, and it relies
 on the existing guards (no read or spend without PROMPT_EVAL_APPROVED = yes; one capped run that deletes its own
 approval and refuses to run twice; counts-only summary). No new scope or permission. The scanner never calls it.
-Supersedes the identity-check proposal in #49.
+Review of #50: one run at a time for any caller. A run claim (PROMPT_EVAL_RUNNING, 7-minute lease) is taken
+under the script lock, held only for milliseconds so scans are not blocked; it replaces the user lock, which may not
+be shared by anonymous web callers. Supersedes the identity-check proposal in #49.
 
 ## 0.13.34-draft — prompt caching; order ticket and look-alike counts
 
@@ -32,8 +34,8 @@ the script's own key. It needs Script Property PROMPT_EVAL_APPROVED = yes, is ca
 writes to the workbook, and saves results (tickets and "x of N" only) as a JSON file in the photo folder after every
 batch (one file, updated in place; a resume refuses if the file or case list is missing). The case list is fixed on
 the first run (compact, under the 9 KB property limit) so resuming never skips or repeats a photo; a finished run
-deletes its approval, a second run refuses while a live results file exists, and a user lock (never the script lock,
-so scans keep working) stops two runs at once. A missing photo, failed fetch or HTTP error is recorded and left out of
+deletes its approval, a second run refuses while a live results file exists, and a run claim (PROMPT_EVAL_RUNNING, taken
+under the script lock for milliseconds, so scans keep working) stops two runs at once. A missing photo, failed fetch or HTTP error is recorded and left out of
 the scores. A scan whose store row now holds another customer is not used. Production still reads SYSTEM_PROMPT only. One synthetic test ticket in
 offline.test.cjs was renumbered (it matched a real ticket).
 

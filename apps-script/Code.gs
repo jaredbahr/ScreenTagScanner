@@ -255,6 +255,16 @@ function extractTag_(imageB64, props) {
 }
 
 /**
+ * Editor entry point for the prompt test: the editor's Run menu hides names ending in "_" (issue #45). Like every
+ * public function of this anonymous web app it can also be called through the web app, so it relies on the guards
+ * of runPromptEval_ alone (Jared, 2026-11-01): without PROMPT_EVAL_APPROVED = yes it throws before any read or spend,
+ * and an approved run is capped at 60 photos, deletes its approval when done and refuses to run twice. Takes no
+ * arguments and returns only the counts summary. The scanner page never calls it.
+ */
+function runPromptEval() {
+  return runPromptEval_();
+}
+/**
  * One-time, paid A/B test of a prompt variant on Kirsten's saved tag photos (Jared, 2026-10-31). Run privately from
  * the editor, only with Script Property PROMPT_EVAL_APPROVED = 'yes'; it deletes that property when it finishes, so it
  * never pays twice. Picks scans of the active month that have a saved photo: those whose ticket or "x of N" Kirsten
@@ -265,22 +275,19 @@ function extractTag_(imageB64, props) {
  * the script lock (scans keep working). Runs in batches under the 6-minute limit; run again to continue
  * (PROMPT_EVAL_CURSOR).
  */
-/**
- * Editor entry point for the prompt test: the editor's Run menu hides names ending in "_" (issue #45). Like every
- * public function of this anonymous web app it can also be called through the web app, so it relies on the guards
- * of runPromptEval_ alone (Jared, 2026-11-01): without PROMPT_EVAL_APPROVED = yes it throws before any read or spend,
- * and an approved run is capped at 60 photos, deletes its approval when done and refuses to run twice. Takes no
- * arguments and returns only the counts summary. The scanner page never calls it.
- */
-function runPromptEval() {
-  return runPromptEval_();
-}
 function runPromptEval_() {
-  var props = PropertiesService.getScriptProperties();
-  if (props.getProperty('PROMPT_EVAL_APPROVED') !== 'yes') throw new Error('Set Script Property PROMPT_EVAL_APPROVED = yes (Jared approves the spend) first');
-  var lock = LockService.getUserLock(); // two editor runs at once would both pay; the user lock never blocks scans
-  if (!lock.tryLock(0)) throw new Error('The prompt test is already running');
-  try { return promptEvalRun_(props); } finally { lock.releaseLock(); }
+  var props = PropertiesService.getScriptProperties(), lock = LockService.getScriptLock();
+  // One run at a time, whoever calls (review of #50: the user lock may not be shared by anonymous web callers).
+  // The script lock is held only for this claim (milliseconds), so scans are not blocked. The lease outlives the
+  // 6-minute execution limit, so a killed run's claim expires by itself.
+  if (!lock.tryLock(3000)) throw new Error('Busy, try again');
+  try {
+    if (props.getProperty('PROMPT_EVAL_APPROVED') !== 'yes') throw new Error('Set Script Property PROMPT_EVAL_APPROVED = yes (Jared approves the spend) first');
+    var claimed = Number(props.getProperty('PROMPT_EVAL_RUNNING')) || 0;
+    if (claimed && Date.now() - claimed < 7 * 60 * 1000) throw new Error('The prompt test is already running');
+    props.setProperty('PROMPT_EVAL_RUNNING', String(Date.now()));
+  } finally { lock.releaseLock(); }
+  try { return promptEvalRun_(props); } finally { props.deleteProperty('PROMPT_EVAL_RUNNING'); }
 }
 /** The results file that is not in the trash (Drive lists trashed files by name too), or null. */
 function promptEvalFile_(folder, name) {
