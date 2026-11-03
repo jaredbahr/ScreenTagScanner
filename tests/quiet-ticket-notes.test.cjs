@@ -18,11 +18,21 @@ test('a bare doubt on a ticket in the series: no sheet note, still in the Scans 
   assert.match(logReason(t, '7779110'), /ticket_number/);
 });
 
-test('kept on the sheet: a doubt with detail, a ticket outside the series, or too few tickets to know the series', () => {
+test('a doubt with detail on a ticket in the series: no sheet note either, still in the Scans log (2026-11-03)', () => {
   const { t, sh, c } = setup();
   t.scan(tag('7779101')); t.scan(tag('7779102'));
-  t.scan(tag('7779111', { unclear: ['ticket_number: last digit 1 or 7'] }));
-  assert.match(noteOf(sh, c, '7779111'), /ticket_number: last digit 1 or 7/);
+  t.scan(tag('7779111', { unclear: ['ticket_number: handwritten reads 77791111 but the tag at top shows 7779111', 'phone'] }));
+  assert.doesNotMatch(noteOf(sh, c, '7779111'), /ticket_number/);
+  assert.match(logReason(t, '7779111'), /ticket_number: handwritten reads/);
+  assert.equal(t.ctx.isReaderTicketDoubt_('Ticket # 7779111 looks off for this store'), false, 'the scanner\'s own ticket notes are never quieted');
+  assert.equal(t.ctx.isReaderTicketDoubt_('width_in: written next to the ticket_number line'), false, 'only the reader\'s ticket doubts');
+});
+
+test('kept on the sheet: a ticket outside the series, or too few tickets to know the series', () => {
+  const { t, sh, c } = setup();
+  t.scan(tag('7779101')); t.scan(tag('7779102'));
+  t.scan(tag('5559111', { unclear: ['ticket_number: last digit 1 or 7'] }));
+  assert.match(noteOf(sh, c, '5559111'), /ticket_number: last digit 1 or 7/);
   t.scan(tag('7779901', { unclear: ['ticket_number'] }));
   assert.match(noteOf(sh, c, '7779901'), /ticket_number/);
   const u = setup();

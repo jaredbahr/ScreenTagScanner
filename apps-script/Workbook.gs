@@ -185,7 +185,11 @@ function appendReviewNote_(cell, note) {
 
 /** The flags shown on the sheet: all of them, less a quieted bare ticket doubt (it stays in the Scans log). */
 function sheetFlags_(flags, x) {
-  return x && x._quiet_bare_ticket ? flags.filter(function (f) { return f !== 'ticket_number'; }) : flags;
+  return x && x._quiet_bare_ticket ? flags.filter(function (f) { return !isReaderTicketDoubt_(f); }) : flags;
+}
+/** The reader's own ticket doubt, bare ("ticket_number") or with detail ("ticket_number: last digit 1 or 7"). */
+function isReaderTicketDoubt_(f) {
+  return f === 'ticket_number' || /^ticket_number:/.test(String(f));
 }
 /** The 7-digit tickets on both blocks of a store tab. */
 function knownTickets_(sh, layout) {
@@ -1311,10 +1315,11 @@ function writeToStoreTab_(ss, x, reasons) {
     flags.push('Ticket # written as ' + likely + ' (read as ' + x.ticket_number + ' on ' + scanDayLabel_() + '), as suggested above');
     x = Object.assign({}, x, { ticket_number: likely });
   } else if (bookHint) flags.push(bookHint);
-  // A bare "ticket_number" doubt (the reader gave no detail) on a ticket that already fits this tab's series is not a
-  // sheet note (Jared, 2026-10-30): since 10/20 such notes led to a fix 4 times in 77. Only the note is left out: the
-  // flags list stays whole, because saveScan_ copies the sheet-only flags back to the log by position (review).
-  else if (flags.indexOf('ticket_number') >= 0 && ticketFitsSeries_(sh, layout, x.ticket_number)) x = Object.assign({}, x, { _quiet_bare_ticket: true });
+  // The reader's ticket doubt (bare or with detail) on a ticket that already fits this tab's series is not a sheet note
+  // (Jared, 2026-10-30 bare; 2026-11-03 with detail): October, 44 detailed doubts on series tickets led to a fix 5
+  // times, 3 of them now caught by the ticket rules. It stays in the Scans log. Only the note is left out: the flags
+  // list stays whole, because saveScan_ copies the sheet-only flags back to the log by position (review).
+  else if (flags.some(isReaderTicketDoubt_) && ticketFitsSeries_(sh, layout, x.ticket_number)) x = Object.assign({}, x, { _quiet_bare_ticket: true });
   if (ticketInStoreTab_(sh, x.ticket_number, layout) && !(x.tag_count > 1)) {
     flags.push('Ticket already on the ' + store.name + ' tab: another tag in the group, or a duplicate?');
   }
