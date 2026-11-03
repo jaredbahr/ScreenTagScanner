@@ -4,12 +4,12 @@
   "reconciliationBranch": "main",
   "requiredUpstreamCommit": "5ebceb692142a7968f628b4cf841e0179e27b8cf",
   "lastVerifiedDeployment": {
-    "sourceCommit": "6d84c5f70eebbbed611545ae132ae10f14bd93e6",
-    "version": "0.13.34-draft",
-    "appsScriptVersion": 21,
-    "deployedAtUtc": "2026-10-31T20:25:03.585Z",
-    "verifiedAtUtc": "2026-10-31T20:25:22Z",
-    "evidence": "Sole cloud-browser writer verified all twelve baseline files against version 20/71dfed8 at 20:22:44 UTC. Four guarded clipboard pastes and visible Saves, then full reload/readback against exact source completed 20:24:23.886 UTC. Eleven raw blobs/byte lengths matched canonical source; untouched manifest differed only by the approved missing terminal LF (raw blob 1209f928704010a313ed09d80f84a8eeb507b483, 488 bytes; canonical af507c4c66583975efc63b989fea75ceb033c1f8, 489 bytes). No other normalization. Exactly one version 21 deployment submitted 2026-10-31T20:25:03.585Z / 15:25:03.585 America/Chicago, confirmed 20:25:09Z; deployedAtUtc records observed submission rather than asserted server creation time. Same endpoint, identity and access. Health 0.13.34-draft verified 20:25:15Z; notes 0.13.34 Oct 31 then 0.13.33 Oct 30 verified 20:25:22Z. Normal1180x757 scanner/Back passed; required phone-sized/actual-phone checks remain pending (no viewport resize/emulation API). Prompt test NOT RUN: zero runs, zero spend, no final counts summary. Only PROMPT_EVAL_APPROVED=yes was saved, verified 20:27:17Z and retained; cleanup is not confirmed. Code editor dropdown offered only doPost/scanTag/doGet after reload and Extraction showed No functions; private runPromptEval_ was not offered. No Run clicked, workaround, result-file access or deletion. No other property values read/changed; no new permissions or sharing/scopes/access/triggers/rows/migration/month actions. No private identifiers recorded."
+    "sourceCommit": "4c703382ae38c786bfa1f56f6095702a400a894f",
+    "version": "0.13.38-draft",
+    "appsScriptVersion": 22,
+    "deployedAtUtc": "2026-11-03T18:39:50.432Z",
+    "verifiedAtUtc": "2026-11-03T18:40:09.445Z",
+    "evidence": "All twelve saved files matched version 21/6d84c5f before changes at 2026-11-03T18:34:17.354Z. Exactly five explicit clipboard pastes and visible Saves: Code.gs, Extraction.gs, Layout.gs, Upload.html, Workbook.gs. After reload, all twelve files matched exact source 4c703382ae38c786bfa1f56f6095702a400a894f at 2026-11-03T18:38:44.986Z; only unchanged manifest missing terminal LF (488 bytes, blob 1209f928704010a313ed09d80f84a8eeb507b483; canonical 489 bytes, af507c4c66583975efc63b989fea75ceb033c1f8). Clipboard CRLF transport converted back to LF for Git blob comparison; no other normalization. Existing deployment updated once: submitted 2026-11-03T18:39:50.432Z / 12:39:50.432 America/Chicago; Google confirmed version 22 at 2026-11-03T18:40:09.445Z. Same endpoint, execution identity and access. Source release:validate passed 596 tests across 40 suites; release:check -- --fetch passed; main still equaled pin immediately before deployment. Codex independently inspected the date-format and quiet-ticket-doubt changes and regression coverage without a formal PR approval. HEALTH AND RELEASE-NOTES VERIFICATION PENDING: in-app browser multilogin redirected the public endpoint to a Google Page Not Found page. Separate Firefox app approval timed out; no input was sent there. Prompt evaluation NOT RUN: zero runs/spend, no summary. Property cleanup not verified; no properties changed manually and no result file opened. No new Google permission prompt, scans, rows/reformatting, migrations, month changes, sharing, scopes, access or triggers. Do not treat this receipt as completed post-deploy QA."
   },
   "requiredProductionFiles": [
     "apps-script/Backup.gs",
@@ -27,16 +27,16 @@
   ],
   "baselineRuntimeBlobs": {
     "apps-script/Backup.gs": "ebb93e40165fdea0e509e40e8ca9e84edd7e85bf",
-    "apps-script/Code.gs": "1e1b034ec4cf8e3b941d380a2ebc6a69d8994d30",
+    "apps-script/Code.gs": "a888883dfb91b8750f4b4617b392fb4bcee37f4e",
     "apps-script/ExtraLabor.gs": "c486f353d9f637f0e74b69da12f40d4c2334015a",
-    "apps-script/Extraction.gs": "0441c7d2e8c7ae310bf565c67ba84980f88f2627",
-    "apps-script/Layout.gs": "404068706c114dbfc678777af9c7d7a702c91e46",
+    "apps-script/Extraction.gs": "b9c132bf9e175e5f0347ae6978c2c4c90257ff59",
+    "apps-script/Layout.gs": "14ab233a8d237a569113e85c0a3ac9b2554173b4",
     "apps-script/Month.gs": "313dbc09c372695495aaa36dadda07599ccff55b",
     "apps-script/MonthArchive.gs": "eb3a398ff452cb7c4ef208fc97582cddf2509e16",
     "apps-script/Parts.gs": "8e0cf7d8e1ab0db4b27716b9b9840d804efc33f6",
     "apps-script/Routing.gs": "4fc5febe9ff2e09a48fca96833b82f844ea7b32f",
-    "apps-script/Upload.html": "aa09cd16b8a5601139f51af67c8aed3602a88a8b",
-    "apps-script/Workbook.gs": "f44cff2ba9982ec5119b7060b8f7817fc54bfc0f",
+    "apps-script/Upload.html": "5819999309ba330dc3951fa96b70265061fe6bc7",
+    "apps-script/Workbook.gs": "9275ee08690f0016cd7e1b2b2a3ac1622ecf25cf",
     "apps-script/appsscript.json": "af507c4c66583975efc63b989fea75ceb033c1f8"
   },
   "allowedPublicFunctions": [

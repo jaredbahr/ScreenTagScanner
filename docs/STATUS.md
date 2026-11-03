@@ -3,13 +3,13 @@
 Living notes so any session (Claude Code or Codex) can pick up where the last one stopped. Update this
 file whenever the state below changes. No customer data, emails, Google IDs or secrets here.
 
-_Last updated: 2026-10-31 (version 21 health/release notes verified at 2026-10-31T20:25:22Z; prompt test blocked)._
+_Last updated: 2026-11-03 (version 22 deployed; health/release notes and prompt test pending)._
 
 ## Where things stand
 | | |
 |---|---|
-| Live in Google | Immutable version 21 / **0.13.34-draft**, source `6d84c5f70eebbbed611545ae132ae10f14bd93e6`. Submitted 2026-10-31 20:25:03.585 UTC / 15:25:03.585 America/Chicago; confirmed 20:25:09; health/notes verified 20:25:22 UTC. All twelve baseline and post-reload source checks passed, with only the known unchanged manifest missing final LF. Same endpoint/identity/access; normal 1180x757 scanner/Back passed. Required phone QA remains pending. Prompt test **NOT RUN**: editor does not offer private runPromptEval_; zero runs/spend, no final counts summary. PROMPT_EVAL_APPROVED=yes remains set; cleanup not confirmed. No result file opened or other property/sharing/scope/trigger/data changes. |
-| Ready to deploy | Issue #45 code deployment is complete; prompt test is blocked on the unavailable editor entry point, phone QA remains pending, and this metadata record awaits Claude/user review. No runtime entry-point fix is included here. |
+| Live in Google | Immutable version 22, source `4c703382ae38c786bfa1f56f6095702a400a894f` / **0.13.38-draft**. Submitted 2026-11-03 18:39:50.432 UTC / 12:39:50.432 America/Chicago; Google confirmed version 22 at 18:40:09.445 UTC. All twelve pre-check and post-reload source comparisons passed (only the known unchanged manifest missing final LF); exactly five clipboard pastes and visible Saves. Same endpoint/identity/access. **Health and What's new not yet verified**: Google multilogin redirected the in-app browser to Page Not Found; separate Firefox app approval timed out. Prompt test **NOT RUN**, zero runs/spend, no final summary; property cleanup unverified. No properties manually changed, result file opened, or sharing/scopes/access/triggers/rows/migration/month changes. |
+| Ready to deploy | Issue #51 deployment to version 22 is complete, but post-deploy health/release-note verification and the approved prompt evaluation remain pending. Complete those checks before running `runPromptEval`; this draft metadata record must be updated with the counts-only summary and automatic property cleanup before merge. |
 | Who deploys | Codex, per [DEPLOYMENT.md](DEPLOYMENT.md) and the release gate, recorded as a `deployment` issue |
 | Lesson (2026-10-22) | Google ran Codex's unmerged PR line for a week while the default branch moved on separately. Rule now: deploy only from the default branch; the release gate fails a candidate that lacks the deployed source's history |
 | Workbook in use | "October 2026" in the shared monthly folder; tabs named by store ("Downers Grove", …); a "Tag x of N" column after Name in both blocks |
