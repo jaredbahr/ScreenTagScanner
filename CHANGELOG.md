@@ -8,7 +8,8 @@ T", or a lone "could be T") for a 6-, 7- or 8-digit reading, T is written; the h
 "written as T (read as R on MM/dd)", and the Scans log keeps the reading. Never for several candidates, a 4- or 5-digit
 tail, windows, a tag with parts or additional labor (receipts carry the read ticket), or a T already on the tab (only a
 group whose other tags all read T may share it). A reading near one this rule rewrote the same day is left as read (a
-new ticket book would otherwise be rewritten again and again); once Kirsten undoes a write the book fits the tab.
+new ticket book would otherwise be rewritten again and again); once Kirsten undoes a write the book fits the tab (a new book scanned once a day keeps being rewritten until she
+undoes one; the note says so each time).
 `orderTicketFix_` and the prompt test treat these writes as the scanner's, not Kirsten's hand fixes.
 October replay (484 scans, Kirsten's fixes applied each evening): 30 written; 22 match her fix; 7 differ only because
 the sheet still holds the misread (2 impossible 6/8-digit readings, 2 confirmed on the saved photos, 3 on her fix

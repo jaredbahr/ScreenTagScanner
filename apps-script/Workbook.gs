@@ -1228,15 +1228,15 @@ function repeatCustomerName_(sh, layout, x) {
   return { name: spellings[keys[0]], row: rowOf[keys[0]], read: read };
 }
 
+/** Today's Chicago date as MM/dd, for the likely-ticket note. */
+function scanDayLabel_() {
+  return Utilities.formatDate(new Date(), 'America/Chicago', 'yyyy-MM-dd').slice(5).replace('-', '/');
+}
 /**
  * The one ticket a hint names ("likely 7708120", or a lone "could be 7708154"), for a 6-, 7- or 8-digit reading; ''
  * when it names none or several, or the reading is a short handwritten tail (Jared, 2026-11-03; October replay in
  * the CHANGELOG).
  */
-/** Today's Chicago date as MM/dd, for the likely-ticket note. */
-function scanDayLabel_() {
-  return Utilities.formatDate(new Date(), 'America/Chicago', 'yyyy-MM-dd').slice(5).replace('-', '/');
-}
 function hintTicket_(hint, read) {
   if (!hint || !/^\d{6,8}$/.test(String(read || ''))) return '';
   var m = /(?:likely|could be) (\d{7})(?! or )(?!, \d)/.exec(hint); // a lone "could be" was right 4 of 4 in October
