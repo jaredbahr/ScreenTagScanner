@@ -1228,6 +1228,30 @@ function repeatCustomerName_(sh, layout, x) {
   return { name: spellings[keys[0]], row: rowOf[keys[0]], read: read };
 }
 
+/**
+ * The one ticket a ticket hint names ("likely 7708120", "could be 7708154"), for a 6-, 7- or 8-digit reading; '' when it
+ * names none, several, or the reading is a short handwritten tail. October: 23 of 24 such hints Kirsten resolved were
+ * the ticket she typed, and the 1 miss was a reading wrong in two digits (Jared, 2026-11-03).
+ */
+function hintTicket_(hint, read) {
+  if (!hint || !/^\d{6,8}$/.test(String(read || ''))) return '';
+  var m = /(?:likely|could be) (\d{7})(?! or )(?!, \d)/.exec(hint);
+  return m && m[1] !== String(read) ? m[1] : '';
+}
+/**
+ * Writes the hinted ticket for a screen tag (the reading stays in the Scans log and the cell note). Never when the tag
+ * has parts or additional labor (their receipts are planned with the ticket as read), or when the hinted ticket is
+ * already on the tab for a single tag (a duplicate would hide the mistake).
+ */
+function likelyTicketFix_(sh, layout, x, hint) {
+  if (x.item_type === 'window') return '';
+  var T = hintTicket_(hint, x.ticket_number);
+  if (!T) return '';
+  var pp = x._parts_plan || {}, lp = x._extra_labor_plan || {};
+  if ((pp.items || []).length || (pp.posted || []).length || (pp.references || []).length || (lp.items || []).length) return '';
+  if (!(x.tag_count > 1) && ticketInStoreTab_(sh, T, layout)) return '';
+  return T;
+}
 function writeToStoreTab_(ss, x, reasons) {
   var routing = resolveJobRouting_(x);
   if (!routing.type) return { ok: false, problem: 'item type is unknown; review the tag before placing it' };
@@ -1265,7 +1289,12 @@ function writeToStoreTab_(ss, x, reasons) {
     flags.push('Repeat customer (name): read as "' + repeat.read + '"; same phone as ' + repeat.row + ', where the name was typed "' + repeat.name + '". Check the tag.');
   }
   var bookHint = groupTicketHint_(sh, c, x, screenBlockEnd_(sh)) || ticketBookHint_(sh, layout, x.ticket_number);
-  if (bookHint) flags.push(bookHint);
+  var likely = bookHint ? likelyTicketFix_(sh, layout, x, bookHint) : '';
+  if (likely) { // write it, keep the reading in the note (Jared, 2026-11-03): Kirsten typed these by hand
+    flags.push(bookHint);
+    flags.push('Ticket # written as ' + likely + ' (read as ' + x.ticket_number + '), as suggested above');
+    x = Object.assign({}, x, { ticket_number: likely });
+  } else if (bookHint) flags.push(bookHint);
   // A bare "ticket_number" doubt (the reader gave no detail) on a ticket that already fits this tab's series is not a
   // sheet note (Jared, 2026-10-30): since 10/20 such notes led to a fix 4 times in 77. Only the note is left out: the
   // flags list stays whole, because saveScan_ copies the sheet-only flags back to the log by position (review).

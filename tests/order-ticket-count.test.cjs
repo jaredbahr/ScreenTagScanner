@@ -80,7 +80,7 @@ test('no count note for another customer, a far ticket, or a real 2-tag order', 
   const t = load(), { sh, c } = modern(t, 'New Lenox');
   [[6, '7777610'], [4, '7777619']].forEach(([i, tk]) => write(t, tag('New Lenox', 'Synthdelta', tk, i, 7)));
   write(t, tag('New Lenox', 'Synthomega', '7777621', 2, 2, { phone: '8155550999' }));
-  write(t, tag('New Lenox', 'Synthdelta', '7779621', 1, 2, { width_in: 41, phone: '8155550997' }));
+  write(t, tag('New Lenox', 'Synthdelta', '5551621', 1, 2, { width_in: 41, phone: '8155550997' }));
   write(t, tag('New Lenox', 'Synthkappa', '7777631', 1, 2, { phone: '8155550998' })); write(t, tag('New Lenox', 'Synthkappa', '7777632', 2, 2, { phone: '8155550998' }));
   for (let r = 2; r < 14; r++) assert.doesNotMatch(note(sh, c.SEQUENCE, r), /look alike/, 'row ' + r);
   const u = load(), m = modern(u, 'New Lenox'); // only one tag of the other count on the tab: not yet an order
