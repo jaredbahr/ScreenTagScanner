@@ -106,7 +106,7 @@ test('look-alike digits: 7s read as 2s get the store-series fix (New Lenox patte
   const t = load(), sh = t.ss.tabs['New Lenox'];
   t.scan(tag('New Lenox', 'Synthone', '7708101', 1, 1)); t.scan(tag('New Lenox', 'Synthtwo', '7708150', 1, 1));
   t.scan(tag('New Lenox', 'Synththree', '2208120', 1, 1));
-  const r = rowOf(sh, t.ctx.storeLayout_(sh).screens, '2208120');
+  const r = rowOf(sh, t.ctx.storeLayout_(sh).screens, '7708120'); // written as the likely ticket (2026-11-03)
   assert.match(sh.notes.get(r + ',5') || '', /Ticket # 2208120 looks off for this store \(7708xxx\): likely 7708120 \(2\/7 look alike\)/);
   assert.match(t.ctx.SYSTEM_PROMPT, /2\/7/); assert.match(t.ctx.SYSTEM_PROMPT, /misread as 2 in ticket numbers/);
   t.scan(tag('New Lenox', 'Synthfour', '7708130', 1, 1));

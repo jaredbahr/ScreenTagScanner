@@ -11,6 +11,7 @@ const P = '8155550142';
 const tag = (store, name, tk, i, n, x = {}) => ({ store, customer_name: 'Ann ' + name, last_name: name, phone: P, ticket_number: tk,
   tag_index: i, tag_count: n, width_in: 20 + i, height_in: 30, billable_inches: 50 + i, ...x });
 const rowOf = (sh, c, seq, tk) => [...Array(60).keys()].map(k => k + 2).find(r => sh.get(r, c.SEQUENCE) === seq && (!tk || String(sh.get(r, c.TICKET)) === tk));
+const rowsWith = (sh, col, v) => [...Array(80).keys()].map(k => k + 2).filter(r => String(sh.get(r, col)) === v);
 const note = (sh, col, r) => sh.notes.get(sh.key(r, col)) || '';
 function homer() {
   const t = load(), m = modern(t, 'Homer Glen');
@@ -81,6 +82,7 @@ test('no count note for another customer, a far ticket, or a real 2-tag order', 
   [[6, '7777610'], [4, '7777619']].forEach(([i, tk]) => write(t, tag('New Lenox', 'Synthdelta', tk, i, 7)));
   write(t, tag('New Lenox', 'Synthomega', '7777621', 2, 2, { phone: '8155550999' }));
   write(t, tag('New Lenox', 'Synthdelta', '7779621', 1, 2, { width_in: 41, phone: '8155550997' }));
+  assert.equal(rowsWith(sh, c.TICKET, '7779621').length, 1, 'never written as another customer\'s ticket (review of #54)');
   write(t, tag('New Lenox', 'Synthkappa', '7777631', 1, 2, { phone: '8155550998' })); write(t, tag('New Lenox', 'Synthkappa', '7777632', 2, 2, { phone: '8155550998' }));
   for (let r = 2; r < 14; r++) assert.doesNotMatch(note(sh, c.SEQUENCE, r), /look alike/, 'row ' + r);
   const u = load(), m = modern(u, 'New Lenox'); // only one tag of the other count on the tab: not yet an order

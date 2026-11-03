@@ -631,13 +631,13 @@ test('store tabs named by store ("Downers Grove") work the same as the template 
   assert.match(t.scan({ store: 'Plainfield', ticket_number: '6567999' }).message, /→ Plainfield/);
 });
 
-test('ticket book: a ticket that doesn\'t fit the store\'s sequence gets a likely fix in its note (real October misreads)', () => {
+test('ticket book: a ticket that doesn\'t fit the store\'s sequence gets its likely ticket written, the reading in the note (real October misreads)', () => {
   const t = load(), sh = t.ss.tabs['Homer Glen'];
   for (const [i, tk] of ['8339712', '8339736', '8339740'].entries()) t.scan({ ticket_number: tk, width_in: 20 + i, billable_inches: 99 + i });
-  const note = (tk, extra) => { const u = t; u.scan({ ticket_number: tk, ...extra }); const row = rowsWith(sh, tk)[0]; return { row, note: sh.notes.get(row + ',5') || '', value: sh.get(row, 5) }; };
-  let r = note('339725', { width_in: 30, billable_inches: 109 });
-  assert.match(r.note, /likely 8339725/); assert.equal(r.value, '339725', 'value is never changed');
-  r = note('6339751', { width_in: 31, billable_inches: 110 });
+  const note = (tk, extra, now = tk) => { const u = t; u.scan({ ticket_number: tk, ...extra }); const row = rowsWith(sh, now)[0]; return { row, note: sh.notes.get(row + ',5') || '', value: sh.get(row, 5) }; };
+  let r = note('339725', { width_in: 30, billable_inches: 109 }, '8339725');
+  assert.match(r.note, /likely 8339725/); assert.match(r.note, /written as 8339725 \(read as 339725 on \d\d\/\d\d\)/); assert.equal(r.value, '8339725');
+  r = note('6339751', { width_in: 31, billable_inches: 110 }, '8339751');
   assert.match(r.note, /looks off for this store \(8339xxx\): likely 8339751/);
   r = note('8339735', { width_in: 32, billable_inches: 111 });
   assert.doesNotMatch(r.note, /likely/, 'a ticket that fits the book gets no hint');
