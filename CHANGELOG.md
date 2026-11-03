@@ -3,14 +3,17 @@
 ## 0.13.36-draft — likely tickets written
 
 Kirsten (2026-11-02): 7s read as 1s and 2s, a lost digit, and an 8 read as a 2; 4 of the 5 already had the right
-"likely" note, but each was typed by hand. Approved by Jared (2026-11-03): when a ticket hint names one ticket for a
-6-, 7- or 8-digit reading (store-series look-alikes, one wrong digit, a lost or extra digit, the group's tickets), that
-ticket is written; the hint stays in the cell note with "written as T (read as R)", and the Scans log keeps the
-reading. Never for several candidates, a 4- or 5-digit tail, a hinted ticket already on the tab for a single tag, a tag
-with parts or additional labor (receipts carry the read ticket), or windows. October replay (484 scans, Kirsten's
-fixes applied each evening): 37 written; 28 match her fix; 7 differ only because the sheet still holds the misread
-(2 impossible 6/8-digit readings, 2 confirmed on the saved photos, 3 already on her fix list); 2 wrong where the
-reading was wrong too; no correct reading changed.
+"likely" note, but each was typed by hand. Approved by Jared (2026-11-03): when a ticket hint names one ticket ("likely
+T", or a lone "could be T") for a 6-, 7- or 8-digit reading, T is written; the hint stays in the cell note with
+"written as T (read as R on MM/dd)", and the Scans log keeps the reading. Never for several candidates, a 4- or 5-digit
+tail, windows, a tag with parts or additional labor (receipts carry the read ticket), or a T already on the tab (only a
+group whose other tags all read T may share it). A reading near one this rule rewrote the same day is left as read (a
+new ticket book would otherwise be rewritten again and again); once Kirsten undoes a write the book fits the tab.
+`orderTicketFix_` and the prompt test treat these writes as the scanner's, not Kirsten's hand fixes.
+October replay (484 scans, Kirsten's fixes applied each evening): 30 written; 22 match her fix; 7 differ only because
+the sheet still holds the misread (2 impossible 6/8-digit readings, 2 confirmed on the saved photos, 3 on her fix
+list); 1 wrong where the reading was wrong too; no correct reading changed. Review of #54 fixed: a group tag taking
+another customer's ticket, a new book feeding its own rewrites, and the order rule mistaking a write for a hand fix.
 
 ## 0.13.35-draft — prompt test entry point
 

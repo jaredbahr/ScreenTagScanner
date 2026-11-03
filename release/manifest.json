@@ -115,7 +115,7 @@
     "tests/one-ticket-mismatch.test.cjs": 7,
     "tests/quiet-ticket-notes.test.cjs": 4,
     "tests/prompt-eval.test.cjs": 10,
-    "tests/likely-ticket.test.cjs": 3,
+    "tests/likely-ticket.test.cjs": 6,
     "tests/order-ticket-count.test.cjs": 8
   },
   "allowWorkflowDefinitions": true

@@ -399,6 +399,7 @@ function promptEvalCases_(ss, max) {
     var ticket = String(tab.t[row - 1][0]).trim(), seq = tab.s ? String(tab.s[row - 1][0]).trim() : '';
     var readTicket = String(r[col('Ticket #')]).trim(), readSeq = String(r[col('Tag x of N')]).trim();
     var item = { kind: '', store: m[1], photo: photo[0], ticket: ticket, seq: seq, readTicket: readTicket, readSeq: readSeq };
+    if (/Ticket # written as \d+ \(read as|so it is written as theirs/.test(String(r[col('Review Reason')] || ''))) return; // the scanner's own fix, not Kirsten's
     if ((/^\d{7}$/.test(ticket) && ticket !== readTicket) || (seq && readSeq && seq !== readSeq)) { item.kind = 'corrected'; fixed.push(item); }
     else if (/^\d{7}$/.test(readTicket) && /[127]/.test(readTicket + readSeq)) { item.kind = 'control'; kept.push(item); }
   });

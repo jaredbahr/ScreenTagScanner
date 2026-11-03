@@ -638,7 +638,7 @@ function orderTicketFix_(sh, c, x, endRow) {
   // first must not spread). If this rule already overrode a reading equal to this one, the order is disputed: stop.
   // This rule's corrections are found in the Scans log's Review Reason, which Kirsten doesn't edit (review: a cleared
   // cell note must not turn a correction into evidence), and in the ticket cell's note.
-  var logged = {}, ruled = {}, mark = /so it is written as theirs/;
+  var logged = {}, ruled = {}, mark = /so it is written as theirs|Ticket # written as \d+ \(read as/; // either rule's own writes
   if (typeof x._log_rows === 'function') x._log_rows().forEach(function (r) {
     if (r.tab !== store || r.block !== 'screens') return;
     logged[r.row] = String(r.ticket || '').trim();
@@ -1229,13 +1229,17 @@ function repeatCustomerName_(sh, layout, x) {
 }
 
 /**
- * The one ticket a ticket hint names ("likely 7708120", "could be 7708154"), for a 6-, 7- or 8-digit reading; '' when it
- * names none, several, or the reading is a short handwritten tail. October: 23 of 24 such hints Kirsten resolved were
- * the ticket she typed, and the 1 miss was a reading wrong in two digits (Jared, 2026-11-03).
+ * The one ticket a hint names ("likely 7708120", or a lone "could be 7708154"), for a 6-, 7- or 8-digit reading; ''
+ * when it names none or several, or the reading is a short handwritten tail (Jared, 2026-11-03; October replay in
+ * the CHANGELOG).
  */
+/** Today's Chicago date as MM/dd, for the likely-ticket note. */
+function scanDayLabel_() {
+  return Utilities.formatDate(new Date(), 'America/Chicago', 'yyyy-MM-dd').slice(5).replace('-', '/');
+}
 function hintTicket_(hint, read) {
   if (!hint || !/^\d{6,8}$/.test(String(read || ''))) return '';
-  var m = /(?:likely|could be) (\d{7})(?! or )(?!, \d)/.exec(hint);
+  var m = /(?:likely|could be) (\d{7})(?! or )(?!, \d)/.exec(hint); // a lone "could be" was right 4 of 4 in October
   return m && m[1] !== String(read) ? m[1] : '';
 }
 /**
@@ -1249,8 +1253,20 @@ function likelyTicketFix_(sh, layout, x, hint) {
   if (!T) return '';
   var pp = x._parts_plan || {}, lp = x._extra_labor_plan || {};
   if ((pp.items || []).length || (pp.posted || []).length || (pp.references || []).length || (lp.items || []).length) return '';
-  if (!(x.tag_count > 1) && ticketInStoreTab_(sh, T, layout)) return '';
-  return T;
+  // Another job's ticket is never borrowed (review: a group tag took another customer's 2 of 2). Only a group whose
+  // other tags all read T may share it (one ticket per order).
+  if (ticketInStoreTab_(sh, T, layout) && !(x.tag_count > 1 && /the group's other tags all read it/.test(hint))) return '';
+  // A reading near one this rule rewrote today, before Kirsten has looked, may be a new ticket book rather than a
+  // misread (review: each write would otherwise feed the next hint): note only. Once she undoes a write, the reading is
+  // on the tab and the book fits; a write she kept is a misread the same hand repeats (October: Willowbrook 8s as 2s
+  // days apart), so it does not block.
+  var r = Number(x.ticket_number), today = scanDayLabel_();
+  var notes = sh.getRange(2, layout.screens.TICKET, screenBlockEnd_(sh) - 1, 1).getNotes();
+  var echoed = notes.some(function (n) {
+    var m = /written as \d{7} \(read as (\d{6,8}) on (\d\d\/\d\d)\)/.exec(String(n[0] || ''));
+    return m && m[2] === today && String(r).length === m[1].length && Math.abs(Number(m[1]) - r) <= 300;
+  });
+  return echoed ? '' : T;
 }
 function writeToStoreTab_(ss, x, reasons) {
   var routing = resolveJobRouting_(x);
@@ -1292,7 +1308,7 @@ function writeToStoreTab_(ss, x, reasons) {
   var likely = bookHint ? likelyTicketFix_(sh, layout, x, bookHint) : '';
   if (likely) { // write it, keep the reading in the note (Jared, 2026-11-03): Kirsten typed these by hand
     flags.push(bookHint);
-    flags.push('Ticket # written as ' + likely + ' (read as ' + x.ticket_number + '), as suggested above');
+    flags.push('Ticket # written as ' + likely + ' (read as ' + x.ticket_number + ' on ' + scanDayLabel_() + '), as suggested above');
     x = Object.assign({}, x, { ticket_number: likely });
   } else if (bookHint) flags.push(bookHint);
   // A bare "ticket_number" doubt (the reader gave no detail) on a ticket that already fits this tab's series is not a
