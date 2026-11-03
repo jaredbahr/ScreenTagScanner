@@ -14,6 +14,7 @@
  * Results are written to private/results-<timestamp>.json (gitignored).
  */
 import Anthropic from "@anthropic-ai/sdk";
+import { parseTruthCSV, same } from "./scoring.mjs";
 import fs from "node:fs";
 import path from "node:path";
 import vm from "node:vm";
@@ -56,7 +57,7 @@ const photos = fs
   .readdirSync(photosDir)
   .filter((f) => /\.(jpe?g|png)$/i.test(f))
   .sort();
-const truth = fs.existsSync(truthPath) ? loadTruth(truthPath) : null;
+const truth = fs.existsSync(truthPath) ? parseTruthCSV(fs.readFileSync(truthPath, "utf8")) : null;
 if (!truth) console.warn(`No truth file at ${truthPath}; reporting raw results without scoring.\n`);
 
 const client = new Anthropic();
@@ -124,27 +125,3 @@ fs.mkdirSync(path.join(repo, "private"), { recursive: true });
 const out = path.join(repo, "private", `results-${new Date().toISOString().replace(/[:.]/g, "-")}.json`);
 fs.writeFileSync(out, JSON.stringify(results, null, 2));
 console.log(`\nFull results: ${out}`);
-
-// ---- helpers ----
-function loadTruth(p) {
-  const [header, ...lines] = fs.readFileSync(p, "utf8").trim().split(/\r?\n/);
-  const cols = header.split(",").map((c) => c.trim());
-  const map = new Map();
-  for (const line of lines) {
-    const vals = line.split(",").map((v) => v.trim());
-    const rec = Object.fromEntries(cols.map((c, i) => [c, vals[i] ?? ""]));
-    map.set(rec.file, rec);
-  }
-  return map;
-}
-function same(field, got, want) {
-  if (field === "phone") return digits(got) === digits(want);
-  if (typeof got === "number" || /^-?[\d.]+$/.test(want)) return Number(got) === Number(want);
-  return norm(got) === norm(want);
-}
-function norm(s) {
-  return String(s ?? "").trim().toLowerCase();
-}
-function digits(s) {
-  return String(s ?? "").replace(/\D/g, "");
-}
