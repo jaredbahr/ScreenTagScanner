@@ -185,7 +185,8 @@ function appendReviewNote_(cell, note) {
 
 /** The flags shown on the sheet: all of them, less a quieted bare ticket doubt (it stays in the Scans log). */
 function sheetFlags_(flags, x) {
-  return x && x._quiet_bare_ticket ? flags.filter(function (f) { return !isReaderTicketDoubt_(f); }) : flags;
+  var quiet = (x && x._quiet_ticket_doubts) || [];
+  return quiet.length ? flags.filter(function (f) { return quiet.indexOf(f) < 0; }) : flags;
 }
 /** The reader's own ticket doubt, bare ("ticket_number") or with detail ("ticket_number: last digit 1 or 7"). */
 function isReaderTicketDoubt_(f) {
@@ -1319,7 +1320,12 @@ function writeToStoreTab_(ss, x, reasons) {
   // (Jared, 2026-10-30 bare; 2026-11-03 with detail): October, 44 detailed doubts on series tickets led to a fix 5
   // times, 3 of them now caught by the ticket rules. It stays in the Scans log. Only the note is left out: the flags
   // list stays whole, because saveScan_ copies the sheet-only flags back to the log by position (review).
-  else if (flags.some(isReaderTicketDoubt_) && ticketFitsSeries_(sh, layout, x.ticket_number)) x = Object.assign({}, x, { _quiet_bare_ticket: true });
+  // Only a one-cell doubt about the digits: a row-level one ("two tickets", "another customer", a slip, a rescan) stays
+  // on the sheet, or the scan message would point at a row with nothing on it (review).
+  else if (ticketFitsSeries_(sh, layout, x.ticket_number)) {
+    var quiet = flags.filter(function (f) { return isReaderTicketDoubt_(f) && reviewTier_(f, store).tier === 'cell'; });
+    if (quiet.length) x = Object.assign({}, x, { _quiet_ticket_doubts: quiet });
+  }
   if (ticketInStoreTab_(sh, x.ticket_number, layout) && !(x.tag_count > 1)) {
     flags.push('Ticket already on the ' + store.name + ' tab: another tag in the group, or a duplicate?');
   }

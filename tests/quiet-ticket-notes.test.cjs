@@ -28,6 +28,16 @@ test('a doubt with detail on a ticket in the series: no sheet note either, still
   assert.equal(t.ctx.isReaderTicketDoubt_('width_in: written next to the ticket_number line'), false, 'only the reader\'s ticket doubts');
 });
 
+test('review: a row-level ticket doubt on a series ticket stays on the sheet (two tickets, another customer)', () => {
+  const { t, sh, c } = setup();
+  t.scan(tag('7779101')); t.scan(tag('7779102'));
+  const r = t.scan(tag('7779111', { unclear: ['ticket_number: two tickets on this form, 7779111 and 7779140'] }));
+  const row = [...Array(40).keys()].map(k => k + 2).find(q => String(sh.get(q, c.TICKET)) === '7779111');
+  const notes = [c.TICKET, c.NAME].map(col => sh.notes.get(sh.key(row, col)) || '').join(' ');
+  assert.match(notes, /two tickets on this form/, 'the row-level doubt is on the sheet');
+  assert.ok(r.message, 'the scan message still points at it');
+});
+
 test('kept on the sheet: a ticket outside the series, or too few tickets to know the series', () => {
   const { t, sh, c } = setup();
   t.scan(tag('7779101')); t.scan(tag('7779102'));
