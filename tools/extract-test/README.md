@@ -21,9 +21,11 @@ private/
 `truth.csv` format (see [`truth.example.csv`](truth.example.csv)); dimensions in decimal inches, phone as digits:
 
 ```csv
-file,store_number,last_name,phone,width_in,height_in
-tag01.jpg,1234,Smith,6305550142,36,48
+file,store,last_name,phone,width_in,height_in
+tag01.jpg,EXAMPLE,Smith,6305550142,36,48
 ```
+
+Blank truth cells are omitted from scoring. Numeric measurements compare as numbers; ticket and store identifiers keep their digits, including leading zeros. Missing extracted values never count as zero. Standard quoted CSV fields may contain commas, escaped quotes, or line breaks; malformed records stop the run before any requests.
 
 Resize iPhone photos on a Mac: `sips -Z 2000 -s format jpeg *.HEIC --out resized/`
 
