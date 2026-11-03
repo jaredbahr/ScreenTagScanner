@@ -35,7 +35,9 @@ test('review: a row-level ticket doubt on a series ticket stays on the sheet (tw
   const row = [...Array(40).keys()].map(k => k + 2).find(q => String(sh.get(q, c.TICKET)) === '7779111');
   const notes = [c.TICKET, c.NAME].map(col => sh.notes.get(sh.key(row, col)) || '').join(' ');
   assert.match(notes, /two tickets on this form/, 'the row-level doubt is on the sheet');
-  assert.ok(r.message, 'the scan message still points at it');
+  assert.match(r.message, /Check on the sheet: ticket/, 'the scan message still points at it');
+  const h = t.ctx.HEADERS, lr = t.ss.tabs.Scans.getDataRange().getValues().find(v => String(v[h.indexOf('Ticket #')]) === '7779111');
+  assert.equal(lr[h.indexOf('Needs Review')], 'YES');
 });
 
 test('kept on the sheet: a ticket outside the series, or too few tickets to know the series', () => {

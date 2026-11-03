@@ -183,7 +183,7 @@ function appendReviewNote_(cell, note) {
   cell.setNote(existing ? existing + '\n\n' + note : note);
 }
 
-/** The flags shown on the sheet: all of them, less a quieted bare ticket doubt (it stays in the Scans log). */
+/** The flags shown on the sheet: all of them, less the reader's quieted one-cell ticket doubts (they stay in the Scans log). */
 function sheetFlags_(flags, x) {
   var quiet = (x && x._quiet_ticket_doubts) || [];
   return quiet.length ? flags.filter(function (f) { return quiet.indexOf(f) < 0; }) : flags;
