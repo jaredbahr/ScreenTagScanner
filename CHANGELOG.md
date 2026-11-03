@@ -1,5 +1,13 @@
 # Changelog
 
+## 0.13.38-draft — quieter ticket doubts
+
+Kirsten (2026-11-03): a "handwritten reads … but the tag at top shows …" note on a ticket that was right. Approved by
+Jared (2026-11-03): the reader's ticket doubts with detail join the bare ones (0.13.33): on a ticket that fits the
+tab's series they stay in the Scans log, not the cell note. October: 44 such notes on series tickets led to a hand fix
+5 times, 3 of them now caught by the ticket rules. The scanner's own ticket notes (likely tickets, order tickets,
+group checks) are unchanged.
+
 ## 0.13.37-draft — dates always written as date cells
 
 Kirsten (2026-11-03): Plainfield rows past the template's date-formatted area showed 46326 for Oct 31. Dates were
