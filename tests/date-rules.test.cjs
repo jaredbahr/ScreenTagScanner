@@ -7,6 +7,13 @@ test('Date in uses written tag date while Date out uses scan day, on screens and
     assert.equal(t.ss.tabs.Scans.get(2,t.ctx.COL.DATE),'9/21/2024','raw tag text preserved');
   }
 });
+test('dates are written as date cells on screens and windows, also past the template\'s formatted rows (Plainfield, 11/3)',()=>{
+  for(const item_type of ['screen','window']){const t=load();t.scan({item_type,panes:1,date:'10/31/2026'});const sh=t.ss.tabs['Homer Glen'];
+    const di=item_type==='screen'?2:14,dout=item_type==='screen'?4:16;
+    assert.equal(sh.formats.get(sh.key(2,di)),'d-mmm');assert.equal(sh.formats.get(sh.key(2,dout)),'d-mmm');}
+  const u=load();u.scan({date:null});const sh=u.ss.tabs['Homer Glen'];
+  assert.equal(sh.get(2,2),'');assert.equal(sh.formats.get(sh.key(2,2)),undefined,'a blank Date in keeps its format');
+});
 test('missing year is the admission Chicago calendar year, including UTC New Year boundary',()=>{
   const t=load({now:new Date('2027-01-01T05:30:00Z')});t.scan({date:'12/30'});
   assert.equal(t.ss.tabs['Homer Glen'].get(2,2),serial('2026-12-30'));assert.equal(t.ss.tabs['Homer Glen'].get(2,4),serial('2026-12-31'));

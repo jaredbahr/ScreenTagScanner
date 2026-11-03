@@ -50,11 +50,20 @@ function verifiedSequence_(text) {
   return m && Number(m[1]) >= 1 && Number(m[1]) <= Number(m[2]) && Number(m[2]) <= 1000
     ? Number(m[1]) + ' of ' + Number(m[2]) : '';
 }
+/**
+ * Dates are written as serial day numbers; the cell must also be a date cell. The template formats only part of
+ * each tab, and rows past it showed 46326 for Oct 31 (Kirsten, 2026-11-03). The tab's own date format.
+ */
+var STORE_DATE_FORMAT = 'd-mmm';
+function setStoreDate_(range, v) {
+  if (typeof v === 'number') range.setNumberFormat(STORE_DATE_FORMAT);
+  range.setValue(v);
+}
 function writeStoreIdentity_(sh, row, c, x, dates) {
-  sh.getRange(row, c.DATE_IN).setValue(dates.dateIn);
+  setStoreDate_(sh.getRange(row, c.DATE_IN), dates.dateIn);
   sh.getRange(row, c.NAME).setValue(safeCell_(sheetName_(x)));
   if (c.SEQUENCE) sh.getRange(row, c.SEQUENCE).setNumberFormat('@').setValue(verifiedSequence_(tagOf_(x)));
-  sh.getRange(row, c.DATE_OUT).setValue(dates.dateOut);
+  setStoreDate_(sh.getRange(row, c.DATE_OUT), dates.dateOut);
 }
 
 function sequenceTargets_() {

@@ -78,7 +78,7 @@
   },
   "minimumTestCounts": {
     "tests/offline.test.cjs": 51,
-    "tests/date-rules.test.cjs": 16,
+    "tests/date-rules.test.cjs": 17,
     "tests/extra-labor.test.cjs": 32,
     "tests/glass-routing.test.cjs": 11,
     "tests/job-unit.test.cjs": 7,

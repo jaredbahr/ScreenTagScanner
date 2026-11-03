@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.13.37-draft — dates always written as date cells
+
+Kirsten (2026-11-03): Plainfield rows past the template's date-formatted area showed 46326 for Oct 31. Dates were
+always written as serial day numbers (right in any time zone) but took the cell's existing format; Plainfield,
+Lockport, Joliet, Downers Grove and Willowbrook all have unformatted rows. `writeStoreIdentity_` now sets the tab's
+date format (d-mmm) on Date in and Date out whenever it writes a date; a blank date leaves the cell as it is.
+
 ## 0.13.36-draft — likely tickets written
 
 Kirsten (2026-11-02): 7s read as 1s and 2s, a lost digit, and an 8 read as a 2; 4 of the 5 already had the right
