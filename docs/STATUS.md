@@ -3,17 +3,27 @@
 Living notes so any session (Claude Code or Codex) can pick up where the last one stopped. Update this
 file whenever the state below changes. No customer data, emails, Google IDs or secrets here.
 
-_Last updated: 2026-11-03 (version 22 deployed; health/release notes and prompt test pending)._
+_Last updated: 2026-11-04 (version 22 health/release notes verified; prompt test finished 60/60 with zero errors; temporary-property cleanup verified)._
 
 ## Where things stand
 | | |
 |---|---|
-| Live in Google | Immutable version 22, source `4c703382ae38c786bfa1f56f6095702a400a894f` / **0.13.38-draft**. Submitted 2026-11-03 18:39:50.432 UTC / 12:39:50.432 America/Chicago; Google confirmed version 22 at 18:40:09.445 UTC. All twelve pre-check and post-reload source comparisons passed (only the known unchanged manifest missing final LF); exactly five clipboard pastes and visible Saves. Same endpoint/identity/access. **Health and What's new not yet verified**: Google multilogin redirected the in-app browser to Page Not Found; separate Firefox app approval timed out. Prompt test **NOT RUN**, zero runs/spend, no final summary; property cleanup unverified. No properties manually changed, result file opened, or sharing/scopes/access/triggers/rows/migration/month changes. |
-| Ready to deploy | Issue #51 deployment to version 22 is complete, but post-deploy health/release-note verification and the approved prompt evaluation remain pending. Complete those checks before running `runPromptEval`; this draft metadata record must be updated with the counts-only summary and automatic property cleanup before merge. |
+| Live in Google | Immutable version 22 / **0.13.38-draft**, source `4c703382ae38c786bfa1f56f6095702a400a894f`. Submitted 2026-11-03 18:39:50.432 UTC / 12:39:50.432 America/Chicago; Google success observed 18:40:09.445 UTC. Twelve-file pre-check and post-reload comparison passed, with only the known unchanged manifest missing final LF; exactly five clipboard pastes and visible Saves. Same endpoint/identity/access. On 2026-11-04, read-only public endpoint requests verified health 0.13.38-draft and served notes in order 0.13.38 Nov 3, 0.13.37, 0.13.36, 0.13.35, 0.13.34. Actual-phone rendering remains unverified. One editor `runPromptEval` completed at 12:35:52 America/Chicago: **60/60 cases, zero errors**. APPROVED, CURSOR, CASES and RUNNING temporary prompt properties all absent, confirmed through names only at 18:37:14.674 UTC. No manual property edits, result-file access, redeployment, sharing/scopes/access/triggers/rows/migration/month actions. |
+| Ready to deploy | Issue #51 deployment and approved one-time prompt evaluation are complete. Deployment record PR #57 remains draft and unmerged for Claude review. No additional deployment or prompt run is needed. |
 | Who deploys | Codex, per [DEPLOYMENT.md](DEPLOYMENT.md) and the release gate, recorded as a `deployment` issue |
 | Lesson (2026-10-22) | Google ran Codex's unmerged PR line for a week while the default branch moved on separately. Rule now: deploy only from the default branch; the release gate fails a candidate that lacks the deployed source's history |
 | Workbook in use | "October 2026" in the shared monthly folder; tabs named by store ("Downers Grove", …); a "Tag x of N" column after Name in both blocks |
 | Testing phase | Kirsten scans and checks every row; Paul isn't ready to scan alone. Jared watches unplaced scans during testing |
+
+## One-time prompt evaluation (2026-11-04)
+
+One editor run; done equals of, so no repeat. Final counts-only summary:
+
+```json
+{"done":60,"of":60,"errors":0,"corrected":{"ticket":{"total":49,"current":10,"variant":12},"seq":{"total":49,"current":44,"variant":46}},"control":{"ticket":{"total":11,"current":11,"variant":11},"seq":{"total":11,"current":11,"variant":11}}}
+```
+
+The test automatically removed `PROMPT_EVAL_APPROVED`, `PROMPT_EVAL_CURSOR`, `PROMPT_EVAL_CASES` and `PROMPT_EVAL_RUNNING`; absence was checked through property names only. The result file was not opened. Actual paid-test billing was not independently measured.
 
 ## Standing rules from Jared
 0. **Triple-check every change: this runs a real business** (2026-10-23). See CONTRIBUTING.md.
