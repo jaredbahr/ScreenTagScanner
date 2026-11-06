@@ -78,6 +78,9 @@ test('review: a new ticket book is rewritten at most once a day; a write Kirsten
   write(u.t, one('2208120', 3)); assert.equal(rowsWith(u.sh, u.c.TICKET, '7708120').length, 1);
   u.t.setNow(new Date(new u.t.ctx.Date().getTime() + 2 * 864e5)); // two days later, the write kept: the same hand's misread is fixed again
   write(u.t, one('2208140', 4)); assert.equal(rowsWith(u.sh, u.c.TICKET, '7708140').length, 1);
+  const v = newLenox(); // 11/5: two lost-digit tags the same day are both misreads (a 6-digit reading is never a ticket)
+  write(v.t, one('708155', 3)); write(v.t, one('708157', 4));
+  assert.equal(rowsWith(v.sh, v.c.TICKET, '7708155').length, 1); assert.equal(rowsWith(v.sh, v.c.TICKET, '7708157').length, 1, 'the second is written too');
 });
 
 test('review: the order rule never takes a likely-ticket write for Kirsten\'s hand fix', () => {

@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.13.39-draft — lost-digit tickets fixed on every tag
+
+Kirsten (11/5): two tags of one New Lenox order lost a digit; the first was written as its likely ticket, the second
+was left for her because of the same-day hold (0.13.36), which exists for a new ticket book. Only a 7-digit reading
+can be a real ticket, so 6- and 8-digit readings are no longer held. Replay through 11/5 (565 scans): 38 written
+(was 34), 29 match her fix (was 26), 1 more wrong where the reading was wrong too; no correct reading changed.
+
 ## 0.13.38-draft — quieter ticket doubts
 
 Kirsten (2026-11-03): a "handwritten reads … but the tag at top shows …" note on a ticket that was right. Approved by
