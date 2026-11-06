@@ -55,7 +55,7 @@ test('the same "x of N" twice: noted with what is still missing', () => {
 test('different customers with the same N are not treated as one group', () => {
   const t = load(), { sh, c } = modern(t, 'New Lenox');
   t.scan(tag('New Lenox', 'Synthalpha', '7777350', 1, 2));
-  t.scan(tag('New Lenox', 'Synthomega', '7707950', 1, 2));
+  t.scan(tag('New Lenox', 'Synthomega', '7797950', 1, 2));
   for (let r = 2; r <= 6; r++) for (const col of [c.NAME, c.TICKET, c.SEQUENCE]) assert.doesNotMatch(note(sh, r, col), /Group check/);
 });
 

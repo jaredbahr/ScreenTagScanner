@@ -21,15 +21,15 @@ const held = (t, sh, r) => !!t.ctx.holdAt_(sh.notes.get(r + ',1') || '', t.ctx.g
 
 test('real pattern: 3 of 3 first, other jobs in between, then 2 of 3 and 1 of 3 land together', () => {
   const t = load(), { sh, c } = modern(t);
-  t.scan(job('Synthmol', '7707981', 3, 3));
+  t.scan(job('Synthmol', '7777981', 3, 3));
   assert.equal(nameAt(sh, c, 2), 'Synthmol'); assert.ok(held(t, sh, 3)); assert.ok(held(t, sh, 4)); assert.ok(!held(t, sh, 5));
   assert.equal(sh.bg.get('3,' + c.NAME), t.ctx.HOLD_COLOR);
   assert.match(sh.notes.get('3,1'), /Saved for the rest of the Synthmol group \(3 tags\)/);
-  t.scan(job('Synthowak', '7707983', 1, 1));
-  t.scan(job('Synthola', '7707976', 1, 1, { bump: 5 }));
+  t.scan(job('Synthowak', '7777983', 1, 1));
+  t.scan(job('Synthola', '7777976', 1, 1, { bump: 5 }));
   assert.equal(nameAt(sh, c, 5), 'Synthowak', 'other jobs skip held rows'); assert.equal(nameAt(sh, c, 6), 'Synthola');
-  t.scan(job('Synthmol', '7707982', 2, 3));
-  t.scan(job('Synthmol', '7707980', 1, 3));
+  t.scan(job('Synthmol', '7777982', 2, 3));
+  t.scan(job('Synthmol', '7777980', 1, 3));
   assert.deepEqual([2, 3, 4].map(r => seqAt(sh, c, r)), ['3 of 3', '2 of 3', '1 of 3']);
   for (const r of [3, 4]) { assert.ok(!held(t, sh, r)); assert.notEqual(sh.bg.get(r + ',' + c.NAME), t.ctx.HOLD_COLOR); }
 });
@@ -61,76 +61,76 @@ test('a misprinted ticket still fills the group when name and N match exactly an
 
 test('holds expire after 14 days and the row is used normally', () => {
   const t = load({ now: new Date('2026-10-01T17:00:00Z') }), { sh, c } = modern(t);
-  t.scan(job('Synthold', '7707901', 1, 2));
+  t.scan(job('Synthold', '7777901', 1, 2));
   assert.ok(held(t, sh, 3));
   t.setNow(new Date('2026-10-20T17:00:00Z'));
-  t.scan(job('Synthnew', '7707950', 1, 1));
+  t.scan(job('Synthnew', '7777950', 1, 1));
   assert.equal(nameAt(sh, c, 3), 'Synthnew'); assert.ok(!held(t, sh, 3));
 });
 
 test('a held row Kirsten typed into is left alone; the tag goes to the next empty row', () => {
   const t = load(), { sh, c } = modern(t);
-  t.scan(job('Synthtyp', '7707901', 1, 2));
+  t.scan(job('Synthtyp', '7777901', 1, 2));
   sh.set(3, c.NAME, 'Typed by hand');
-  t.scan(job('Synthtyp', '7707902', 2, 2));
+  t.scan(job('Synthtyp', '7777902', 2, 2));
   assert.equal(sh.get(3, c.NAME), 'Typed by hand'); assert.equal(nameAt(sh, c, 4), 'Synthtyp'); assert.ok(!held(t, sh, 3));
 });
 
 test('no holds for single tags, unverified or large N, windows, multi-frame builds, or the old layout', () => {
   const t = load(), { sh } = modern(t);
-  t.scan(job('Synthone', '7707901', 1, 1));
-  t.scan(job('Synthbig', '7707902', 1, 40, { bump: 1 }));
-  t.scan(job('Synthbad', '7707903', 5, 3, { bump: 2 }));
-  t.scan(job('Synthbld', '7707904', 1, 2, { form_type: 'new_build', screens_on_tag: 2, bump: 3 }));
+  t.scan(job('Synthone', '7777901', 1, 1));
+  t.scan(job('Synthbig', '7777902', 1, 40, { bump: 1 }));
+  t.scan(job('Synthbad', '7777903', 5, 3, { bump: 2 }));
+  t.scan(job('Synthbld', '7777904', 1, 2, { form_type: 'new_build', screens_on_tag: 2, bump: 3 }));
   for (let r = 2; r <= 12; r++) assert.ok(!held(t, sh, r), 'row ' + r);
-  const u = load(); u.scan(job('Synthleg', '7707905', 1, 3));
+  const u = load(); u.scan(job('Synthleg', '7777905', 1, 3));
   assert.ok(!held(u, u.ss.tabs['New Lenox'], 3), 'tabs without a Tag x of N column keep the old behavior');
 });
 
 test('a group already on the tab (scanned before holds existed) gets no new holds', () => {
   const t = load(), { sh, c } = modern(t);
-  sh.set(2, c.NAME, 'Synthpre'); sh.set(2, c.SEQUENCE, '1 of 3'); sh.set(2, c.TICKET, '7707901'); sh.set(2, c.DATE_IN, 46300);
-  t.scan(job('Synthpre', '7707902', 2, 3));
+  sh.set(2, c.NAME, 'Synthpre'); sh.set(2, c.SEQUENCE, '1 of 3'); sh.set(2, c.TICKET, '7777901'); sh.set(2, c.DATE_IN, 46300);
+  t.scan(job('Synthpre', '7777902', 2, 3));
   assert.equal(nameAt(sh, c, 3), 'Synthpre'); assert.ok(!held(t, sh, 4));
 });
 
 test('only rows right after the first tag are held, never past a filled row', () => {
   const t = load(), { sh, c } = modern(t);
   sh.set(4, c.NAME, 'Existing'); sh.set(4, c.DATE_IN, 46300);
-  t.scan(job('Synthgap', '7707901', 1, 4));
+  t.scan(job('Synthgap', '7777901', 1, 4));
   assert.ok(held(t, sh, 3)); assert.ok(!held(t, sh, 5), 'stops at the filled row');
 });
 
 test('hold data is hidden: the note is plain text, the data sits in row metadata, deleting the note frees the row', () => {
   const t = load(), { sh, c } = modern(t);
-  t.scan(job('Synthmeta', '7707901', 1, 3));
+  t.scan(job('Synthmeta', '7777901', 1, 3));
   const note = sh.notes.get('3,1');
   assert.match(note, /^Saved for the rest of the Synthmeta group \(3 tags\)\./); assert.doesNotMatch(note, /GROUP_HOLD|\{/);
   assert.deepEqual(sh.devMeta.map(m => [m.key, m.row]), [['GROUP_HOLD_V2', 3], ['GROUP_HOLD_V2', 4]]);
   sh.notes.set('3,1', ''); // Kirsten deletes the note
-  t.scan(job('Synthother', '7707950', 1, 1));
+  t.scan(job('Synthother', '7777950', 1, 1));
   assert.equal(nameAt(sh, c, 3), 'Synthother', 'the freed row is used'); assert.ok(held(t, sh, 4), 'the other hold stays');
-  t.scan(job('Synthmeta', '7707902', 2, 3, { bump: 1 }));
+  t.scan(job('Synthmeta', '7777902', 2, 3, { bump: 1 }));
   assert.equal(nameAt(sh, c, 4), 'Synthmeta'); assert.deepEqual(sh.devMeta.map(m => m.row), [3], 'used holds remove their metadata');
 });
 
 test('notes written by 0.13.21 (visible data) still work', () => {
   const t = load(), { sh, c } = modern(t);
-  sh.set(2, c.NAME, 'Synthold'); sh.set(2, c.SEQUENCE, '1 of 2'); sh.set(2, c.TICKET, '7707901'); sh.set(2, c.DATE_IN, 46310);
-  sh.notes.set('3,1', 'Saved for the rest of the Synthold group (2 tags).\nGROUP_HOLD_V1: ' + JSON.stringify({ name: 'synthold', of: 2, ticket: '7707901', day: t.ctx.scanDateSerial_() }));
-  t.scan(job('Synthold', '7707902', 2, 2));
+  sh.set(2, c.NAME, 'Synthold'); sh.set(2, c.SEQUENCE, '1 of 2'); sh.set(2, c.TICKET, '7777901'); sh.set(2, c.DATE_IN, 46310);
+  sh.notes.set('3,1', 'Saved for the rest of the Synthold group (2 tags).\nGROUP_HOLD_V1: ' + JSON.stringify({ name: 'synthold', of: 2, ticket: '7777901', day: t.ctx.scanDateSerial_() }));
+  t.scan(job('Synthold', '7777902', 2, 2));
   assert.equal(nameAt(sh, c, 3), 'Synthold'); assert.equal(sh.notes.get('3,1'), '');
 });
 
 test('if Google rejects the hidden metadata, the old visible note is written and holds still work', () => {
   const t = load(), { sh, c } = modern(t);
   sh.failMetadata = true;
-  t.scan(job('Synthfall', '7707901', 1, 2));
+  t.scan(job('Synthfall', '7777901', 1, 2));
   assert.match(sh.notes.get('3,1'), /GROUP_HOLD_V1: /); assert.equal(sh.devMeta.length, 0);
-  t.scan(job('Synthelse', '7707950', 1, 1)); t.scan(job('Synthfall', '7707902', 2, 2, { bump: 1 }));
+  t.scan(job('Synthelse', '7777950', 1, 1)); t.scan(job('Synthfall', '7777902', 2, 2, { bump: 1 }));
   assert.equal(nameAt(sh, c, 3), 'Synthfall'); assert.equal(nameAt(sh, c, 4), 'Synthelse');
   const u = load(), m = modern(u); m.sh.failMetadataRead = true;
-  const r = u.scan(job('Synthread', '7707903', 1, 2)); assert.equal(r.status, 'ok', 'a metadata read failure never stops a scan');
+  const r = u.scan(job('Synthread', '7777903', 1, 2)); assert.equal(r.status, 'ok', 'a metadata read failure never stops a scan');
 });
 
 console.log(`${passed} group-hold tests passed`);

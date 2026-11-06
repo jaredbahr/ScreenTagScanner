@@ -663,11 +663,11 @@ test('a 4-digit ticket (handwritten last digits, Plainfield) gets the full 7-dig
 test('a tag rescanned with a different ticket reading is flagged as a possible duplicate (real New Lenox case)', () => {
   const t = load(), sh = t.ss.tabs['New Lenox'];
   const tag = { store: 'New Lenox', last_name: 'Synthetic', width_in: 22, height_in: 54, billable_inches: 76, tag_index: 1, tag_count: 1 };
-  t.scan({ ...tag, ticket_number: '7707611' });
+  t.scan({ ...tag, ticket_number: '7797611' });
   const r = t.scan({ ...tag, ticket_number: '7702611' });
   assert.match(r.message, /Check on the sheet:/);
-  assert.match(sh.notes.get('3,3'), /Possible duplicate: same name, size and Tag x of N as New Lenox screens row 2 \(ticket read as 7707611\)/);
-  const u = load(); u.scan({ ...tag, ticket_number: '7707611' }); u.scan({ ...tag, ticket_number: '7777612', tag_index: 2, tag_count: 2 });
+  assert.match(sh.notes.get('3,3'), /Possible duplicate: same name, size and Tag x of N as New Lenox screens row 2 \(ticket read as 7797611\)/);
+  const u = load(); u.scan({ ...tag, ticket_number: '7797611' }); u.scan({ ...tag, ticket_number: '7777612', tag_index: 2, tag_count: 2 });
   assert.equal(u.ss.tabs['New Lenox'].notes.get('3,3'), undefined, 'a different tag in the group is not a duplicate');
 });
 
