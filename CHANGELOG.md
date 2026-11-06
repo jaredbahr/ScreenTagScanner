@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.13.41-draft — inches past an unrelated correction, misread months, clearer ticket notes
+
+Kirsten (2026-11-06), approved by Jared the same day:
+- Inches: `settleInches_` was skipped for any correction on the tag, so a crossed-out screen colour left 71" unbilled
+  with three agreeing QTY rows. `correctionOutsideInches_` lets a correction about colour, name, phone, date,
+  employee, ticket or store through; anything naming a size, quantity, row, total, price, refund or redo still blocks.
+  October: 12 "values disagree" scans; this bills 2 more, both what Kirsten typed.
+- Dates: a month over 45 days before the scan in the scan's year. A lost leading 1 ("1/3", "01-03") that lands within
+  two weeks of the scan is written back (11/3), with a note; any other such month gets a note only (a tag can wait over
+  the winter). October/November: 5 such dates; 2 written (both her fix), 3 notes.
+- Written tickets: the sheet note says the scanner's reading was off, not the tag; "Ticket # has 6 digits … a staple
+  may hide a digit" and the reader's one-cell ticket doubts stay in the Scans log only.
+
 ## 0.13.40-draft — the sevens guidance is live
 
 Prompt test (2026-11-04, 60 saved tag photos, current model): the "sevens" guidance read 12 of 49 hand-corrected

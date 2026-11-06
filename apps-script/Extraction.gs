@@ -16,7 +16,7 @@
  * Column mapping to the real spreadsheet is still pending. See TODO(fields).
  */
 
-var EXTRACTION_VERSION = '0.13.40-draft';
+var EXTRACTION_VERSION = '0.13.41-draft';
 
 var SYSTEM_PROMPT = [
   'You read Ace Hardware screen tags for a small screen repair shop. Each photo shows one paper form',
@@ -478,8 +478,19 @@ function isSettlementInches_(n) {
  * to the cent, then agree with size or a clear QTY-row majority. With no totals, use that majority.
  * A written but unreadable/contradictory total blocks the QTY fallback. Every result needs review.
  */
+/**
+ * A correction that cannot touch inches or money: the screen colour, a name, phone, date, employee or ticket digit
+ * crossed out (Joliet, 2026-11-06: "Black color circled but crossed out" left 71" unbilled). Anything mentioning a
+ * size, quantity, row, total, price, refund or redo still blocks settling.
+ */
+function correctionOutsideInches_(x) {
+  var d = String(x.correction_details || '');
+  if (!x.has_corrections) return true;
+  return /\b(colou?r|black|gr[ae]y|name|phone|date|employee|ticket|tag ?#|store)\b/i.test(d) &&
+    !/size|measur|width|height|qty|quantit|inch|row|total|\$|refund|redo|credit|price|cost|labor|material|spline|fiberglass|alumin|pet|screen ?count|\d+ ?x ?\d+/i.test(d);
+}
 function settleInches_(x) {
-  if (x.quantity_conflict || x.has_corrections || !Number.isFinite(x.width_in) || !Number.isFinite(x.height_in) ||
+  if (x.quantity_conflict || !correctionOutsideInches_(x) || !Number.isFinite(x.width_in) || !Number.isFinite(x.height_in) ||
       x.width_in < 6 || x.width_in > 120 || x.height_in < 6 || x.height_in > 120) return null;
   var rate = Object.prototype.hasOwnProperty.call(RATES, x.material) ? RATES[x.material] : null;
   if (!rate) return null;

@@ -1149,6 +1149,20 @@ function storeDates_(x) {
     return {dateIn:'',dateOut:dateOut,reason:'Tag date is invalid: Date in left blank; verify the written date'};
   }
   var dateIn = Date.UTC(year,month-1,day)/86400000+25569;
+  // A month far before the scan in the scan's own year is usually a misread month (Kirsten, 2026-11-06: "11/5" read
+  // as 4/5; "11/3" read as "1/3" and "01-03"). A lost leading 1 that puts the date within two weeks of the scan is
+  // written as such; any other month over 45 days back gets a note only (a tag can wait over the winter).
+  if (year === scanYear && dateOut - dateIn > 45) {
+    var mText = String(us ? us[1] : '').replace(/^0+/, ''), back = Number('1' + mText);
+    var fixed = us && /^[0-2]$/.test(mText) && validYmd_(year, back, day) ? Date.UTC(year, back - 1, day) / 86400000 + 25569 : null;
+    if (fixed !== null && dateOut - fixed >= 0 && dateOut - fixed <= 14) {
+      reason += (reason ? '; ' : '') + 'Tag date read as ' + raw + '; written as ' + back + '/' + day + ' (a leading 1 lost?), check the tag';
+      dateIn = fixed;
+    } else {
+      reason += (reason ? '; ' : '') + 'Tag date ' + raw + ' is ' + Math.round(dateOut - dateIn) +
+        ' days before the scan: if the screen did not wait that long, the month is likely misread, check the tag';
+    }
+  }
   // User rule: a missing written year always uses the admitted scan calendar year.
   // A later month/day may need review, but never changes the inferred year.
   if (dateIn > dateOut) reason += (reason ? '; ' : '') + 'Tag date is after the scan date; verify it';
@@ -1316,8 +1330,14 @@ function writeToStoreTab_(ss, x, reasons) {
   var likely = bookHint ? likelyTicketFix_(sh, layout, x, bookHint) : '';
   if (likely) { // write it, keep the reading in the note (Jared, 2026-11-03): Kirsten typed these by hand
     flags.push(bookHint);
-    flags.push('Ticket # written as ' + likely + ' (read as ' + x.ticket_number + ' on ' + scanDayLabel_() + '), as suggested above');
-    x = Object.assign({}, x, { ticket_number: likely });
+    flags.push('Ticket # written as ' + likely + ' (read as ' + x.ticket_number + ' on ' + scanDayLabel_() + '): the scanner\'s ' +
+      'reading was off, not the tag. Check the tag only if ' + likely + ' looks wrong');
+    // Clearer sheet note (Kirsten, 2026-11-06: "has 6 digits ... a staple may hide a digit" read as if the tag itself
+    // were missing a digit). The length doubt and the reader's cell doubts stay in the Scans log; the hint stays.
+    var quietWritten = flags.filter(function (f) {
+      return /^Ticket # has \d+ digits \(Ace tickets have 7\)/.test(f) || (isReaderTicketDoubt_(f) && reviewTier_(f, store).tier === 'cell');
+    });
+    x = Object.assign({}, x, { ticket_number: likely, _quiet_ticket_doubts: quietWritten });
   } else if (bookHint) flags.push(bookHint);
   // The reader's ticket doubt (bare or with detail) on a ticket that already fits this tab's series is not a sheet note
   // (Jared, 2026-10-30 bare; 2026-11-03 with detail): October, 44 detailed doubts on series tickets led to a fix 5
