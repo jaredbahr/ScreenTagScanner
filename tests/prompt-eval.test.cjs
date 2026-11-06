@@ -7,7 +7,8 @@ let passed = 0;
 function test(name, fn) { fn(); passed++; console.log('PASS ' + name); }
 
 function setup() {
-  const t = load({ props: { SAVE_IMAGES: 'true' } }), files = {}, drive = [];
+  const t = load({ props: { SAVE_IMAGES: 'true', PROMPT_EVAL_VARIANT: 'sevens' } }), files = {}, drive = [];
+  t.ctx.PROMPT_VARIANTS.sevens = p => p + '\n  Synthetic test variant.'; // the real sevens guidance went live on 2026-11-06
   let n = 0;
   const fileObj = (name, content) => { const f = { name, content, trashed: false, failSave: false,
     getBlob: () => ({ getDataAsString: () => f.content }), isTrashed: () => f.trashed, setTrashed(v) { f.trashed = v; },
@@ -28,14 +29,25 @@ function setup() {
   return { t, files, drive };
 }
 
-test('the variant changes only the 7s line; production keeps the current prompt', () => {
+test('the sevens guidance is live; production reads SYSTEM_PROMPT; there is no default variant', () => {
   const { t } = setup(), ctx = t.ctx;
   assert.equal(ctx.promptVariant_('current'), ctx.SYSTEM_PROMPT);
-  const v = ctx.promptVariant_('sevens');
-  assert.notEqual(v, ctx.SYSTEM_PROMPT); assert.match(v, /Handwritten 7s on these tags are often misread as 2/);
-  assert.equal(v.replace(ctx.SEVENS_NEW_LINES, ctx.SEVENS_OLD_LINE), ctx.SYSTEM_PROMPT);
+  assert.match(ctx.SYSTEM_PROMPT, /Handwritten 7s on these tags are often misread as 2/, 'the sevens guidance is live (2026-11-06)');
+  assert.doesNotMatch(ctx.SYSTEM_PROMPT, /A handwritten 7 with a curled foot/, 'the old line is gone');
+  assert.throws(() => ctx.promptVariant_(''), /Unknown prompt variant/, 'no default variant');
   assert.throws(() => ctx.promptVariant_('other'), /Unknown prompt variant/);
   assert.equal(ctx.buildRequest_('m', 'AAAA', 'image/jpeg').body.system[0].text, ctx.SYSTEM_PROMPT);
+});
+
+test('an approved run with no or an unknown variant refuses before creating or paying anything', () => {
+  const { t, files } = setup();
+  scans(t, 2); let paid = 0; t.ctx.UrlFetchApp.fetchAll = reqs => { paid += reqs.length; return []; };
+  for (const v of [undefined, 'old-sevens']) {
+    if (v === undefined) delete t.props.PROMPT_EVAL_VARIANT; else t.props.PROMPT_EVAL_VARIANT = v;
+    assert.throws(() => t.ctx.runPromptEval(), /Unknown prompt variant/);
+  }
+  assert.equal(paid, 0); assert.equal(Object.keys(files).length, 0); assert.equal(t.props.PROMPT_EVAL_CASES, undefined);
+  assert.equal(t.props.PROMPT_EVAL_APPROVED, 'yes', 'approval kept: nothing ran');
 });
 
 test('refuses to spend without PROMPT_EVAL_APPROVED', () => {

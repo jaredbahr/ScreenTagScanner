@@ -16,7 +16,7 @@
  * Column mapping to the real spreadsheet is still pending. See TODO(fields).
  */
 
-var EXTRACTION_VERSION = '0.13.39-draft';
+var EXTRACTION_VERSION = '0.13.40-draft';
 
 var SYSTEM_PROMPT = [
   'You read Ace Hardware screen tags for a small screen repair shop. Each photo shows one paper form',
@@ -30,7 +30,10 @@ var SYSTEM_PROMPT = [
   'Extract exactly what is written. Never guess or invent a value:',
   '- If a field is missing or unreadable, return null and say why in "unclear".',
   '- If two readings are plausible (1/7, 2/7, 3/8, 5/9, 0/6, 4/6 in years...), pick the more likely one and list it in "unclear".',
-  '  A handwritten 7 with a curled foot is often misread as 2 in ticket numbers: look twice before reading a 2.',
+  '  Handwritten 7s on these tags are often misread as 2 (a 7 with a curled or hooked foot) or as 1 (a 7 with a',
+  '  short top bar), in ticket numbers, the Qty "x of N" box, sizes and quantities alike. A 2 has a rounded top and',
+  '  a flat base stroke; a 7 has a top bar and one diagonal stroke down, even when its foot curls. Before reading a',
+  '  2 or a 1, compare it with the same writer\'s other digits on this tag (phone, date, sizes, Qty box).',
   '  A thin handwritten 1 between other digits is easy to skip ("1201345" read as "120345"): look for it.',
   '- Ignore crossed-out text, stamps, staples, highlighter, and colored stickers.',
   '',
@@ -237,20 +240,15 @@ function supportsFallbacks_(model) {
  * Build the Messages API request body. Shared by Apps Script and the test harness.
  * Returns { body, betas } so each caller can attach headers its own way.
  */
-// Candidate instruction for the one-time prompt test (runPromptEval_, Code.gs). Production reads SYSTEM_PROMPT only.
-// Kirsten (2026-10-31): 7s read as 2s in tickets (a leading 77 read as 22) and Qty boxes ("2 of 2" for "7 of 7").
-var SEVENS_OLD_LINE = '  A handwritten 7 with a curled foot is often misread as 2 in ticket numbers: look twice before reading a 2.';
-var SEVENS_NEW_LINES = [
-  '  Handwritten 7s on these tags are often misread as 2 (a 7 with a curled or hooked foot) or as 1 (a 7 with a',
-  '  short top bar), in ticket numbers, the Qty "x of N" box, sizes and quantities alike. A 2 has a rounded top and',
-  '  a flat base stroke; a 7 has a top bar and one diagonal stroke down, even when its foot curls. Before reading a',
-  '  2 or a 1, compare it with the same writer\'s other digits on this tag (phone, date, sizes, Qty box).'
-].join('\n');
+// Prompt variants for the one-time prompt test (runPromptEval_, Code.gs). Production reads SYSTEM_PROMPT only. The
+// "sevens" variant (7 vs 2/1 guidance) won the 2026-11-04 test (corrected tickets 12 vs 10 of 49, counts 46 vs 44,
+// controls unchanged) and is now in SYSTEM_PROMPT (Jared, 2026-11-06); add a new variant here for the next test.
+var PROMPT_VARIANTS = {}; // name -> function (prompt) returning the candidate prompt; empty until the next test
 function promptVariant_(name) {
-  if (!name || name === 'current') return SYSTEM_PROMPT;
-  if (name !== 'sevens') throw new Error('Unknown prompt variant: ' + name);
-  var p = SYSTEM_PROMPT.replace(SEVENS_OLD_LINE, SEVENS_NEW_LINES);
-  if (p === SYSTEM_PROMPT) throw new Error('Prompt variant "sevens" no longer applies: its line changed');
+  if (name === 'current') return SYSTEM_PROMPT;
+  if (!name || typeof PROMPT_VARIANTS[name] !== 'function') throw new Error('Unknown prompt variant: "' + (name || '') + '" (set PROMPT_EVAL_VARIANT to a variant in Extraction.gs)');
+  var p = PROMPT_VARIANTS[name](SYSTEM_PROMPT);
+  if (p === SYSTEM_PROMPT) throw new Error('Prompt variant "' + name + '" no longer applies');
   return p;
 }
 
