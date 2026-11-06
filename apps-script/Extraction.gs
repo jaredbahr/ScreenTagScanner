@@ -472,23 +472,33 @@ function isSettlementInches_(n) {
   return Number.isSafeInteger(n) && n >= 12 && n <= 240;
 }
 
+var CORRECTION_ALLOW = /\b(colou?r|black|gr[ae]y|name|phone|date|employee|ticket|store)\b|\btag ?#/i;
+var CORRECTION_BLOCK = new RegExp(['size', 'measur', 'width', 'height', 'qty', 'quan', 'inch', 'row', 'total', '\\$', 'refund',
+  'redo', 're-?done', 're-?made', 're-?do', 'credit', 'price', 'cost', 'labor', 'material', 'spline', 'fiberglass', 'alumin',
+  '\\bpet\\b', 'screens', 'count', 'warrant', 'free', 'charge', '\\bn\\/c\\b', '\\bcomp\\b', 'discount', '\\boff\\b', 'paid',
+  'deposit', 'amount', 'fee', 'cancel', 'line', 'number changed', 'from .* to', 'written over',
+  '\\d+\\s*["\']?\\s*[x×*]\\s*\\d'].join('|'), 'i');
+/**
+ * A correction that cannot touch inches or money: the screen colour, a name, phone, date, employee or ticket digit
+ * crossed out (Joliet, 2026-11-06: "Black color circled but crossed out" left 71" unbilled). Fails closed (review):
+ * every clause must be about one of those, nothing may name a size, quantity, row, total, price, refund, redo,
+ * charge or count, and no number may appear outside a ticket, phone, date or employee phrase.
+ */
+function correctionOutsideInches_(x) {
+  if (!x.has_corrections) return true;
+  var d = String(x.correction_details || '');
+  if (!d.trim() || CORRECTION_BLOCK.test(d)) return false;
+  var parts = d.split(/[;,.\n]+|\b(?:and|but|now|then)\b/i).map(function (p) { return p.trim(); }).filter(Boolean);
+  var filler = /^(?:circled|crossed out|instead|x'?d out|with (?:an )?x)\b/i;
+  if (!parts.every(function (p) { return CORRECTION_ALLOW.test(p) || filler.test(p); })) return false;
+  return !/\d/.test(d.replace(/(ticket|phone|tag ?#|date|employee)[^;,]*/ig, ''));
+}
 /**
  * Reconcile a size/QTY disagreement from literal tag evidence; never edit the original readings.
  * Explicit conflicts and unusual/missing dimensions remain manual. All written totals must agree
  * to the cent, then agree with size or a clear QTY-row majority. With no totals, use that majority.
  * A written but unreadable/contradictory total blocks the QTY fallback. Every result needs review.
  */
-/**
- * A correction that cannot touch inches or money: the screen colour, a name, phone, date, employee or ticket digit
- * crossed out (Joliet, 2026-11-06: "Black color circled but crossed out" left 71" unbilled). Anything mentioning a
- * size, quantity, row, total, price, refund or redo still blocks settling.
- */
-function correctionOutsideInches_(x) {
-  var d = String(x.correction_details || '');
-  if (!x.has_corrections) return true;
-  return /\b(colou?r|black|gr[ae]y|name|phone|date|employee|ticket|tag ?#|store)\b/i.test(d) &&
-    !/size|measur|width|height|qty|quantit|inch|row|total|\$|refund|redo|credit|price|cost|labor|material|spline|fiberglass|alumin|pet|screen ?count|\d+ ?x ?\d+/i.test(d);
-}
 function settleInches_(x) {
   if (x.quantity_conflict || !correctionOutsideInches_(x) || !Number.isFinite(x.width_in) || !Number.isFinite(x.height_in) ||
       x.width_in < 6 || x.width_in > 120 || x.height_in < 6 || x.height_in > 120) return null;

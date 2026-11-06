@@ -17,7 +17,10 @@ test('a correction outside the inches (a crossed-out colour, name or ticket digi
     has_corrections: true, correction_details: 'Measured wrong: size changed from 34x41 to 41x54' });
   assert.equal(sh2.get(2, 6), '', 'a size correction still leaves the inches for Kirsten');
   const c = t.ctx;
-  for (const d of ['Fiberglass rows crossed out', 'Refund 2 screens', 'QTY changed', 'total rewritten $12', 'Measured wrong'])
+  for (const d of ['Fiberglass rows crossed out', 'Refund 2 screens', 'QTY changed', 'total rewritten $12', 'Measured wrong',
+    'Black screen crossed out, now 2 screens', 'Black crossed out, remade', 'Black crossed out, 36\u00d748', 'Black crossed out, 36" x 48"',
+    'Gray crossed out, Black circled, quanity 3', 'Black crossed out, no charge', 'Black crossed out - warranty',
+    'Name crossed out, second screen added', 'Black crossed out, written over 71', 'Ticket number overwritten; 2 tags', ''])
     assert.equal(c.correctionOutsideInches_({ has_corrections: true, correction_details: d }), false, d);
   for (const d of ['Phone number has a crossed-out first attempt', 'Ticket number has an overwritten digit', 'Gray crossed out, Black circled'])
     assert.equal(c.correctionOutsideInches_({ has_corrections: true, correction_details: d }), true, d);
