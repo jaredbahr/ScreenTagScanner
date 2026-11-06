@@ -1265,6 +1265,9 @@ function likelyTicketFix_(sh, layout, x, hint) {
   // misread (review: each write would otherwise feed the next hint): note only. Once she undoes a write, the reading is
   // on the tab and the book fits; a write she kept is a misread the same hand repeats (October: Willowbrook 8s as 2s
   // days apart), so it does not block.
+  // Only a 7-digit reading can be a real ticket from a new book: a 6- or 8-digit one is always a misread, so it is never
+  // held back (New Lenox, 11/5: the second lost-digit tag of one order was left for Kirsten to type).
+  if (String(x.ticket_number).length !== 7) return T;
   var r = Number(x.ticket_number), today = scanDayLabel_();
   var notes = sh.getRange(2, layout.screens.TICKET, screenBlockEnd_(sh) - 1, 1).getNotes();
   var echoed = notes.some(function (n) {
