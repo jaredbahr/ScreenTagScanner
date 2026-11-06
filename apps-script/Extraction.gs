@@ -476,7 +476,7 @@ var CORRECTION_ALLOW = /\b(colou?r|black|gr[ae]y|name|phone|date|employee|ticket
 var CORRECTION_BLOCK = new RegExp(['size', 'measur', 'width', 'height', 'qty', 'quan', 'inch', 'row', 'total', '\\$', 'refund',
   'redo', 're-?done', 're-?made', 're-?do', 'credit', 'price', 'cost', 'labor', 'material', 'spline', 'fiberglass', 'alumin',
   '\\bpet\\b', 'screens', 'count', 'warrant', 'free', 'charge', '\\bn\\/c\\b', '\\bcomp\\b', 'discount', '\\boff\\b', 'paid',
-  'deposit', 'amount', 'fee', 'cancel', 'line', 'number changed', 'from .* to', 'written over',
+  'deposit', 'amount', 'fee', 'cancel', 'line', 'number changed', 'from .* to', 'written over', '\\bboth\\b', '\\bother\\b', '\\beach\\b',
   '\\d+\\s*["\']?\\s*[x×*]\\s*\\d'].join('|'), 'i');
 /**
  * A correction that cannot touch inches or money: the screen colour, a name, phone, date, employee or ticket digit
@@ -491,7 +491,8 @@ function correctionOutsideInches_(x) {
   var parts = d.split(/[;,.\n]+|\b(?:and|but|now|then)\b/i).map(function (p) { return p.trim(); }).filter(Boolean);
   var filler = /^(?:circled|crossed out|instead|x'?d out|with (?:an )?x)\b/i;
   if (!parts.every(function (p) { return CORRECTION_ALLOW.test(p) || filler.test(p); })) return false;
-  return !/\d/.test(d.replace(/(ticket|phone|tag ?#|date|employee)[^;,]*/ig, ''));
+  // Only the digits right after a ticket/phone/tag #/date/employee word are excused (review: "Phone crossed out 2 added").
+  return !/\d/.test(d.replace(/(?:ticket|phone|tag ?#|date|employee)(?:\s+(?:number|no\.?|#))?\s*(?:#|:)?\s*\d[\d\/\-. ()]*/ig, ''));
 }
 /**
  * Reconcile a size/QTY disagreement from literal tag evidence; never edit the original readings.
