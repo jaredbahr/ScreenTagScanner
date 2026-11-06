@@ -297,7 +297,9 @@ function promptEvalFile_(folder, name) {
 }
 function promptEvalRun_(props) {
   var apiKey = props.getProperty('ANTHROPIC_API_KEY'), model = props.getProperty('MODEL') || DEFAULT_MODEL;
-  var variant = props.getProperty('PROMPT_EVAL_VARIANT') || 'sevens', max = Math.max(1, Math.min(60, Number(props.getProperty('PROMPT_EVAL_MAX')) || 60));
+  var variant = props.getProperty('PROMPT_EVAL_VARIANT') || '', max = Math.max(1, Math.min(60, Number(props.getProperty('PROMPT_EVAL_MAX')) || 60));
+  // The variant is checked before anything is created or paid (the sevens variant went live on 2026-11-06).
+  var prompts = { a: promptVariant_('current'), b: promptVariant_(variant) };
   var folders = DriveApp.getFoldersByName(PHOTO_FOLDER); if (!folders.hasNext()) throw new Error('No photo folder');
   var folder = folders.next(), fileName = 'prompt-eval-' + variant + '.json', start = Number(props.getProperty('PROMPT_EVAL_CURSOR')) || 0;
   var file = promptEvalFile_(folder, fileName), cases, out;
@@ -320,7 +322,7 @@ function promptEvalRun_(props) {
     if (out.rows.length < start) throw new Error('Cannot resume: ' + fileName + ' has ' + out.rows.length + ' rows, cursor says ' + start + '. Nothing was sent.');
     start = out.rows.length; // a run stopped between saving and moving the cursor: the saved rows are the truth
   }
-  var began = Date.now(), prompts = { a: promptVariant_('current'), b: promptVariant_(variant) };
+  var began = Date.now();
   var headersFor = function (betas) { var h = { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' }; if (betas.length) h['anthropic-beta'] = betas.join(','); return h; };
   var save = function () {
     // Scored only where both prompts returned a reading: an outage on one side must not count as a misread.

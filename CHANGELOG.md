@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.13.40-draft — the sevens guidance is live
+
+Prompt test (2026-11-04, 60 saved tag photos, current model): the "sevens" guidance read 12 of 49 hand-corrected
+tickets right (current prompt: 10) and 46 of 49 "x of N" (44), with the 11 controls unchanged. Approved by Jared
+(2026-11-06): it replaces the one-line 7-vs-2 rule in SYSTEM_PROMPT. promptVariant_ now has no variants until the
+next test. The cached prompt changes once, so the first scan after deploy writes a new cache entry.
+
 ## 0.13.39-draft — lost-digit tickets fixed on every tag
 
 Kirsten (11/5): two tags of one New Lenox order lost a digit; the first was written as its likely ticket, the second

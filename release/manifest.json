@@ -114,7 +114,7 @@
     "tests/repeat-customer.test.cjs": 11,
     "tests/one-ticket-mismatch.test.cjs": 7,
     "tests/quiet-ticket-notes.test.cjs": 6,
-    "tests/prompt-eval.test.cjs": 10,
+    "tests/prompt-eval.test.cjs": 11,
     "tests/likely-ticket.test.cjs": 6,
     "tests/order-ticket-count.test.cjs": 8
   },
