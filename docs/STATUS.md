@@ -3,17 +3,28 @@
 Living notes so any session (Claude Code or Codex) can pick up where the last one stopped. Update this
 file whenever the state below changes. No customer data, emails, Google IDs or secrets here.
 
-_Last updated: 2026-11-04 (version 22 health/release notes verified; prompt test finished 60/60 with zero errors; temporary-property cleanup verified)._
+_Last updated: 2026-11-07 (version 23 / 0.13.41 deployed and verified; Jared confirmed the Opus trial started the prior night, Chicago time)._
 
 ## Where things stand
 | | |
 |---|---|
-| Live in Google | Immutable version 22 / **0.13.38-draft**, source `4c703382ae38c786bfa1f56f6095702a400a894f`. Submitted 2026-11-03 18:39:50.432 UTC / 12:39:50.432 America/Chicago; Google success observed 18:40:09.445 UTC. Twelve-file pre-check and post-reload comparison passed, with only the known unchanged manifest missing final LF; exactly five clipboard pastes and visible Saves. Same endpoint/identity/access. On 2026-11-04, read-only public endpoint requests verified health 0.13.38-draft and served notes in order 0.13.38 Nov 3, 0.13.37, 0.13.36, 0.13.35, 0.13.34. Actual-phone rendering remains unverified. One editor `runPromptEval` completed at 12:35:52 America/Chicago: **60/60 cases, zero errors**. APPROVED, CURSOR, CASES and RUNNING temporary prompt properties all absent, confirmed through names only at 18:37:14.674 UTC. No manual property edits, result-file access, redeployment, sharing/scopes/access/triggers/rows/migration/month actions. |
-| Ready to deploy | Issue #51 deployment and approved one-time prompt evaluation are complete. Deployment record PR #57 remains draft and unmerged for Claude review. No additional deployment or prompt run is needed. |
+| Live in Google | Immutable version 23 / **0.13.41-draft**, source `a8e817aad2b7582cf6c3614a1c5e739919888c9c`, per issue #60. Deployed November 6, 2026, **9:56 PM America/Chicago** (`2026-11-07T03:56:04.010Z`). All twelve saved files matched version 22 before changes; exactly four clipboard pastes and visible Saves, followed by a reload and all-twelve comparison against the new source. Only the known unchanged manifest missing final LF was excepted. Same endpoint/identity/access. Health and browser What's new verified 0.13.41, 0.13.40, 0.13.39, 0.13.38 in that order by `2026-11-07T03:57:03Z`. **Sevens guidance is live**, together with the lost-digit ticket and inches/date/ticket-note fixes. Actual-phone rendering remains unverified. |
+| Deployment record | Issue #60 deployment is complete. This metadata-only record needs independent review and merge; no further deployment or prompt test is requested. The production source remains `a8e817a`. |
 | Who deploys | Codex, per [DEPLOYMENT.md](DEPLOYMENT.md) and the release gate, recorded as a `deployment` issue |
 | Lesson (2026-10-22) | Google ran Codex's unmerged PR line for a week while the default branch moved on separately. Rule now: deploy only from the default branch; the release gate fails a candidate that lacks the deployed source's history |
 | Workbook in use | "October 2026" in the shared monthly folder; tabs named by store ("Downers Grove", …); a "Tag x of N" column after Name in both blocks |
 | Testing phase | Kirsten scans and checks every row; Paul isn't ready to scan alone. Jared watches unplaced scans during testing |
+
+## Opus trial (night of 2026-11-06, Chicago time)
+
+After version 23 was confirmed, Jared manually saved **`MODEL` = `claude-opus-5-5`**, starting the trial.
+He confirmed on November 7 that he saved it the prior night. **The exact save time was not recorded
+or independently verified.** The screenshot showed the intended value entered; saving is confirmed
+by Jared's report, not by a scan or a post-save property read.
+
+Codex did not read or change secret values or change any Script Property. No test scan or prompt
+evaluation was run. No other properties, sharing, scopes, access, triggers, rows, migrations or month
+settings were changed. Delete `MODEL` only if Jared requests ending the trial; no redeploy is needed.
 
 ## One-time prompt evaluation (2026-11-04)
 
