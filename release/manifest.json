@@ -117,6 +117,7 @@
     "tests/prompt-eval.test.cjs": 11,
     "tests/likely-ticket.test.cjs": 6,
     "tests/nov6-fixes.test.cjs": 3,
+    "tests/placement.test.cjs": 6,
     "tests/order-ticket-count.test.cjs": 8
   },
   "allowWorkflowDefinitions": true

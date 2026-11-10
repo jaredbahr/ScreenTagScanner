@@ -1,5 +1,18 @@
 # Changelog
 
+## 0.13.42-draft — new rows at the bottom; surname particles
+
+Kirsten (2026-11-10): tags landed in old empty rows among October's rows (an expired group hold, a cleared row), so
+she missed one and typed it again; and an order with a "Van der …" surname split because later tags read only its last word.
+- Placement: a new screens row goes to the first empty row below the last filled row (`lastFilledScreenRow_`).
+  Empty rows higher up are used only when the bottom of the tab is full, with a note. Held rows for a group are
+  unchanged (a group's later tags still fill the rows held right after its first tag).
+- `namesClose_`: a surname with one particle or a fixed compound (van, van der, van den, von, de, de la, del, della,
+  der, di, du, la, le, mc, mac, st) matches its last word when that word has 5+ letters; particles never chain.
+- Review of #63: expired group holds are released wherever they are on each scan (the row search no longer reaches
+  old ones higher up); a multi-frame build's rows stay together; window rows also go below the last filled window
+  row. Live check: on every tab the last filled row is the last job (the totals rows sit outside the block).
+
 ## 0.13.41-draft — inches past an unrelated correction, misread months, clearer ticket notes
 
 Kirsten (2026-11-06), approved by Jared the same day:

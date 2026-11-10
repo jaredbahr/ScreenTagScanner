@@ -94,11 +94,12 @@ test('a group already on the tab (scanned before holds existed) gets no new hold
   assert.equal(nameAt(sh, c, 3), 'Synthpre'); assert.ok(!held(t, sh, 4));
 });
 
-test('only rows right after the first tag are held, never past a filled row', () => {
+test('a new tag goes below the last filled row (never into empty rows above), and only the rows right after it are held', () => {
   const t = load(), { sh, c } = modern(t);
   sh.set(4, c.NAME, 'Existing'); sh.set(4, c.DATE_IN, 46300);
   t.scan(job('Synthgap', '7777901', 1, 4));
-  assert.ok(held(t, sh, 3)); assert.ok(!held(t, sh, 5), 'stops at the filled row');
+  assert.equal(nameAt(sh, c, 2), '', 'empty rows above stay empty (2026-11-10)'); assert.equal(nameAt(sh, c, 5), 'Synthgap');
+  assert.ok(held(t, sh, 6)); assert.ok(held(t, sh, 8)); assert.ok(!held(t, sh, 9), 'only N - 1 rows');
 });
 
 test('hold data is hidden: the note is plain text, the data sits in row metadata, deleting the note frees the row', () => {
