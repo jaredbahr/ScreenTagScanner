@@ -483,7 +483,6 @@ function screenBlockEnd_(sh) {
   return end;
 }
 
-/** First row at or after `from` in the screens block that is blank and not held for a group. */
 /** The last screens row (2..endRow) with anything typed in it; 1 when the block is empty. */
 function lastFilledScreenRow_(sh, endRow, layout) {
   var c = (layout || storeLayout_(sh)).screens;
@@ -494,6 +493,7 @@ function lastFilledScreenRow_(sh, endRow, layout) {
   }
   return 1;
 }
+/** First row at or after `from` in the screens block that is blank and not held for a group. */
 function firstEmptyScreenRowFrom_(sh, from, endRow, layout) {
   if (from > endRow) return -1;
   var c = (layout || storeLayout_(sh)).screens;
@@ -574,13 +574,15 @@ function ticketsNear6_(a, b) {
 }
 
 /** Names that differ by a misread letter or two ("Synthm"/"Synthim", "Bynth"/"Rynth"). */
+// One particle or a fixed compound, never chained (review: "Leo Smith" is not le + o + Smith).
+var SURNAME_PARTICLES = ['van', 'vander', 'vanden', 'vande', 'von', 'de', 'dela', 'delos', 'del', 'della', 'der', 'di', 'du', 'la', 'le', 'mc', 'mac', 'st'];
 function namesClose_(a, b) {
   a = String(a || '').toLowerCase().replace(/[^a-z]/g, ''); b = String(b || '').toLowerCase().replace(/[^a-z]/g, '');
   if (!a || !b) return false;
   if (a === b) return true;
   // A surname with a particle read as its last word ("Van der Synthwal" read as "Synthwal", Kirsten 2026-11-10).
   var short = a.length < b.length ? a : b, long = a.length < b.length ? b : a;
-  if (short.length >= 5 && long.slice(-short.length) === short && /^(van|vander|vanden|vande|von|de|del|della|der|di|du|la|le|mc|mac|o|st|san|santa)+$/.test(long.slice(0, -short.length))) return true;
+  if (short.length >= 5 && long.slice(-short.length) === short && SURNAME_PARTICLES.indexOf(long.slice(0, -short.length)) >= 0) return true;
   return Math.min(a.length, b.length) >= 4 && editDistance_(a, b) <= 2;
 }
 /** Same ticket, sequential tickets within 50, or one misread digit ("8160684"/"8160084"). */
@@ -856,6 +858,19 @@ function rowBlank_(sh, row, c) {
   var v = sh.getRange(row, c.DATE_IN, 1, c.EARNING - c.DATE_IN + 1).getValues()[0];
   return cols.every(function (col) { return v[col - c.DATE_IN] === ''; });
 }
+/**
+ * Expired group holds are released wherever they are (review of #63: new rows now go below the last filled row, so
+ * the row search no longer reaches an old hold higher up, which would stay grey forever).
+ */
+function releaseExpiredHolds_(sh, c, endRow) {
+  var notes = sh.getRange(2, COUNTER_COL, endRow - 1, 1).getNotes(), today = scanDateSerial_(), meta = null;
+  for (var i = 0; i < notes.length; i++) {
+    if (!notes[i][0]) continue;
+    meta = meta || groupHoldMeta_(sh);
+    var h = holdAt_(notes[i][0], meta, i + 2);
+    if (h && !h.unknown && today - h.day > GROUP_HOLD_DAYS) releaseGroupHold_(sh, i + 2, c, meta, !rowBlank_(sh, i + 2, c));
+  }
+}
 /** A held row for this tag's group, released for its use; -1 if none. Stale holds (row typed in) are dropped. */
 function takeGroupHold_(sh, c, key, endRow, flags) {
   var notes = sh.getRange(2, COUNTER_COL, endRow - 1, 1).getNotes(), today = scanDateSerial_(), meta = null, found = [], holds = [];
@@ -1088,7 +1103,11 @@ function firstEmptyWindowRow_(sh, layout) {
   var c = (layout || storeLayout_(sh)).windows;
   var cols = [c.DATE_IN, c.NAME, c.SEQUENCE, c.DATE_OUT, c.TICKET, c.GLASS, c.LB_EARN, c.SPL_EARN, c.OTHER, c.OTHER_EARN].filter(Boolean);
   var vals = sh.getRange(2, c.DATE_IN, WINDOW_LAST_ROW - 1, c.OTHER_EARN - c.DATE_IN + 1).getValues();
-  for (var i = 0; i < vals.length; i++) if (cols.every(function (col) { return vals[i][col - c.DATE_IN] === ''; })) return i + 2;
+  var blank = function (i) { return cols.every(function (col) { return vals[i][col - c.DATE_IN] === ''; }); };
+  // Below the last filled window row, like screens (2026-11-10); an empty row higher up only when the bottom is full.
+  var last = -1; for (var j = vals.length - 1; j >= 0; j--) if (!blank(j)) { last = j; break; }
+  for (var i = last + 1; i < vals.length; i++) if (blank(i)) return i + 2;
+  for (var k = 0; k < vals.length; k++) if (blank(k)) return k + 2;
   return -1;
 }
 
@@ -1391,8 +1410,10 @@ function writeToStoreTab_(ss, x, reasons) {
   // New rows go below the last filled row (Kirsten, 2026-11-10: tags landed in old empty rows among October's, where
   // she didn't see them). Empty rows higher up (an expired group hold, a cleared row) are used only when the bottom of
   // the tab is full.
-  var firstFree = lastFilledScreenRow_(sh, end, layout) + 1, placedAbove = false;
+  releaseExpiredHolds_(sh, c, end);
+  var firstFree = lastFilledScreenRow_(sh, end, layout) + 1, placedAbove = false, keep = rows.length;
   for (var pass = 0; pass < 2 && rows.length < count; pass++) {
+    if (pass) rows = rows.slice(0, keep); // a build's frames stay together: all from the top, not split (review)
     for (var r = pass ? 2 : firstFree; rows.length < count; r++) {
       var next = firstEmptyScreenRowFrom_(sh, r, end, layout);
       if (next < 0) break;

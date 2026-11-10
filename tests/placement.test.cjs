@@ -49,4 +49,31 @@ test('a surname with a particle matches its last word ("Van der Synthwal" / "Syn
     assert.equal(c.namesClose_(a, b), false, a + ' / ' + b);
 });
 
+test('review of #63: an expired hold higher up is released; a build\'s frames stay together; windows go to the bottom', () => {
+  const t = load({ now: new Date('2026-10-01T17:00:00Z') }), { sh, c } = modern(t);
+  t.scan(job('Synthold', '7777901', 1, 3, '6305550401')); // holds rows 3-4
+  t.scan(job('Synthnext', '7777940', 1, 1, '6305550402')); // row 5
+  t.setNow(new Date('2026-10-25T17:00:00Z'));
+  t.scan(job('Synthlater', '7777950', 1, 1, '6305550403'));
+  assert.deepEqual(rowOf(sh, c, 'Synthlater'), [6]);
+  assert.equal(t.ctx.holdAt_(sh.notes.get('3,1') || '', t.ctx.groupHoldMeta_(sh), 3), null, 'the expired hold at row 3 is released');
+  const u = load(), m = modern(u), end = u.ctx.screenBlockEnd_(m.sh);
+  m.sh.set(end - 1, m.c.NAME, 'Near the end'); m.sh.set(end - 1, m.c.DATE_IN, 46300);
+  u.scan(job('Synthbuild', '7777960', 1, 1, '6305550404', { form_type: 'new_build', screens_on_tag: 3 }));
+  const got = rowOf(m.sh, m.c, 'Synthbuild');
+  assert.equal(got.length, 3); assert.ok(got.every(r => r < end - 1), 'all three frames together higher up, not split across the end: ' + got);
+  const w = load(), sh2 = w.ss.tabs['Homer Glen'], wc = w.ctx.storeLayout_(sh2).windows;
+  for (const k of [1, 2, 3]) w.scan({ item_type: 'window', panes: 1, width_in: null, height_in: null, billable_inches: null, ticket_number: '833990' + k, last_name: 'Synthwin' + k });
+  for (const col of [wc.DATE_IN, wc.NAME, wc.DATE_OUT, wc.TICKET, wc.GLASS, wc.LB_EARN]) if (col) sh2.set(3, col, '');
+  w.scan({ item_type: 'window', panes: 1, width_in: null, height_in: null, billable_inches: null, ticket_number: '8339909', last_name: 'Synthwinlast' });
+  assert.equal(sh2.get(3, wc.NAME), '', 'the cleared window row stays empty'); assert.equal(sh2.get(5, wc.NAME), 'Synthwinlast');
+});
+
+test('review of #63: particles never chain and a first name is not a particle', () => {
+  const c = load().ctx;
+  for (const [a, b] of [['Leo Synthwal', 'Synthwal'], ['Ole Synthwal', 'Synthwal'], ['Dedede Synthwal', 'Synthwal'], ['San Synthwal', 'Synthwal']])
+    assert.equal(c.namesClose_(a, b), false, a + ' / ' + b);
+  assert.equal(c.namesClose_('Van den Synthwal', 'Synthwal'), true);
+});
+
 console.log(`${passed} placement tests passed`);
