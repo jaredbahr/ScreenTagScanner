@@ -3,13 +3,13 @@
 Living notes so any session (Claude Code or Codex) can pick up where the last one stopped. Update this
 file whenever the state below changes. No customer data, emails, Google IDs or secrets here.
 
-_Last updated: 2026-11-07 (version 23 / 0.13.41 deployed and verified; Jared confirmed the Opus trial started the prior night, Chicago time)._
+_Last updated: 2026-11-11 (version 24 / 0.13.42 deployed and verified; the existing Opus trial is unchanged)._
 
 ## Where things stand
 | | |
 |---|---|
-| Live in Google | Immutable version 23 / **0.13.41-draft**, source `a8e817aad2b7582cf6c3614a1c5e739919888c9c`, per issue #60. Deployed November 6, 2026, **9:56 PM America/Chicago** (`2026-11-07T03:56:04.010Z`). All twelve saved files matched version 22 before changes; exactly four clipboard pastes and visible Saves, followed by a reload and all-twelve comparison against the new source. Only the known unchanged manifest missing final LF was excepted. Same endpoint/identity/access. Health and browser What's new verified 0.13.41, 0.13.40, 0.13.39, 0.13.38 in that order by `2026-11-07T03:57:03Z`. **Sevens guidance is live**, together with the lost-digit ticket and inches/date/ticket-note fixes. Actual-phone rendering remains unverified. |
-| Deployment record | Issue #60 deployment is complete. This metadata-only record needs independent review and merge; no further deployment or prompt test is requested. The production source remains `a8e817a`. |
+| Live in Google | Immutable version 24 / **0.13.42-draft**, source `266ae84ec2f06fad1f05b866ef774679bb539cc6`, per issue #64. Deployed November 11, 2026, **7:25 PM America/Chicago** (`2026-11-12T01:25:22.076Z`). Jared explicitly confirmed Kirsten had finished scanning. All twelve saved files matched version 23 before changes; exactly three clipboard pastes and visible Saves (`Extraction.gs`, `Upload.html`, `Workbook.gs`), followed by a reload and all-twelve comparison against the pin. Only the known unchanged manifest missing final LF was excepted. Source was staged November 10, Chicago time; deployment waited for explicit confirmation. Both release gates and the all-twelve readback were repeated November 11 before deployment. Same endpoint/identity/access. Health and browser What's new verified 0.13.42, then 0.13.41 by `2026-11-12T01:26:37.168Z`. New screen/window rows go below the last filled row, expired group holds are released, multi-frame rows stay together, and surname particles match. Actual-phone rendering remains unverified. |
+| Deployment record | Issue #64 deployment is complete. This metadata-only version-24 record needs independent review and merge by Claude; no further deployment or prompt test is requested. The production source remains `266ae84`. |
 | Who deploys | Codex, per [DEPLOYMENT.md](DEPLOYMENT.md) and the release gate, recorded as a `deployment` issue |
 | Lesson (2026-10-22) | Google ran Codex's unmerged PR line for a week while the default branch moved on separately. Rule now: deploy only from the default branch; the release gate fails a candidate that lacks the deployed source's history |
 | Workbook in use | "October 2026" in the shared monthly folder; tabs named by store ("Downers Grove", …); a "Tag x of N" column after Name in both blocks |
