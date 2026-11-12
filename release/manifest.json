@@ -4,12 +4,12 @@
   "reconciliationBranch": "main",
   "requiredUpstreamCommit": "5ebceb692142a7968f628b4cf841e0179e27b8cf",
   "lastVerifiedDeployment": {
-    "sourceCommit": "a8e817aad2b7582cf6c3614a1c5e739919888c9c",
-    "version": "0.13.41-draft",
-    "appsScriptVersion": 23,
-    "deployedAtUtc": "2026-11-07T03:56:04.010Z",
-    "verifiedAtUtc": "2026-11-07T03:57:03Z",
-    "evidence": "Issue #60. Jared confirmed scanning was finished before deployment. Clean source a8e817aad2b7582cf6c3614a1c5e739919888c9c passed release:validate (600 tests across 41 suites), release:check -- --fetch and hosted CI. Main still equaled the pin immediately before deployment. All twelve saved Google files matched version 22 / 4c703382ae38c786bfa1f56f6095702a400a894f before changes, except the known manifest missing final LF. Exactly four files were explicitly clipboard-pasted and visibly saved: Code.gs, Extraction.gs, Upload.html and Workbook.gs. After reload, all twelve saved files matched a8e817a; appsscript.json remained unchanged at 488 bytes with the same missing final LF (canonical repository file 489 bytes). Existing deployment was updated once; Google confirmed immutable version 23 at 9:56 PM America/Chicago on November 6, 2026. Same URL, execution identity and access. Live health returned \"Screen tag scanner is running. Version 0.13.41-draft\" and the browser showed What's new starting 0.13.41 Nov 6, 0.13.40 Nov 6, 0.13.39 Nov 6, 0.13.38 Nov 3. Verification was complete by evidence capture at 2026-11-07T03:57:03Z; actual-phone rendering was not tested. Sevens guidance is live. After deployment, Jared manually saved MODEL = claude-opus-5-5, starting the Opus trial on the night of November 6, 2026, America/Chicago, per his confirmation on November 7. The exact property-save time was not recorded or independently verified; the screenshot showed the entered value before confirmed saving. Codex did not read or change secret values or change any Script Property. No test scan or prompt evaluation was run for this release/trial. No new Google permission prompt, other properties, sharing, scopes, access, triggers, rows, reformatting, migrations or month actions."
+    "sourceCommit": "266ae84ec2f06fad1f05b866ef774679bb539cc6",
+    "version": "0.13.42-draft",
+    "appsScriptVersion": 24,
+    "deployedAtUtc": "2026-11-12T01:25:22.076Z",
+    "verifiedAtUtc": "2026-11-12T01:26:37.168Z",
+    "evidence": "Issue #64. Jared explicitly confirmed Kirsten had finished scanning before deployment. Clean source 266ae84ec2f06fad1f05b866ef774679bb539cc6 passed release:validate (606 tests across 42 suites), release:check -- --fetch and hosted offline-tests CI. Main still equaled the pin. Before changes, all twelve saved Google files matched version 23 / a8e817aad2b7582cf6c3614a1c5e739919888c9c, except the known manifest missing final LF. Exactly three files were explicitly clipboard-pasted and visibly saved: Extraction.gs, Upload.html and Workbook.gs. After reload, all twelve saved files matched 266ae84; appsscript.json remained unchanged at 488 bytes with the same missing final LF (canonical repository file 489 bytes). Source was staged on November 10, Chicago time; deployment paused for explicit scanning-complete confirmation. On November 11, all twelve saved files were compared again and both release gates passed again before submission. The existing deployment was updated once; Google confirmed immutable version 24 on November 11, 2026 at 7:25 PM America/Chicago. Same URL, execution identity and access. Live health returned \"Screen tag scanner is running. Version 0.13.42-draft\". Browser What's new started \"0.13.42 \u00b7 Nov 10\", then \"0.13.41 \u00b7 Nov 6\". Verification was complete at 2026-11-12T01:26:37.168Z; actual-phone rendering was not tested. No new Google permission prompt. No Script Properties (including MODEL), sharing, scopes, access, triggers, rows, formatting, migrations or month settings were changed. No scan or prompt evaluation was run."
   },
   "requiredProductionFiles": [
     "apps-script/Backup.gs",
@@ -29,14 +29,14 @@
     "apps-script/Backup.gs": "ebb93e40165fdea0e509e40e8ca9e84edd7e85bf",
     "apps-script/Code.gs": "e5a9a6706794316f50023df926e6cbe82f4e9170",
     "apps-script/ExtraLabor.gs": "c486f353d9f637f0e74b69da12f40d4c2334015a",
-    "apps-script/Extraction.gs": "720372d52232020c64227e7957b488ce21edfee9",
+    "apps-script/Extraction.gs": "58a1b5f68abab893e38b1860d9174dd98373e2c8",
     "apps-script/Layout.gs": "14ab233a8d237a569113e85c0a3ac9b2554173b4",
     "apps-script/Month.gs": "313dbc09c372695495aaa36dadda07599ccff55b",
     "apps-script/MonthArchive.gs": "eb3a398ff452cb7c4ef208fc97582cddf2509e16",
     "apps-script/Parts.gs": "8e0cf7d8e1ab0db4b27716b9b9840d804efc33f6",
     "apps-script/Routing.gs": "4fc5febe9ff2e09a48fca96833b82f844ea7b32f",
-    "apps-script/Upload.html": "bb8b4a35cecc965931d5193219dd1c0743203b15",
-    "apps-script/Workbook.gs": "e2ca3952d3dbb9cc250f8e3c653cb79acbb9d6ac",
+    "apps-script/Upload.html": "24862c48637f6e9e75f8b5ea5fca75d4cc0b8b72",
+    "apps-script/Workbook.gs": "fe9955fbf5473f93ec55c8e66ed5e3daf9c34fa9",
     "apps-script/appsscript.json": "af507c4c66583975efc63b989fea75ceb033c1f8"
   },
   "allowedPublicFunctions": [
