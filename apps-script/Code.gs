@@ -177,7 +177,7 @@ function admitScan_(props, admitted) {
     // holds this lock while it writes, so wait longer and say plainly that the earlier scan is still saving.
     try { lock.waitLock(ADMIT_LOCK_WAIT_MS); acquired = true; }
     catch (busy) {
-      scannerDiagnostic_('admission-busy');
+      scannerDiagnostic_('admission-busy-' + String(busy && busy.name || 'Error').replace(/\W/g, '').substring(0, 20));
       return 'The last scan is still saving. Wait a few seconds, then scan again. No photo was sent.';
     }
     if (props.getProperty('ROLLOVER_PENDING')) return 'New-month setup is pending. No photo was sent. Open Settings to recover, or contact Jared.';
@@ -222,8 +222,10 @@ function admitScan_(props, admitted) {
     }
     return '';
   } catch (err) {
-    // The reason goes to the private Executions log so the next one can be diagnosed (no customer data in these errors).
-    console.error('Scanner event: admission-failed; ' + String(err && err.message || err).substring(0, 120));
+    // The reason goes to the private Executions log so the next one can be diagnosed. Only this code's fixed messages are
+    // logged as text; anything else (a JSON.parse error can echo stored property text) logs its error name only.
+    var m = String(err && err.message || '');
+    console.error('Scanner event: admission-failed; ' + (/^(Invalid limit( state)?|Workbook missing|Scan admission[\w .]*)$/.test(m) ? m : String(err && err.name || 'Error').substring(0, 40)));
     return 'Scan limits could not be checked. No photo was sent. Contact Jared.';
   } finally {
     if (acquired) lock.releaseLock();
