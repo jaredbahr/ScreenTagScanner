@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.13.43-draft — window rows stay above the window totals
+
+Kirsten (2026-11-14): a Joliet window tag was saved to row 102, below the windows block. Live tabs end the windows
+block at row 100 (the windows row counter), and Joliet keeps a totals formula in row 101. 0.13.42 searched the fixed
+range up to `WINDOW_LAST_ROW` (250), took that totals row for the last filled window row and wrote below it.
+- `windowBlockEnd_`: the last positive row counter in the column just left of the windows Date in, like
+  `screenBlockEnd_`; `WINDOW_LAST_ROW` when a tab has no counter there. `firstEmptyWindowRow_` searches only that
+  block, so the totals row is never the last row or a free row, and a full block reports full.
+- Only this write path changes; the read-only lookups that scan to `WINDOW_LAST_ROW` are unchanged. One scan was
+  affected since the 0.13.42 deploy (Kirsten moved it by hand).
+
 ## 0.13.42-draft — new rows at the bottom; surname particles
 
 Kirsten (2026-11-10): tags landed in old empty rows among October's rows (an expired group hold, a cleared row), so
