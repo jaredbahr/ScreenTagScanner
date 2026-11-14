@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.13.44-draft — a rescan during a slow save says so
+
+Kirsten (2026-11-14): a tag that did not save was scanned again and got "Scan limits could not be checked. No photo
+was sent. Contact Jared." No row was logged for either attempt, and `admitScan_` swallowed its error without logging it.
+Admission waited only 5 s for the script lock that every save holds while it writes, so a rescan during a slow save failed.
+- `admitScan_` waits up to `ADMIT_LOCK_WAIT_MS` (15 s) for the lock. When the lock is still busy, it says "The last scan
+  is still saving. Wait a few seconds, then scan again. No photo was sent." No quota or lease is used.
+- Any other admission failure keeps the owner message and logs `admission-failed` with its reason to the private
+  Executions log, so the next one can be diagnosed.
+
 ## 0.13.43-draft — window rows stay above the window totals
 
 Kirsten (2026-11-14): a Joliet window tag was saved to row 102, below the windows block. Live tabs end the windows

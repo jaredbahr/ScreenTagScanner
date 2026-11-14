@@ -455,7 +455,7 @@ test('invalid limit settings/state fail closed without spend', () => {
 });
 test('lock contention fails closed; reservation releases before workbook lock', () => {
   const t=load();t.setOutput({});t.setLocked(true);
-  assert.match(t.ctx.scanTag(request()).message,/could not be checked/);assert.equal(t.fetches(),0);
+  assert.match(t.ctx.scanTag(request()).message,/^The last scan is still saving.*No photo was sent\./);assert.equal(t.fetches(),0);
   t.setLocked(false);assert.equal(t.ctx.scanTag(request()).status,'ok');
   // Shared state survives subsequent requests rather than an in-memory per-execution counter.
   const state=JSON.parse(t.props.SCAN_LIMIT_STATE);assert.equal(state.daily,1);assert.equal(state.recent.length,1);
@@ -484,7 +484,7 @@ test('overlapping reservation cannot read/write state outside the shared lock', 
     return t.props[k]??null;
   },setProperty:(k,v)=>{t.props[k]=v;}});
   t.setOutput({});assert.equal(t.ctx.scanTag(request()).status,'ok');
-  assert.match(contender.message,/could not be checked/);assert.equal(t.fetches(),1);assert.equal(JSON.parse(t.props.SCAN_LIMIT_STATE).daily,1);
+  assert.match(contender.message,/^The last scan is still saving.*No photo was sent\./);assert.equal(t.fetches(),1);assert.equal(JSON.parse(t.props.SCAN_LIMIT_STATE).daily,1);
   t.ctx.PropertiesService.getScriptProperties=original;
 });
 test('authentication signal is positive only after actual token validation', () => {
