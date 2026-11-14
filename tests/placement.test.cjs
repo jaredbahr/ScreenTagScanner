@@ -76,4 +76,18 @@ test('review of #63: particles never chain and a first name is not a particle', 
   assert.equal(c.namesClose_('Van den Synthwal', 'Synthwal'), true);
 });
 
+test('Kirsten, 2026-11-14: a totals row just below the windows block is not the last window row', () => {
+  const w = load(), sh = w.ss.tabs['Homer Glen'], l = w.ctx.storeLayout_(sh), wc = l.windows, cc = wc.DATE_IN - 1;
+  for (let r = 101; r <= 250; r++) sh.set(r, cc, '');            // live tabs: the windows counter ends at row 100
+  sh.set(101, wc.LB_EARN, '=SUM(V2:V100)');                      // as Joliet keeps its window totals in row 101
+  assert.equal(w.ctx.windowBlockEnd_(sh, l), 100);
+  w.scan({ item_type: 'window', panes: 1, width_in: null, height_in: null, billable_inches: null, ticket_number: '8339921', last_name: 'Synthwintot' });
+  assert.equal(sh.get(2, wc.NAME), 'Synthwintot', 'inside the block, not row 102'); assert.equal(sh.get(102, wc.NAME), '');
+  for (let r = 3; r <= 100; r++) sh.set(r, wc.NAME, 'Full' + r);   // a full block reports full, never spills below the totals
+  assert.equal(w.ctx.firstEmptyWindowRow_(sh, l), -1);
+  const u = load(), sh2 = u.ss.tabs['Homer Glen'], l2 = u.ctx.storeLayout_(sh2);
+  for (let r = 2; r <= 250; r++) sh2.set(r, l2.windows.DATE_IN - 1, '');  // no counter at all: the old fixed limit
+  assert.equal(u.ctx.windowBlockEnd_(sh2, l2), 250);
+});
+
 console.log(`${passed} placement tests passed`);

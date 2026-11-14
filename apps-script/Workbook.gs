@@ -1098,11 +1098,25 @@ function ticketInStoreTab_(sh, ticket, layout) {
   return screens.concat(windows).some(function (r) { return String(r[0]).trim() === t; });
 }
 
+/**
+ * Last row of the windows block: the last positive row counter in the column just left of the windows Date in, like
+ * screenBlockEnd_. Live tabs end the windows block at row 100 and Joliet keeps a totals formula in row 101, which 0.13.42
+ * took for the last window row (Kirsten, 2026-11-14: a window tag saved to row 102). WINDOW_LAST_ROW when no counter.
+ */
+function windowBlockEnd_(sh, layout) {
+  var l = layout || storeLayout_(sh), col = l.windows.DATE_IN - 1;
+  if (col <= l.screens.EARNING) return WINDOW_LAST_ROW;
+  var vals = sh.getRange(2, col, WINDOW_LAST_ROW - 1, 1).getValues(), end = 1;
+  for (var i = 0; i < vals.length; i++) if (typeof vals[i][0] === 'number' && vals[i][0] > 0) end = i + 2;
+  return end > 1 ? end : WINDOW_LAST_ROW;
+}
+
 /** First row in the windows block whose Date in, Name and Ticket # are all blank. */
 function firstEmptyWindowRow_(sh, layout) {
-  var c = (layout || storeLayout_(sh)).windows;
+  layout = layout || storeLayout_(sh);
+  var c = layout.windows, end = windowBlockEnd_(sh, layout);
   var cols = [c.DATE_IN, c.NAME, c.SEQUENCE, c.DATE_OUT, c.TICKET, c.GLASS, c.LB_EARN, c.SPL_EARN, c.OTHER, c.OTHER_EARN].filter(Boolean);
-  var vals = sh.getRange(2, c.DATE_IN, WINDOW_LAST_ROW - 1, c.OTHER_EARN - c.DATE_IN + 1).getValues();
+  var vals = sh.getRange(2, c.DATE_IN, end - 1, c.OTHER_EARN - c.DATE_IN + 1).getValues();
   var blank = function (i) { return cols.every(function (col) { return vals[i][col - c.DATE_IN] === ''; }); };
   // Below the last filled window row, like screens (2026-11-10); an empty row higher up only when the bottom is full.
   var last = -1; for (var j = vals.length - 1; j >= 0; j--) if (!blank(j)) { last = j; break; }
