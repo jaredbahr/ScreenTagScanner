@@ -122,7 +122,9 @@ function processAuthenticatedScan_(req, props) {
   var scanId = Utilities.getUuid().substring(0, 8);
 
   try {
+    var t0 = Date.now(), timing = function (stage) { scanTiming_(scanId, stage, t0); };
     var x = normalizeJobInput_(extractTag_(req.image, props));
+    timing('read');
     x._scan_ymd = admitted.scannedYmd;
     var reasons = reviewReasons_(x).concat(x.routing_review);
     var photoUrl = '';
@@ -131,7 +133,9 @@ function processAuthenticatedScan_(req, props) {
       try { photoUrl = savePhoto_(req.image, scanId, x); purgeOldPhotosDaily_(props); }
       catch (photoErr) { scannerDiagnostic_('photo-save-failed', scanId); }
     }
+    timing('photo');
     var placed = saveScan_(x, user, reasons, photoUrl, scanId, admitted.sheetId, admitted.leaseId);
+    timing('saved');
     var withToday = function (result) { if (typeof placed.today === 'number') result.today = placed.today; return result; };
 
     if (placed.rescan) {
@@ -178,7 +182,7 @@ function admitScan_(props, admitted) {
     try { lock.waitLock(ADMIT_LOCK_WAIT_MS); acquired = true; }
     catch (busy) {
       scannerDiagnostic_('admission-busy-' + String(busy && busy.name || 'Error').replace(/\W/g, '').substring(0, 20));
-      return 'The last scan is still saving. Wait a few seconds, then scan again. No photo was sent.';
+      return 'The last scan is still saving. Wait a minute and scan again; it clears by itself within 6 minutes. No photo was sent.';
     }
     if (props.getProperty('ROLLOVER_PENDING')) return 'New-month setup is pending. No photo was sent. Open Settings to recover, or contact Jared.';
     if (props.getProperty('TAG_SEQUENCE_MIGRATION_ACTIVE') || props.getProperty('TAG_SEQUENCE_SCAN_PAUSE') === 'true') {
@@ -463,7 +467,6 @@ function saveScan_(x, user, reasons, photoUrl, scanId, admittedId, leaseId) {
     x.routing_review.forEach(function (f) { if (reasons.indexOf(f) < 0) reasons.push(f); });
     x._store_group_extras = x.group_extras && !groupExtrasLogged_(log, x) ? x.group_extras : '';
     x._extra_labor_plan = prepareExtraLabor_(ss, x);
-    x._extra_labor_plan.flags.forEach(function (f) { if (reasons.indexOf(f) < 0) reasons.push(f); });
     var phonesByRow = null; // read once, only if a pins split needs it (review of #31: never pay another customer's frame)
     x._row_phone = function (storeName, row) {
       if (!phonesByRow) {
@@ -492,6 +495,19 @@ function saveScan_(x, user, reasons, photoUrl, scanId, admittedId, leaseId) {
       return logRows;
     };
     x._parts_plan = preparePartsEarnings_(ss, x);
+    // Settle the ticket before receipts (Kirsten, 2026-11-16: a 9 read as a 4 on a tag with corners kept the misread,
+    // because receipts were planned with the ticket as read). When the store write will fix the ticket, plan both
+    // receipts for that ticket; the reading itself stays in the Scans log and the cell note.
+    if (hasReceiptPlans_(x)) {
+      var planTicket = receiptTicket_(ss, x);
+      if (planTicket && planTicket !== String(x.ticket_number)) {
+        var planX = Object.assign({}, x, { ticket_number: planTicket });
+        x._extra_labor_plan = prepareExtraLabor_(ss, planX);
+        x._parts_plan = preparePartsEarnings_(ss, planX);
+        x._plans_ticket = planTicket;
+      }
+    }
+    x._extra_labor_plan.flags.forEach(function (f) { if (reasons.indexOf(f) < 0) reasons.push(f); });
     x._parts_plan.flags.forEach(function (f) { if (reasons.indexOf(f) < 0) reasons.push(f); });
     // Dates are written as serial day numbers (correct in any time zone), but a mismatched
     // spreadsheet time zone still shifts the Scans log timestamps; note it in the log only.
@@ -763,6 +779,11 @@ function installTriggers_() {
 function scannerDiagnostic_(event, scanId) {
   var id = /^[a-f0-9]{8}$/.test(String(scanId)) ? scanId : 'unavailable';
   console.error('Scanner event: ' + event + '; scanId=' + id);
+}
+/** Seconds since the photo arrived, per stage, to the private Executions log (Jared, 2026-11-17: find where a slow scan waits). */
+function scanTiming_(scanId, stage, t0) {
+  var id = /^[a-f0-9]{8}$/.test(String(scanId)) ? scanId : 'unavailable';
+  console.log('Scanner timing: scanId=' + id + '; ' + stage + '=' + ((Date.now() - t0) / 1000).toFixed(1) + 's');
 }
 function alert_(props, user, scanId, err, imageB64) { scannerDiagnostic_('scan-failed', scanId); }
 function notice_(props, user, scanId, problem, x) { scannerDiagnostic_('not-placed', scanId); }
