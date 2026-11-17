@@ -104,7 +104,7 @@ Window mapping is built from Kirsten's description and the first real October wi
    A tag without a year always gets the admitted scan's Chicago calendar year, including when month/day is later than the scan date. Never infer last year; retain the date and flag a later date for review.
    "Oct 8" style dates are read; a two-digit year for this year or last is accepted silently. A missing or unreadable
    date leaves Date in blank, flagged, unless the order's other rows agree on one date (Jared, 2026-11-17: same name and
-   ticket, or a group's close ticket within 14 days; screen tags). An earlier written year with a month/day within 45
+   ticket, or a group's close ticket with the same phone and N within 14 days; screen tags). An earlier written year with a month/day within 45
    days before the scan is written as this year (Jared, 2026-11-17, option A; Scans-log note). Written as serial day
    numbers, so the sheet's time zone can't shift them. See [DATE_RULES.md](DATE_RULES.md).
 14. **No formulas from tag text.** Every value written goes through `safeCell_`/`safeRow_`: text starting with

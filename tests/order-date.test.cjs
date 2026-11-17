@@ -9,6 +9,7 @@ const serial = s => { const [y, m, d] = s.split('-').map(Number); return Date.UT
 const tag = (x = {}) => ({ store: 'Homer Glen', last_name: 'Synthorder', customer_name: 'Synthorder', phone: '6305550301', ticket_number: '7777961',
   tag_index: 1, tag_count: 2, width_in: 22, height_in: 30, billable_inches: 52, date: '10/8', ...x });
 const at = d => new Date(d + 'T17:00:00Z');
+const modern = t => { const sh = t.ss.tabs['Homer Glen']; sh.insertColumnAfter(15); sh.set(1, 16, 'Tag x of N'); sh.insertColumnAfter(3); sh.set(1, 4, 'Tag x of N'); return sh; };
 const rowOf = (sh, name) => [...Array(40).keys()].map(k => k + 2).filter(r => String(sh.get(r, 3)).replace(' (?)', '') === name);
 
 test('a tag with no date takes the date of its order\'s other tag, with a note on Date in', () => {
@@ -36,8 +37,8 @@ test('no order date: a single tag, tags that disagree, or an old order of the sa
   const rep = rowOf(sh, 'Synthrepeat'); assert.equal(sh.get(rep[1], 2), '', 'same name, another ticket, filled over 14 days ago: not this order');
 });
 
-test('a group tag with a close ticket and the same name takes the order date (Homer-style consecutive tickets)', () => {
-  const t = load({ now: at('2026-10-12') }), sh = t.ss.tabs['Homer Glen'];
+test('a group tag with a close ticket, the same name, phone and N takes the order date (consecutive tickets)', () => {
+  const t = load({ now: at('2026-10-12') }), sh = modern(t);
   t.scan(tag({ ticket_number: '7777961', date: '10/6' }));
   t.scan(tag({ ticket_number: '7777962', tag_index: 2, date: null, width_in: 24, billable_inches: 54 }));
   const rows = rowOf(sh, 'Synthorder'); assert.equal(sh.get(rows[1], 2), serial('2026-10-06'));
@@ -57,6 +58,22 @@ test('review of #72: never another customer\'s date, by a similar name or by a s
   t.scan(tag({ last_name: 'Synthgamma', customer_name: 'Synthgamma', ticket_number: '7777301', phone: '6305551234', tag_count: 2, date: '10/3' }));
   t.scan(tag({ last_name: 'Synthgamma', customer_name: 'Synthgamma', ticket_number: '7777301', phone: '6305559876', tag_count: 2, tag_index: 2, date: null, width_in: 27, billable_inches: 57 }));
   assert.equal(sh.get(rowOf(sh, 'Synthgamma')[1], 2), '', 'the same name and ticket with a different phone');
+  // A close ticket: the same customer's previous single-tag order, and two similar names with no phones, are other orders.
+  // On a tab without "k of N", a close ticket never matches.
+  { const u = load({ now: at('2026-10-12') }), plain = u.ss.tabs['Homer Glen'];
+    u.scan(tag({ ticket_number: '7777961', phone: '6305551357', date: '10/6' }));
+    u.scan(tag({ ticket_number: '7777962', phone: '6305551357', tag_index: 2, date: null, width_in: 24, billable_inches: 54 }));
+    assert.equal(plain.get(rowOf(plain, 'Synthorder')[1], 2), '', 'no sequence column: same ticket only'); }
+});
+
+test('review of #72 (round 2): a close ticket is another order unless the phone and N match', () => {
+  const t = load({ now: at('2026-10-12') }), sh = modern(t);
+  t.scan(tag({ last_name: 'Synthrepeat', customer_name: 'Synthrepeat', ticket_number: '7777500', phone: '6305552468', tag_count: 1, date: '10/1' }));
+  t.scan(tag({ last_name: 'Synthrepeat', customer_name: 'Synthrepeat', ticket_number: '7777520', phone: '6305552468', tag_count: 2, date: null, width_in: 29, billable_inches: 59 }));
+  assert.equal(sh.get(rowOf(sh, 'Synthrepeat')[1], 2), '', 'the customer\'s previous order (another N)');
+  t.scan(tag({ last_name: 'Synthkarl', customer_name: 'Synthkarl', ticket_number: '7777600', phone: null, date: '10/5' }));
+  t.scan(tag({ last_name: 'Synthkarr', customer_name: 'Synthkarr', ticket_number: '7777630', phone: null, tag_index: 2, date: null, width_in: 31, billable_inches: 61 }));
+  assert.equal(sh.get(rowOf(sh, 'Synthkarr')[0], 2), '', 'similar names, close tickets, no phones');
 });
 
 test('Date objects from the sheet (as real Sheets returns them) are read, and a date after the scan is never taken', () => {

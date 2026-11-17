@@ -120,7 +120,7 @@
     "tests/placement.test.cjs": 7,
     "tests/admission-busy.test.cjs": 2,
     "tests/receipt-ticket.test.cjs": 6,
-    "tests/order-date.test.cjs": 6,
+    "tests/order-date.test.cjs": 7,
     "tests/order-ticket-count.test.cjs": 8
   },
   "allowWorkflowDefinitions": true

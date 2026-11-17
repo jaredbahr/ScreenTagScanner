@@ -1185,7 +1185,7 @@ function scanDateSerial_() {
 function orderDateIn_(sh, c, x, end, dateOut) {
   var name = sheetName_(x), ticket = String(x.ticket_number || '').trim();
   if (end < 2 || !name || !ticket) return null;
-  var width = Math.max(c.DATE_IN, c.NAME, c.TICKET, c.DATE_OUT), vals = sh.getRange(2, 1, end - 1, width).getValues();
+  var width = Math.max(c.DATE_IN, c.NAME, c.TICKET, c.DATE_OUT, c.SEQUENCE || 0), vals = sh.getRange(2, 1, end - 1, width).getValues();
   var mine = phoneKey_(x.phone), store = (storeByTabName_(sh.getName()) || {}).name, phoneAt = typeof x._row_phone === 'function' ? x._row_phone : null;
   var serial = function (v) {
     if (typeof v === 'number') return Math.floor(v);
@@ -1198,8 +1198,15 @@ function orderDateIn_(sh, c, x, end, dateOut) {
     if (!namesClose_(String(r[c.NAME - 1] || '').replace(/\s*\(\?\)\s*$/, ''), name)) return;
     var rowTicket = String(r[c.TICKET - 1]).trim(), out = serial(r[c.DATE_OUT - 1]);
     var recent = out !== null && dateOut - out >= 0 && dateOut - out <= 14;
-    if (!(rowTicket === ticket || (x.tag_count > 1 && recent && ticketsClose_(rowTicket, ticket)))) return;
-    if (mine && phoneAt && phonesDiffer_(phoneAt(store, i + 2), mine)) return;
+    var rowPhone = phoneAt ? phoneAt(store, i + 2) : '';
+    if (rowTicket !== ticket) {
+      // A close ticket is another order unless it is this group: the same phone on both scans and the same N in the tab's
+      // "k of N" (review of #72: the same customer's previous order, or similar names with no phones). A tab without
+      // "k of N" (a tab without that column matches the same ticket only).
+      if (!(c.SEQUENCE && x.tag_count > 1 && recent && ticketsClose_(rowTicket, ticket) && mine && rowPhone && !phonesDiffer_(rowPhone, mine))) return;
+      var m = /^\d+ of (\d+)$/.exec(String(r[c.SEQUENCE - 1]).trim()); if (!m || Number(m[1]) !== Number(x.tag_count)) return;
+    }
+    if (mine && rowPhone && phonesDiffer_(rowPhone, mine)) return;
     found[d] = true; if (!(d in first)) first[d] = i + 2;
   });
   var keys = Object.keys(found);

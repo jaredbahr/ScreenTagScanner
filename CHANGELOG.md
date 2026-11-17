@@ -6,9 +6,10 @@ From the 2026-11-17 review of every scan this month (723 scans), approved by Jar
 - **Order date (`orderDateIn_`):** a screen tag with no date takes the Date in of its order's other rows on the tab,
   with a Date in note. It is used only when all of those rows agree on one date that is not after the scan.
   - An order row has a close name and either the same ticket or, for a group tag, a close ticket with a Date out
-    within 14 days.
+    within 14 days. The close-ticket match also needs a "Tag x of N" column, the same phone in the Scans log and the
+    same N.
   - No Scans-log phone may differ.
-  - Read-only replay on the month: 27 of 52 undated tags filled, each equal to the date Kirsten typed.
+  - Read-only replay on the month: 26 of 52 undated tags filled, each equal to the date Kirsten typed.
 - **Option A, old years:** an earlier written year whose month/day falls within 45 days before the scan is written as
   the scan year, with a Scans-log note.
   - This covers 31 rows this month, all within 14 days.
@@ -17,6 +18,8 @@ From the 2026-11-17 review of every scan this month (723 scans), approved by Jar
 - **Review of #72:**
   - Matching now requires a close name together with a same or close ticket, and no differing phone. Before, a similar
     name or a misread ticket alone could match.
+  - Round 2: a close ticket also needs the same phone and the same N, so the customer's previous order and similar
+    names with no phones are never matched.
   - The window is 45 days, not 60, so the misread-month note is never hidden.
   - Future years are not changed.
   - The order date is checked against the admitted scan day.
