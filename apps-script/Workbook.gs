@@ -1307,15 +1307,15 @@ function hintTicket_(hint, read) {
   var m = /(?:likely|could be) (\d{7})(?! or )(?!, \d)/.exec(hint); // a lone "could be" was right 4 of 4 in October
   return m && m[1] !== String(read) ? m[1] : '';
 }
-/**
- * Writes the hinted ticket for a screen tag (the reading stays in the Scans log and the cell note). Never when the tag
- * has parts or additional labor (their receipts are planned with the ticket as read), or when the hinted ticket is
- * already on the tab for a single tag (a duplicate would hide the mistake).
- */
 function hasReceiptPlans_(x) {
   var pp = x._parts_plan || {}, lp = x._extra_labor_plan || {};
   return !!((pp.items || []).length || (pp.posted || []).length || (pp.references || []).length || (lp.items || []).length);
 }
+/**
+ * Writes the hinted ticket for a screen tag (the reading stays in the Scans log and the cell note). On a tag with parts
+ * or additional labor, only when saveScan_ planned their receipts for that ticket (_plans_ticket, 0.13.45); never when
+ * the hinted ticket is already on the tab for a single tag (a duplicate would hide the mistake).
+ */
 function likelyTicketFix_(sh, layout, x, hint) {
   if (x.item_type === 'window') return '';
   var T = hintTicket_(hint, x.ticket_number);
@@ -1341,8 +1341,9 @@ function likelyTicketFix_(sh, layout, x, hint) {
   return echoed ? '' : T;
 }
 /**
- * The ticket the store write will use for this tag, when it differs from the reading: the order's ticket or the one
- * likely ticket, decided exactly as in writeToStoreTab_ (same steps, same lock, nothing written). '' otherwise.
+ * The likely ticket the store write will use for this tag with receipts, decided exactly as in writeToStoreTab_ (same
+ * steps, same lock, nothing written); '' otherwise. The order fix never applies to tags with receipts (orderTicketFix_),
+ * so it is not settled here.
  */
 function receiptTicket_(ss, x) {
   var routing = resolveJobRouting_(x);
@@ -1351,13 +1352,12 @@ function receiptTicket_(ss, x) {
   var store = resolveStore_(x).store, sh = store ? storeSheet_(ss, store) : null, layout;
   if (!sh) return '';
   try { layout = storeLayout_(sh); } catch (err) { return ''; }
-  var c = layout.screens, orderFix = orderTicketFix_(sh, c, x, screenBlockEnd_(sh));
-  if (orderFix) x = Object.assign({}, x, { ticket_number: orderFix.ticket });
+  var c = layout.screens;
   var repeat = repeatCustomerName_(sh, layout, x);
   if (repeat) x = Object.assign({}, x, { customer_name: repeat.name, last_name: repeat.name, name_unclear: false });
   var hint = groupTicketHint_(sh, c, x, screenBlockEnd_(sh)) || ticketBookHint_(sh, layout, x.ticket_number);
   var likely = hint ? likelyTicketFix_(sh, layout, Object.assign({}, x, { _parts_plan: null, _extra_labor_plan: null }), hint) : '';
-  return likely || (orderFix ? String(orderFix.ticket) : '');
+  return likely;
 }
 function writeToStoreTab_(ss, x, reasons) {
   var routing = resolveJobRouting_(x);
@@ -1419,7 +1419,10 @@ function writeToStoreTab_(ss, x, reasons) {
     if (quiet.length) x = Object.assign({}, x, { _quiet_ticket_doubts: quiet });
   }
   if (x._plans_ticket && x._plans_ticket !== String(x.ticket_number)) {
-    flags.push('Parts or additional labor earnings were planned for ticket ' + x._plans_ticket + ', not ' + x.ticket_number + '; check this row\'s ticket and earnings');
+    flags.push('Parts or additional labor earnings were planned for ticket ' + x._plans_ticket + ', not ' + x.ticket_number + '; enter them by hand');
+    // Receipts naming another ticket would be rejected later and block that tab's labor credits (review of #70).
+    x = Object.assign({}, x, { _parts_plan: Object.assign({}, x._parts_plan, { items: [] }),
+      _extra_labor_plan: Object.assign({}, x._extra_labor_plan, { items: [] }) });
   }
   if (ticketInStoreTab_(sh, x.ticket_number, layout) && !(x.tag_count > 1)) {
     flags.push('Ticket already on the ' + store.name + ' tab: another tag in the group, or a duplicate?');

@@ -6,12 +6,15 @@ Kirsten (2026-11-16): a Downers Grove tag read a 9 as a 4. The hint named the ri
 corners, and the likely-ticket write was skipped on any tag with parts or additional labor, because their receipts
 were planned with the ticket as read. Her scans also "kept saying still saving": one save (5:00 PM) was read and its
 photo saved but it never logged, and the rescans waited behind it.
-- `receiptTicket_` (Workbook.gs) dry-runs the store write's ticket decision (order fix, repeat name, group or book
-  hint, likely ticket). It uses the same steps under the same lock and writes nothing.
+- `receiptTicket_` (Workbook.gs) dry-runs the store write's ticket decision (repeat name, group or book hint, likely
+  ticket). It uses the same steps under the same lock and writes nothing. The order fix never applies to tags with
+  receipts, so it is unchanged.
   - When a tag has parts or labor receipts and that decision changes the ticket, `saveScan_` re-plans both receipts
     for it and records `_plans_ticket`.
   - `likelyTicketFix_` then writes the likely ticket. The reading stays in the Scans log and the cell note.
-  - A receipt planned for a ticket other than the one written is flagged on the row.
+  - A receipt planned for a ticket other than the one written is flagged on the row, and no receipt is written.
+  - Review of #70: an exact rescan of a rewritten tag plans its receipts with the ticket that row was written as
+    (`rescanWrittenTicket_`), so it is a plain rescan, not "reconcile the original row".
   - Unchanged: another job's ticket is never borrowed, and windows are never rewritten.
 - Busy admission now says the last scan clears by itself within 6 minutes.
 - `scanTiming_` writes seconds per stage (read, photo, saved) for each scan to the private Executions log. No customer data.

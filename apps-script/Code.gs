@@ -499,7 +499,8 @@ function saveScan_(x, user, reasons, photoUrl, scanId, admittedId, leaseId) {
     // because receipts were planned with the ticket as read). When the store write will fix the ticket, plan both
     // receipts for that ticket; the reading itself stays in the Scans log and the cell note.
     if (hasReceiptPlans_(x)) {
-      var planTicket = receiptTicket_(ss, x);
+      // A rescan of a tag whose ticket was rewritten plans for the ticket that row was written with (review of #70).
+      var planTicket = isExactRescan_(log, x, null) ? rescanWrittenTicket_(log, x) : receiptTicket_(ss, x);
       if (planTicket && planTicket !== String(x.ticket_number)) {
         var planX = Object.assign({}, x, { ticket_number: planTicket });
         x._extra_labor_plan = prepareExtraLabor_(ss, planX);
@@ -781,6 +782,16 @@ function scannerDiagnostic_(event, scanId) {
   console.error('Scanner event: ' + event + '; scanId=' + id);
 }
 /** Seconds since the photo arrived, per stage, to the private Executions log (Jared, 2026-11-17: find where a slow scan waits). */
+/** The ticket an earlier scan of this same reading was written as ("Ticket # written as T (read as R"), or ''. */
+function rescanWrittenTicket_(log, x) {
+  var last = log.getLastRow(), read = String(x.ticket_number), found = '';
+  if (last < 2) return '';
+  log.getRange(2, 1, last - 1, HEADERS.length).getValues().forEach(function (r) {
+    var m = /Ticket # written as (\d{7}) \(read as (\d{6,8})\b/.exec(String(r[HEADERS.indexOf('Review Reason')] || ''));
+    if (String(r[COL.TICKET - 1]) === read && String(r[COL.TAG_OF - 1]) === tagOf_(x) && m && m[2] === read) found = m[1];
+  });
+  return found;
+}
 function scanTiming_(scanId, stage, t0) {
   var id = /^[a-f0-9]{8}$/.test(String(scanId)) ? scanId : 'unavailable';
   console.log('Scanner timing: scanId=' + id + '; ' + stage + '=' + ((Date.now() - t0) / 1000).toFixed(1) + 's');

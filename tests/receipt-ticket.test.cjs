@@ -44,13 +44,36 @@ test('unchanged: a clean reading with parts, and a likely ticket already on the 
   assert.equal(String(sh.get(+b.row, c.TICKET)), '7774941', 'another job\'s ticket is never borrowed');
 });
 
-test('the dry run matches the store write and writes nothing', () => {
-  const { t, sh, save } = series(), before = new Map(sh.cells);
-  const x = t.ctx.normalizeJobInput_(one('7774948', 24, { parts: [part('580401', 2)] }));
-  assert.equal(t.ctx.receiptTicket_(t.ss, x), '7779948'); assert.deepEqual(new Map(sh.cells), before, 'nothing written');
+test('the dry run writes nothing and names exactly the ticket the store write then uses', () => {
+  const { t, sh, c, save, log, col } = series(), before = new Map(sh.cells);
+  const x = one('7774948', 24, { parts: [part('580401', 2)] });
+  assert.equal(t.ctx.receiptTicket_(t.ss, t.ctx.normalizeJobInput_(x)), '7779948'); assert.deepEqual(new Map(sh.cells), before, 'nothing written');
+  const r = save(x);
+  assert.equal(String(sh.get(+r.row, c.TICKET)), '7779948', 'the write agrees with the dry run');
+  assert.doesNotMatch(String(log.get(log.getLastRow(), col('Review Reason'))), /planned for ticket/);
   assert.equal(t.ctx.receiptTicket_(t.ss, t.ctx.normalizeJobInput_(one('7779951', 25))), '', 'a clean reading needs nothing');
   assert.equal(t.ctx.receiptTicket_(t.ss, t.ctx.normalizeJobInput_(one('7774948', 26, { item_type: 'window' }))), '', 'windows are never rewritten');
-  save(one('7779952', 27));
+});
+
+test('review of #70: a rescan of a rewritten parts or labor tag is a plain rescan, not a reconcile', () => {
+  for (const extra of [{ parts: [part('580401', 2)] }, { extras: 'Cleaned rollers; additional labor $8.00', parts: [] }]) {
+    const { sh, c, save } = series();
+    const x = one('7774948', 28, { tag_index: 2, tag_count: 2, ...extra });
+    const first = save(x); assert.equal(String(sh.get(+first.row, c.TICKET)), '7779948');
+    const again = save(x);
+    assert.equal(again.rescan, true); assert.equal(again.needsReview, false, JSON.stringify(again).slice(0, 300));
+  }
+});
+
+test('review of #70: receipts planned for another ticket are flagged and never written', () => {
+  const { t, sh, c } = series();
+  const x = t.ctx.normalizeJobInput_(one('7779953', 29, { parts: [part('580401', 2)] }));
+  x._extra_labor_plan = t.ctx.prepareExtraLabor_(t.ss, x);
+  x._parts_plan = t.ctx.preparePartsEarnings_(t.ss, Object.assign({}, x, { ticket_number: '7779999' }));
+  x._plans_ticket = '7779999';
+  const r = t.ctx.writeToStoreTab_(t.ss, x, []);
+  assert.match(r.flags.join('\n'), /planned for ticket 7779999, not 7779953; enter them by hand/);
+  assert.equal(String(sh.get(+r.row, c.TICKET)), '7779953'); assert.equal(sh.get(+r.row, c.EARNING), '', 'no receipt naming another ticket');
 });
 
 console.log(`${passed} receipt-ticket tests passed`);
