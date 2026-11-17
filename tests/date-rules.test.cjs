@@ -2,9 +2,9 @@
 const serial=s=>{const [y,m,d]=s.split('-').map(Number);return Date.UTC(y,m-1,d)/86400000+25569;};
 function test(name,fn){fn();passed++;console.log('PASS '+name);}
 test('Date in uses written tag date while Date out uses scan day, on screens and windows',()=>{
-  for(const item_type of ['screen','window']){const t=load();t.scan({item_type,panes:1,date:'9/21/2024'});const sh=t.ss.tabs['Homer Glen'];
-    assert.equal(sh.get(2,item_type==='screen'?2:14),serial('2024-09-21'));assert.equal(sh.get(2,item_type==='screen'?4:16),serial('2026-10-12'));
-    assert.equal(t.ss.tabs.Scans.get(2,t.ctx.COL.DATE),'9/21/2024','raw tag text preserved');
+  for(const item_type of ['screen','window']){const t=load();t.scan({item_type,panes:1,date:'6/21/2024'});const sh=t.ss.tabs['Homer Glen'];
+    assert.equal(sh.get(2,item_type==='screen'?2:14),serial('2024-06-21'),'over 60 days back: the written year stays');assert.equal(sh.get(2,item_type==='screen'?4:16),serial('2026-10-12'));
+    assert.equal(t.ss.tabs.Scans.get(2,t.ctx.COL.DATE),'6/21/2024','raw tag text preserved');
   }
 });
 test('dates are written as date cells on screens and windows, also past the template\'s formatted rows (Plainfield, 11/3)',()=>{
@@ -34,10 +34,20 @@ test('two-digit year for this year or last year is accepted without a flag',()=>
     assert.equal(sh.get(2,2),serial(date==='10/8/26'?'2026-10-08':'2025-12-30'),date);assert.equal(sh.notes.get('2,2'),undefined,date);}
 });
 const scanReason=t=>{const log=t.ss.tabs.Scans,h=t.ctx.HEADERS;return String(log.get(2,h.indexOf('Review Reason')+1)||'');};
-test('a written year far behind the scan is noted in the Scans log only (October audit: 24, 2020, 25 on 2026 tags; Kirsten does not use the year)',()=>{
-  for(const date of ['10/17/24','10/17/2020','10/20/25']){const t=load({now:new Date('2026-10-23T18:00:00Z')});const r=t.scan({date});const sh=t.ss.tabs['Homer Glen'];
+test('Jared (2026-11-17, option A): an old year on a tag within 60 days is written as the scan year, noted in the Scans log only',()=>{
+  for(const [date,y] of [['10/17/24','2024'],['10/17/2020','2020'],['10/20/25','2025'],['8/25/2024','2024']]){const t=load({now:new Date('2026-10-23T18:00:00Z')});const r=t.scan({date});const sh=t.ss.tabs['Homer Glen'];
+    const [m,d]=date.split('/');assert.equal(sh.get(2,2),serial('2026-'+m.padStart(2,'0')+'-'+d.padStart(2,'0')),date);
+    const why=scanReason(t);assert.match(why,new RegExp('Tag year '+y+' written as 2026 \\(the month and day are within 60 days of the scan\\)'),date);
+    assert.doesNotMatch(why,/looks off|20YY/,date+': no year doubt left');
+    assert.doesNotMatch(sh.notes.get('2,2')||'',/Tag year/,date+': not on her sheet');assert.doesNotMatch(r.message,/Check on the sheet:/,date);}
+  // 61 days back, a tag left over the winter, and a future month/day keep the written year.
+  for(const [date,now,want] of [['8/22/24','2026-10-23T18:00:00Z','2024-08-22'],['12/28/26','2027-01-05T18:00:00Z','2026-12-28'],['11/20/25','2026-10-23T18:00:00Z','2025-11-20']]){
+    const t=load({now:new Date(now)});t.scan({date});assert.equal(t.ss.tabs['Homer Glen'].get(2,2),serial(want),date);}
+});
+test('a written year far behind the scan, more than 60 days back, is noted in the Scans log only (Kirsten does not use the year)',()=>{
+  for(const date of ['6/17/24','6/17/2020','6/20/25']){const t=load({now:new Date('2026-10-23T18:00:00Z')});const r=t.scan({date});const sh=t.ss.tabs['Homer Glen'];
     const why=scanReason(t);assert.match(why,/Tag year 20\d\d looks off for a scan in 2026 \(4\/6 and 0\/6 look alike/,date);
-    assert.equal((why.match(/20YY|looks off/g)||[]).length,date==='10/17/24'?2:1,date+': one note, century folded in');
+    assert.equal((why.match(/20YY|looks off/g)||[]).length,date==='6/17/24'?2:1,date+': one note, century folded in');
     assert.doesNotMatch(sh.notes.get('2,2')||'',/Tag year/,date+': not on her sheet');
     assert.doesNotMatch(r.message,/Check on the sheet:/,date+': not a yellow row');}
 });
@@ -69,16 +79,16 @@ test('missing, invalid and unsupported dates stay blank with review instead of b
   }
 });
 test('a two-digit year older than last year keeps 20YY but flags a century check',()=>{
-  const t=load();t.scan({date:'10/8/24'});assert.equal(t.ss.tabs['Homer Glen'].get(2,2),serial('2024-10-08'));assert.match(scanReason(t),/verify the century/);
+  const t=load();t.scan({date:'6/8/24'});assert.equal(t.ss.tabs['Homer Glen'].get(2,2),serial('2024-06-08'));assert.match(scanReason(t),/verify the century/);
 });
 test('date serials do not move when spreadsheet timezone differs',()=>{
-  const t=load();t.ss.tz='America/Los_Angeles';t.scan({date:'10/8/2024'});assert.equal(t.ss.tabs['Homer Glen'].get(2,2),serial('2024-10-08'));assert.equal(t.ss.tabs['Homer Glen'].get(2,4),serial('2026-10-12'));
+  const t=load();t.ss.tz='America/Los_Angeles';t.scan({date:'6/8/2024'});assert.equal(t.ss.tabs['Homer Glen'].get(2,2),serial('2024-06-08'));assert.equal(t.ss.tabs['Homer Glen'].get(2,4),serial('2026-10-12'));
 });
 test('an extraction that finishes after midnight still uses the admitted scan day/year',()=>{
   const t=load({now:new Date('2027-01-01T05:59:59Z')});t.ctx.extractTag_=()=>{t.setNow(new Date('2027-01-01T06:00:01Z'));return {...BASE,date:'12/30'};};
   t.ctx.scanTag({token:'t',image:'/9j/AP/Z'});assert.equal(t.ss.tabs['Homer Glen'].get(2,2),serial('2026-12-30'));assert.equal(t.ss.tabs['Homer Glen'].get(2,4),serial('2026-12-31'));
 });
 test('multi-frame build rows share the same preserved tag-in and scan-out dates',()=>{
-  const t=load();t.scan({date:'8/30/2024',form_type:'new_build',screens_on_tag:2});const sh=t.ss.tabs['Homer Glen'];for(const r of [2,3]){assert.equal(sh.get(r,2),serial('2024-08-30'));assert.equal(sh.get(r,4),serial('2026-10-12'));}
+  const t=load();t.scan({date:'6/30/2024',form_type:'new_build',screens_on_tag:2});const sh=t.ss.tabs['Homer Glen'];for(const r of [2,3]){assert.equal(sh.get(r,2),serial('2024-06-30'));assert.equal(sh.get(r,4),serial('2026-10-12'));}
 });
 console.log(`${passed} date-policy tests passed`);

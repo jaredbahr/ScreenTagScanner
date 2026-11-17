@@ -137,6 +137,9 @@ function reviewTier_(reason, routed) {
   // "digit group" in an OCR doubt is about handwriting, not a group of tags (0.13.22, October data).
   var r = String(reason || '').replace(/\bdigit groups?\b/ig, 'digits');
   if (/^Group check \(name\)/.test(r)) return {tier:'cell',field:'NAME'};
+  if (/^Date in taken from row \d+ \(same order\)/.test(r)) return {tier:'cell',field:'DATE_IN'};
+  // Jared (2026-11-17): a written year corrected to the scan year is a Scans-log note only.
+  if (/^Tag year \d{4} written as \d{4} \(/.test(r)) return {tier:'log'};
   if (/^Repeat customer \(name\)/.test(r)) return {tier:'cell',field:'NAME'};
   // Kirsten (2026-10-23): she doesn't use the tag year, so a year doubt alone is kept in the Scans log only.
   if (/^(?:Tag year \d{4} looks off|Two-digit tag year)/.test(r) && !/after the scan date|left blank|invalid|unreadable/i.test(r)) return {tier:'log'};
@@ -1173,6 +1176,29 @@ function scanDateSerial_() {
   return serialFromYmd_(Utilities.formatDate(new Date(), 'America/Chicago', 'yyyy-MM-dd'));
 }
 
+/**
+ * The Date in of this tag's order on the tab: rows with the same ticket, or, for a tag of a group, rows with a close name
+ * filled in within the last 14 days. Only when all such rows agree on one date; otherwise null.
+ */
+function orderDateIn_(sh, c, x, end) {
+  if (end < 2) return null;
+  var width = Math.max(c.DATE_IN, c.NAME, c.TICKET, c.DATE_OUT), vals = sh.getRange(2, 1, end - 1, width).getValues();
+  var ticket = String(x.ticket_number || '').trim(), name = sheetName_(x), today = scanDateSerial_(), found = {}, first = {};
+  var serial = function (v) {
+    if (typeof v === 'number') return v;
+    return v instanceof Date ? Math.round((v.getTime() - Date.UTC(1899, 11, 30)) / 86400000) : null;
+  };
+  vals.forEach(function (r, i) {
+    var d = serial(r[c.DATE_IN - 1]);
+    if (d === null || d < 30000) return;
+    var sameTicket = !!ticket && String(r[c.TICKET - 1]).trim() === ticket;
+    var out = serial(r[c.DATE_OUT - 1]), recent = out !== null && today - out >= 0 && today - out <= 14;
+    var sameGroup = x.tag_count > 1 && !!name && recent && namesClose_(String(r[c.NAME - 1] || '').replace(/\s*\(\?\)\s*$/, ''), name);
+    if (sameTicket || sameGroup) { found[d] = true; if (!(d in first)) first[d] = i + 2; }
+  });
+  var keys = Object.keys(found);
+  return keys.length === 1 ? { serial: Number(keys[0]), row: first[keys[0]] } : null;
+}
 /** Tag date in; admission's Chicago calendar day out. Invalid dates never silently roll. */
 var CENTURY_NOTE = 'Two-digit tag year treated as 20YY; verify the century';
 function storeDates_(x) {
@@ -1195,6 +1221,16 @@ function storeDates_(x) {
     return {dateIn:'',dateOut:dateOut,reason:'Tag date is invalid: Date in left blank; verify the written date'};
   }
   var dateIn = Date.UTC(year,month-1,day)/86400000+25569;
+  // Jared (2026-11-17, option A): staff often write last year's year, or 2020/2024, on this year's tag (October and
+  // November: 31 rows, none changed by Kirsten). A month/day that falls within 60 days before the scan in the scan's
+  // year is this year's tag. A tag left over the winter (12/28 scanned 1/5) keeps its written year.
+  if (year !== scanYear && validYmd_(scanYear, month, day)) {
+    var thisYear = Date.UTC(scanYear, month - 1, day) / 86400000 + 25569;
+    if (dateOut - thisYear >= 0 && dateOut - thisYear <= 60) {
+      reason = 'Tag year ' + year + ' written as ' + scanYear + ' (the month and day are within 60 days of the scan)';
+      year = scanYear; dateIn = thisYear;
+    }
+  }
   // A month far before the scan in the scan's own year is usually a misread month (Kirsten, 2026-11-06: "11/5" read
   // as 4/5; "11/3" read as "1/3" and "01-03"). A lost leading 1 that puts the date within two weeks of the scan is
   // written as such; any other month over 45 days back gets a note only (a tag can wait over the winter).
@@ -1534,6 +1570,11 @@ function writeToStoreTab_(ss, x, reasons) {
     flags.push('Form lists ' + x.screens_on_tag + ' frames: entered as ' + count + ' rows, each with the build amounts');
   }
   var dates = storeDates_(x);
+  // No date on the tag: the order's other tags on this tab give it (Kirsten typed that date 26 times of 44, 2026-11-17).
+  if (!dates.dateIn && /^Tag date missing/.test(dates.reason)) {
+    var od = orderDateIn_(sh, c, x, end);
+    if (od) dates = Object.assign({}, dates, { dateIn: od.serial, reason: 'Date in taken from row ' + od.row + ' (same order): no date on this tag' });
+  }
   if (dates.reason) flags.push(dates.reason);
   rows.forEach(function (row, i) {
     sh.getRange(row, c.TICKET).setNumberFormat('@');

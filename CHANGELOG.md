@@ -1,5 +1,23 @@
 # Changelog
 
+## 0.13.46-draft — dates from the order; old years written as this year
+
+From the 2026-11-17 review of every scan this month (723 scans), approved by Jared the same day:
+- **Order date:** a tag with no date takes the Date in of its order's other tags (`orderDateIn_`). The order's tags
+  are the rows with the same ticket, or, for a group tag, rows with a close name filled in within 14 days. Used only
+  when they all agree, with a Date in note.
+  - Kirsten typed exactly that date on 26 of the 44 undated tags she filled in.
+- **Option A, old years:** a written year other than the scan year, whose month/day falls within 60 days before the
+  scan in the scan year, is written as the scan year. It gets a Scans-log note only.
+  - This covers 31 rows this month dated 2024/2020/2025 that Kirsten never changed.
+  - Over 60 days back, a tag left over the winter, and future dates keep the written year as before.
+- The non-local area code note was already Scans-log only (no change; now covered by a test).
+- **Kept as is, from the review:**
+  - the "unclear ticket" flag (about 40% led to a fix);
+  - the name "(?)" (about 40%);
+  - the 6-digit ticket note (8 of 9).
+  - The remaining ticket hand-fixes since Nov 6 (12 of 151) are digits missing on the tag with no single answer.
+
 ## 0.13.45-draft — settle the ticket before receipts; scan timing
 
 Kirsten (2026-11-16): a Downers Grove tag read a 9 as a 4. The hint named the right ticket, but the tag listed
