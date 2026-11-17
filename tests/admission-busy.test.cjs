@@ -10,7 +10,7 @@ test('a busy lock says the last scan is still saving, uses no quota and sends no
   const t = load(), p = t.ctx.PropertiesService.getScriptProperties(), held = t.ctx.LockService.getScriptLock();
   held.waitLock(1);                                   // a save in progress holds the script lock
   const msg = t.ctx.admitScan_(p, {});
-  assert.match(msg, /^The last scan is still saving\. Wait a few seconds, then scan again\. No photo was sent\.$/);
+  assert.match(msg, /^The last scan is still saving\. Wait a minute and scan again; it clears by itself within 6 minutes\. No photo was sent\.$/);
   assert.equal(t.props.SCAN_LIMIT_STATE, undefined, 'no quota used'); assert.equal(t.props.MONTH_SCAN_LEASES, undefined, 'no lease');
   const second = {};                                  // a failed wait never releases the other holder's lock
   assert.match(t.ctx.admitScan_(p, second), /^The last scan is still saving/); assert.equal(second.leaseId, undefined);

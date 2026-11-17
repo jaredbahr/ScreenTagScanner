@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.13.45-draft — settle the ticket before receipts; scan timing
+
+Kirsten (2026-11-16): a Downers Grove tag read a 9 as a 4. The hint named the right ticket, but the tag listed
+corners, and the likely-ticket write was skipped on any tag with parts or additional labor, because their receipts
+were planned with the ticket as read. Her scans also "kept saying still saving": one save (5:00 PM) was read and its
+photo saved but it never logged, and the rescans waited behind it.
+- `receiptTicket_` (Workbook.gs) dry-runs the store write's ticket decision (repeat name, group or book hint, likely
+  ticket). It uses the same steps under the same lock and writes nothing. The order fix never applies to tags with
+  receipts, so it is unchanged.
+  - When a tag has parts or labor receipts and that decision changes the ticket, `saveScan_` re-plans both receipts
+    for it and records `_plans_ticket`.
+  - `likelyTicketFix_` then writes the likely ticket. The reading stays in the Scans log and the cell note.
+  - A receipt planned for a ticket other than the one written is flagged on the row, and no receipt is written.
+  - Review of #70: an exact rescan of a rewritten tag plans its receipts with the ticket that row was written as
+    (`rescanWrittenTicket_`), so it is a plain rescan, not "reconcile the original row".
+  - Unchanged: another job's ticket is never borrowed, and windows are never rewritten.
+- Busy admission now says the last scan clears by itself within 6 minutes.
+- `scanTiming_` writes seconds per stage (read, photo, saved) for each scan to the private Executions log. No customer data.
+- Measured before this change: spreadsheet calls per scan went from 60.2 (0.13.41) to 62.2 (0.13.42–44) on a
+  synthetic 110-row tab, so recent placement changes did not cause the slowness. On real data, the gap from photo
+  saved to log row was 6–22 s on both Opus and Sonnet days, with no trend.
+
 ## 0.13.44-draft — a rescan during a slow save says so
 
 Kirsten (2026-11-14): a tag that did not save was scanned again and got "Scan limits could not be checked. No photo

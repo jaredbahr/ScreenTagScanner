@@ -35,7 +35,7 @@ test('a missing digit with one clear fit is written; an unclear one stays as rea
   assert.equal(rowsWith(sh, c.TICKET, '770815').length, 1, 'no single fit: the reading stays');
 });
 
-test('never: several candidates, a short handwritten tail, a ticket already on the tab, parts or labor, or a window', () => {
+test('never: several candidates, a short handwritten tail, a ticket already on the tab, or a window (parts: since 0.13.45)', () => {
   const { t, sh, c } = newLenox();
   write(t, one('7708120', 3));
   write(t, one('2208120', 4)); // its likely ticket is another customer's: left as read
@@ -43,7 +43,8 @@ test('never: several candidates, a short handwritten tail, a ticket already on t
   const p = newLenox(); // its own tab: the kept 2208120 above would make 2208130 look like a series
   write(p.t, one('2208130', 5, { extras: '2 580404 rollers', parts: [{ sku: '580404', quantity: 2, unit: 'each', group_wide: false, raw: '2 580404 rollers' }] }));
   assert.match([...p.sh.notes.values()].join('\n'), /likely 7708130/, 'the hint is still there');
-  assert.equal(rowsWith(p.sh, p.c.TICKET, '2208130').length, 1, 'parts receipts carry the read ticket');
+  // 0.13.45 (Kirsten, 2026-11-16): the ticket is settled before the receipts, so a parts tag is written too (receipt-ticket.test.cjs).
+  assert.equal(rowsWith(p.sh, p.c.TICKET, '7708130').length, 1, 'parts tags get the likely ticket since 0.13.45');
   write(t, one('8120', 6));
   assert.equal(rowsWith(sh, c.TICKET, '8120').length, 1, 'a 4-digit tail is only a note');
   const ctx = t.ctx;

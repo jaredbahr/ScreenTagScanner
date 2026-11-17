@@ -1307,17 +1307,21 @@ function hintTicket_(hint, read) {
   var m = /(?:likely|could be) (\d{7})(?! or )(?!, \d)/.exec(hint); // a lone "could be" was right 4 of 4 in October
   return m && m[1] !== String(read) ? m[1] : '';
 }
+function hasReceiptPlans_(x) {
+  var pp = x._parts_plan || {}, lp = x._extra_labor_plan || {};
+  return !!((pp.items || []).length || (pp.posted || []).length || (pp.references || []).length || (lp.items || []).length);
+}
 /**
- * Writes the hinted ticket for a screen tag (the reading stays in the Scans log and the cell note). Never when the tag
- * has parts or additional labor (their receipts are planned with the ticket as read), or when the hinted ticket is
- * already on the tab for a single tag (a duplicate would hide the mistake).
+ * Writes the hinted ticket for a screen tag (the reading stays in the Scans log and the cell note). On a tag with parts
+ * or additional labor, only when saveScan_ planned their receipts for that ticket (_plans_ticket, 0.13.45); never when
+ * the hinted ticket is already on the tab for a single tag (a duplicate would hide the mistake).
  */
 function likelyTicketFix_(sh, layout, x, hint) {
   if (x.item_type === 'window') return '';
   var T = hintTicket_(hint, x.ticket_number);
   if (!T) return '';
-  var pp = x._parts_plan || {}, lp = x._extra_labor_plan || {};
-  if ((pp.items || []).length || (pp.posted || []).length || (pp.references || []).length || (lp.items || []).length) return '';
+  // Receipts planned for the read ticket would name the wrong one; saveScan_ re-plans them for T first (0.13.45).
+  if (hasReceiptPlans_(x) && x._plans_ticket !== T) return '';
   // Another job's ticket is never borrowed (review: a group tag took another customer's 2 of 2). Only a group whose
   // other tags all read T may share it (one ticket per order).
   if (ticketInStoreTab_(sh, T, layout) && !(x.tag_count > 1 && /the group's other tags all read it/.test(hint))) return '';
@@ -1335,6 +1339,25 @@ function likelyTicketFix_(sh, layout, x, hint) {
     return m && m[2] === today && String(r).length === m[1].length && Math.abs(Number(m[1]) - r) <= 300;
   });
   return echoed ? '' : T;
+}
+/**
+ * The likely ticket the store write will use for this tag with receipts, decided exactly as in writeToStoreTab_ (same
+ * steps, same lock, nothing written); '' otherwise. The order fix never applies to tags with receipts (orderTicketFix_),
+ * so it is not settled here.
+ */
+function receiptTicket_(ss, x) {
+  var routing = resolveJobRouting_(x);
+  if (routing.type !== 'screen' || !x.ticket_number) return '';
+  x = Object.assign({}, x, { item_type: routing.type, thermopane: routing.thermopane });
+  var store = resolveStore_(x).store, sh = store ? storeSheet_(ss, store) : null, layout;
+  if (!sh) return '';
+  try { layout = storeLayout_(sh); } catch (err) { return ''; }
+  var c = layout.screens;
+  var repeat = repeatCustomerName_(sh, layout, x);
+  if (repeat) x = Object.assign({}, x, { customer_name: repeat.name, last_name: repeat.name, name_unclear: false });
+  var hint = groupTicketHint_(sh, c, x, screenBlockEnd_(sh)) || ticketBookHint_(sh, layout, x.ticket_number);
+  var likely = hint ? likelyTicketFix_(sh, layout, Object.assign({}, x, { _parts_plan: null, _extra_labor_plan: null }), hint) : '';
+  return likely;
 }
 function writeToStoreTab_(ss, x, reasons) {
   var routing = resolveJobRouting_(x);
@@ -1394,6 +1417,14 @@ function writeToStoreTab_(ss, x, reasons) {
   else if (ticketFitsSeries_(sh, layout, x.ticket_number)) {
     var quiet = flags.filter(function (f) { return isReaderTicketDoubt_(f) && reviewTier_(f, store).tier === 'cell'; });
     if (quiet.length) x = Object.assign({}, x, { _quiet_ticket_doubts: quiet });
+  }
+  if (x._plans_ticket && x._plans_ticket !== String(x.ticket_number)) {
+    flags.push('Parts or additional labor earnings were planned for ticket ' + x._plans_ticket + ', not ' + x.ticket_number + '; enter them by hand');
+    // Receipts naming another ticket would be rejected later and block that tab's labor credits (review of #70).
+    // Also no "already recorded" references or recognized labor lines for the other ticket: the amounts stay in the
+    // Extras note for her to enter (review of #70).
+    x = Object.assign({}, x, { _parts_plan: Object.assign({}, x._parts_plan, { items: [], references: [] }),
+      _extra_labor_plan: Object.assign({}, x._extra_labor_plan, { items: [], recognized: [] }) });
   }
   if (ticketInStoreTab_(sh, x.ticket_number, layout) && !(x.tag_count > 1)) {
     flags.push('Ticket already on the ' + store.name + ' tab: another tag in the group, or a duplicate?');

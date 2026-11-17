@@ -119,6 +119,7 @@
     "tests/nov6-fixes.test.cjs": 3,
     "tests/placement.test.cjs": 7,
     "tests/admission-busy.test.cjs": 2,
+    "tests/receipt-ticket.test.cjs": 6,
     "tests/order-ticket-count.test.cjs": 8
   },
   "allowWorkflowDefinitions": true
