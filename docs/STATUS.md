@@ -3,28 +3,48 @@
 Living notes so any session (Claude Code or Codex) can pick up where the last one stopped. Update this
 file whenever the state below changes. No customer data, emails, Google IDs or secrets here.
 
-_Last updated: 2026-11-11 (version 24 / 0.13.42 deployed and verified; the existing Opus trial is unchanged)._
+_Last updated: 2026-11-17 (version 26 / 0.13.46 deployed and verified; MODEL remains unset)._
 
 ## Where things stand
 | | |
 |---|---|
-| Live in Google | Immutable version 24 / **0.13.42-draft**, source `266ae84ec2f06fad1f05b866ef774679bb539cc6`, per issue #64. Deployed November 11, 2026, **7:25 PM America/Chicago** (`2026-11-12T01:25:22.076Z`). Jared explicitly confirmed Kirsten had finished scanning. All twelve saved files matched version 23 before changes; exactly three clipboard pastes and visible Saves (`Extraction.gs`, `Upload.html`, `Workbook.gs`), followed by a reload and all-twelve comparison against the pin. Only the known unchanged manifest missing final LF was excepted. Source was staged November 10, Chicago time; deployment waited for explicit confirmation. Both release gates and the all-twelve readback were repeated November 11 before deployment. Same endpoint/identity/access. Health and browser What's new verified 0.13.42, then 0.13.41 by `2026-11-12T01:26:37.168Z`. New screen/window rows go below the last filled row, expired group holds are released, multi-frame rows stay together, and surname particles match. Actual-phone rendering remains unverified. |
-| Deployment record | Issue #64 deployment is complete. This metadata-only version-24 record needs independent review and merge by Claude; no further deployment or prompt test is requested. The production source remains `266ae84`. |
+| Live in Google | Immutable version 26 / **0.13.46-draft**, source `fb42d6f3627d6fc6ee62b681f7c49a111fe8ad8b`, per issue #71. Deployed November 17, 2026, **4:22 PM America/Chicago** (confirmation observed `2026-11-17T22:22:46.575Z`). Jared confirmed Kirsten had finished scanning. Both clean-pin release gates passed: 624 tests across 45 suites; fresh main equaled the pin; exact-source hosted CI was green. All twelve saved files matched version 25 / `c61e690` before changes. Only `Code.gs`, `Extraction.gs`, `Upload.html` and `Workbook.gs` were clipboard-pasted and visibly saved. Readback caught an incomplete Workbook save; it was repeated before a fresh reload and successful all-twelve comparison at `2026-11-17T22:21:44.131Z`. Only the unchanged manifest missing final LF was excepted. Same URL, identity and access. Health confirmed 0.13.46-draft; What's new showed 0.13.46 · Nov 17, then 0.13.45 · Nov 17, then 0.13.44 · Nov 14; verification completed `2026-11-17T22:23:27.274Z`. No new Google permissions, property changes, scans or row changes. Actual-phone rendering remains unverified. |
+| Deployment record | Issue #71 deployment is complete. This metadata-only version-26 record needs independent review and merge by Claude. It supersedes PR #69 as the latest live-deployment record while retaining the historical end of the Opus trial below. Production source is `fb42d6f`; no further deployment is requested. |
 | Who deploys | Codex, per [DEPLOYMENT.md](DEPLOYMENT.md) and the release gate, recorded as a `deployment` issue |
 | Lesson (2026-10-22) | Google ran Codex's unmerged PR line for a week while the default branch moved on separately. Rule now: deploy only from the default branch; the release gate fails a candidate that lacks the deployed source's history |
 | Workbook in use | "October 2026" in the shared monthly folder; tabs named by store ("Downers Grove", …); a "Tag x of N" column after Name in both blocks |
 | Testing phase | Kirsten scans and checks every row; Paul isn't ready to scan alone. Jared watches unplaced scans during testing |
 
-## Opus trial (night of 2026-11-06, Chicago time)
+## Version-26 deployment caveats
 
-After version 23 was confirmed, Jared manually saved **`MODEL` = `claude-opus-5-5`**, starting the trial.
-He confirmed on November 7 that he saved it the prior night. **The exact save time was not recorded
-or independently verified.** The screenshot showed the intended value entered; saving is confirmed
-by Jared's report, not by a scan or a post-save property read.
+The Part 1 Executions report is on issue #71. The run at 5:00:29 PM Chicago on November 16
+timed out after 360.785 seconds; Google did not expose its console lines in this view.
 
-Codex did not read or change secret values or change any Script Property. No test scan or prompt
-evaluation was run. No other properties, sharing, scopes, access, triggers, rows, migrations or month
-settings were changed. Delete `MODEL` only if Jared requests ending the trial; no redeploy is needed.
+The read-only deploy-time check of visible notes across eight active-workbook store tabs and
+723 Scans entries found **no confirmed open group with additional labor and an old tag year**.
+Hidden developer metadata was unavailable, so this is **not a definitive zero**. No rows were
+changed to test or repair the possible cross-deploy group-labor receipt-key risk.
+
+## Opus trial ended (2026-11-14, Chicago time)
+
+Jared started the Opus trial on the night of November 6 and confirmed the save on November 7.
+The exact starting save time was not recorded or independently verified.
+
+Jared explicitly approved ending the trial on November 14 in issue #67 and confirmed Kirsten had
+finished scanning. Codex deleted **`MODEL` only** in Project Settings and saved at **1:30 PM
+America/Chicago** (`2026-11-14T19:30:18.708Z`). After reload, `MODEL` was absent at
+`2026-11-14T19:30:34.420Z`; the other nineteen property names remained unchanged. No property
+values were disclosed and no other property was edited.
+
+The version-25 `Code.gs` used `MODEL` when set, otherwise `DEFAULT_MODEL`, for the JPEG image
+extraction request. With the override absent, that code default was **`claude-sonnet-5-5`**.
+This is source/configuration verification; no paid image scan or prompt evaluation was run.
+The property change required no new version: immutable version **25**, source `c61e690`, and its
+existing URL remained unchanged at that time. All twelve saved source files, live health and What's new were
+rechecked unchanged. No new Google permission prompt, or sharing, scopes, access, trigger, row,
+formatting, migration or month-setting changes.
+
+Version 26 did not change any Script Property; `MODEL` remains unset.
 
 ## One-time prompt evaluation (2026-11-04)
 
