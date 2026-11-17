@@ -103,8 +103,10 @@ Window mapping is built from Kirsten's description and the first real October wi
 13. **Dates** (Jared, 2026-10-13): **Date in = the date written on the tag; Date out = the scan date** (America/Chicago).
    A tag without a year always gets the admitted scan's Chicago calendar year, including when month/day is later than the scan date. Never infer last year; retain the date and flag a later date for review.
    "Oct 8" style dates are read; a two-digit year for this year or last is accepted silently. A missing or unreadable
-   date leaves Date in blank, flagged. Written as serial day numbers, so the sheet's time zone can't shift them.
-   See [DATE_RULES.md](DATE_RULES.md).
+   date leaves Date in blank, flagged, unless the order's other rows agree on one date (Jared, 2026-11-17: same name and
+   ticket, or a group's close ticket with the same phone and N within 14 days; screen tags). An earlier written year with a month/day within 45
+   days before the scan is written as this year (Jared, 2026-11-17, option A; Scans-log note). Written as serial day
+   numbers, so the sheet's time zone can't shift them. See [DATE_RULES.md](DATE_RULES.md).
 14. **No formulas from tag text.** Every value written goes through `safeCell_`/`safeRow_`: text starting with
    `=`, `+`, `-` or `@` gets a leading apostrophe so Sheets stores it as plain text (the apostrophe is hidden).
    Covered by `tests/offline.test.cjs` ("injection").
@@ -221,7 +223,7 @@ Window mapping is built from Kirsten's description and the first real October wi
 27. **Bill what the customer was charged** (Kirsten, 2026-10-23). A "measured wrong / balance due" slip's extra QTY
     of the standard screening SKUs is added to the tag QTY (row note). The shop's own marker re-measurement on a tag
     is ignored. A written tag year more than half a year behind the scan is noted in the Scans log (not the sheet:
-    Kirsten doesn't use the year).
+    Kirsten doesn't use the year); since 2026-11-17 a recent month/day (within 45 days) is written as this year (rule 13).
 28. **Patio screen doors** (Kirsten, 2026-10-24). The shop's "Custom Patio Door Order" form is a screen, always
     fiberglass. Inches = width + height, each
     rounded up (75.5 x 48 -> 76 + 48 = 124"), billed at the fiberglass rates with **no** build labor and **no**

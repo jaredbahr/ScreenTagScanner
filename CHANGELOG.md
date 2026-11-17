@@ -1,5 +1,37 @@
 # Changelog
 
+## 0.13.46-draft — dates from the order; old years written as this year
+
+From the 2026-11-17 review of every scan this month (723 scans), approved by Jared the same day:
+- **Order date (`orderDateIn_`):** a screen tag with no date takes the Date in of its order's other rows on the tab,
+  with a Date in note. It is used only when all of those rows agree on one date that is not after the scan.
+  - An order row has a close name and either the same ticket or, for a group tag, a close ticket with a Date out
+    within 14 days. The close-ticket match also needs a "Tag x of N" column, the same phone in the Scans log and the
+    same N.
+  - No Scans-log phone may differ.
+  - Read-only replay on the month: 26 of 52 undated tags filled, each equal to the date Kirsten typed.
+- **Option A, old years:** an earlier written year whose month/day falls within 45 days before the scan is written as
+  the scan year, with a Scans-log note.
+  - This covers 31 rows this month, all within 14 days.
+  - Unchanged: later years, dates over 45 days back, and tags left over the winter keep the written year.
+- The non-local area code note was already Scans-log only. There is no change; a test now covers it.
+- **Review of #72:**
+  - Matching now requires a close name together with a same or close ticket, and no differing phone. Before, a similar
+    name or a misread ticket alone could match.
+  - Round 2: a close ticket also needs the same phone and the same N, so the customer's previous order and similar
+    names with no phones are never matched.
+  - The window is 45 days, not 60, so the misread-month note is never hidden.
+  - Future years are not changed.
+  - The order date is checked against the admitted scan day.
+  - DATE_RULES.md and SPREADSHEET.md rule 13 are updated.
+- **Deploy note:** a group with additional labor open across the deploy whose tags carry an old year could key its
+  group-labor receipt differently on either side of the deploy. Check open groups at deploy time.
+- **Kept as is, from the review:**
+  - the "unclear ticket" flag (about 40% led to a fix);
+  - the name "(?)" (about 40%);
+  - the 6-digit ticket note (8 of 9).
+  - The remaining ticket hand-fixes since Nov 6 (12 of 151) are digits missing on the tag with no single answer.
+
 ## 0.13.45-draft — settle the ticket before receipts; scan timing
 
 Kirsten (2026-11-16): a Downers Grove tag read a 9 as a 4. The hint named the right ticket, but the tag listed
