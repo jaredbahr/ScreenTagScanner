@@ -3,15 +3,26 @@
 ## 0.13.46-draft — dates from the order; old years written as this year
 
 From the 2026-11-17 review of every scan this month (723 scans), approved by Jared the same day:
-- **Order date:** a tag with no date takes the Date in of its order's other tags (`orderDateIn_`). The order's tags
-  are the rows with the same ticket, or, for a group tag, rows with a close name filled in within 14 days. Used only
-  when they all agree, with a Date in note.
-  - Kirsten typed exactly that date on 26 of the 44 undated tags she filled in.
-- **Option A, old years:** a written year other than the scan year, whose month/day falls within 60 days before the
-  scan in the scan year, is written as the scan year. It gets a Scans-log note only.
-  - This covers 31 rows this month dated 2024/2020/2025 that Kirsten never changed.
-  - Over 60 days back, a tag left over the winter, and future dates keep the written year as before.
-- The non-local area code note was already Scans-log only (no change; now covered by a test).
+- **Order date (`orderDateIn_`):** a screen tag with no date takes the Date in of its order's other rows on the tab,
+  with a Date in note. It is used only when all of those rows agree on one date that is not after the scan.
+  - An order row has a close name and either the same ticket or, for a group tag, a close ticket with a Date out
+    within 14 days.
+  - No Scans-log phone may differ.
+  - Read-only replay on the month: 27 of 52 undated tags filled, each equal to the date Kirsten typed.
+- **Option A, old years:** an earlier written year whose month/day falls within 45 days before the scan is written as
+  the scan year, with a Scans-log note.
+  - This covers 31 rows this month, all within 14 days.
+  - Unchanged: later years, dates over 45 days back, and tags left over the winter keep the written year.
+- The non-local area code note was already Scans-log only. There is no change; a test now covers it.
+- **Review of #72:**
+  - Matching now requires a close name together with a same or close ticket, and no differing phone. Before, a similar
+    name or a misread ticket alone could match.
+  - The window is 45 days, not 60, so the misread-month note is never hidden.
+  - Future years are not changed.
+  - The order date is checked against the admitted scan day.
+  - DATE_RULES.md and SPREADSHEET.md rule 13 are updated.
+- **Deploy note:** a group with additional labor open across the deploy whose tags carry an old year could key its
+  group-labor receipt differently on either side of the deploy. Check open groups at deploy time.
 - **Kept as is, from the review:**
   - the "unclear ticket" flag (about 40% led to a fix);
   - the name "(?)" (about 40%);

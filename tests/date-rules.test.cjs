@@ -34,17 +34,25 @@ test('two-digit year for this year or last year is accepted without a flag',()=>
     assert.equal(sh.get(2,2),serial(date==='10/8/26'?'2026-10-08':'2025-12-30'),date);assert.equal(sh.notes.get('2,2'),undefined,date);}
 });
 const scanReason=t=>{const log=t.ss.tabs.Scans,h=t.ctx.HEADERS;return String(log.get(2,h.indexOf('Review Reason')+1)||'');};
-test('Jared (2026-11-17, option A): an old year on a tag within 60 days is written as the scan year, noted in the Scans log only',()=>{
-  for(const [date,y] of [['10/17/24','2024'],['10/17/2020','2020'],['10/20/25','2025'],['8/25/2024','2024']]){const t=load({now:new Date('2026-10-23T18:00:00Z')});const r=t.scan({date});const sh=t.ss.tabs['Homer Glen'];
+test('Jared (2026-11-17, option A): an old year on a tag within 45 days is written as the scan year, noted in the Scans log only',()=>{
+  for(const [date,y] of [['10/17/24','2024'],['10/17/2020','2020'],['10/20/25','2025'],['9/8/2024','2024']]){const t=load({now:new Date('2026-10-23T18:00:00Z')});const r=t.scan({date});const sh=t.ss.tabs['Homer Glen'];
     const [m,d]=date.split('/');assert.equal(sh.get(2,2),serial('2026-'+m.padStart(2,'0')+'-'+d.padStart(2,'0')),date);
-    const why=scanReason(t);assert.match(why,new RegExp('Tag year '+y+' written as 2026 \\(the month and day are within 60 days of the scan\\)'),date);
+    const why=scanReason(t);assert.match(why,new RegExp('Tag year '+y+' written as 2026 \\(the month and day are within 45 days of the scan\\)'),date);
     assert.doesNotMatch(why,/looks off|20YY/,date+': no year doubt left');
     assert.doesNotMatch(sh.notes.get('2,2')||'',/Tag year/,date+': not on her sheet');assert.doesNotMatch(r.message,/Check on the sheet:/,date);}
-  // 61 days back, a tag left over the winter, and a future month/day keep the written year.
-  for(const [date,now,want] of [['8/22/24','2026-10-23T18:00:00Z','2024-08-22'],['12/28/26','2027-01-05T18:00:00Z','2026-12-28'],['11/20/25','2026-10-23T18:00:00Z','2025-11-20']]){
+  // 46 days back, a tag left over the winter, and a future month/day keep the written year.
+  for(const [date,now,want] of [['9/7/24','2026-10-23T18:00:00Z','2024-09-07'],['12/28/26','2027-01-05T18:00:00Z','2026-12-28'],['11/20/25','2026-10-23T18:00:00Z','2025-11-20']]){
     const t=load({now:new Date(now)});t.scan({date});assert.equal(t.ss.tabs['Homer Glen'].get(2,2),serial(want),date);}
 });
-test('a written year far behind the scan, more than 60 days back, is noted in the Scans log only (Kirsten does not use the year)',()=>{
+test('review of #72: a later written year is never changed; 46-60 days back keeps the misread-month note on her sheet',()=>{
+  for(const date of ['10/17/27','10/17/2027']){const t=load({now:new Date('2026-10-23T18:00:00Z')});t.scan({date});const sh=t.ss.tabs['Homer Glen'];
+    assert.equal(sh.get(2,2),serial('2027-10-17'),date);assert.match(sh.notes.get('2,2')||'',/after the scan date/,date);}
+  const t=load({now:new Date('2026-10-23T18:00:00Z')});t.scan({date:'9/1/2024'});const sh=t.ss.tabs['Homer Glen'];
+  assert.equal(sh.get(2,2),serial('2024-09-01'),'52 days back: not rewritten');
+  const u=load({now:new Date('2026-10-23T18:00:00Z')});u.scan({date:'9/1/2026'});
+  assert.match(u.ss.tabs['Homer Glen'].notes.get('2,2')||'',/month is likely misread/,'the same date in this year still gets the cell note');
+});
+test('a written year far behind the scan, more than 45 days back, is noted in the Scans log only (Kirsten does not use the year)',()=>{
   for(const date of ['6/17/24','6/17/2020','6/20/25']){const t=load({now:new Date('2026-10-23T18:00:00Z')});const r=t.scan({date});const sh=t.ss.tabs['Homer Glen'];
     const why=scanReason(t);assert.match(why,/Tag year 20\d\d looks off for a scan in 2026 \(4\/6 and 0\/6 look alike/,date);
     assert.equal((why.match(/20YY|looks off/g)||[]).length,date==='6/17/24'?2:1,date+': one note, century folded in');

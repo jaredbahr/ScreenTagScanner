@@ -13,7 +13,7 @@ const rowOf = (sh, name) => [...Array(40).keys()].map(k => k + 2).filter(r => St
 
 test('a tag with no date takes the date of its order\'s other tag, with a note on Date in', () => {
   const t = load({ now: at('2026-10-12') }), sh = t.ss.tabs['Homer Glen'];
-  t.scan(tag()); t.setNow(at('2026-10-12'));
+  t.scan(tag());
   const r = t.scan(tag({ tag_index: 2, date: null, width_in: 24, billable_inches: 54 }));
   const [first, second] = rowOf(sh, 'Synthorder');
   assert.equal(sh.get(second, 2), serial('2026-10-08'), 'Date in from the order');
@@ -36,10 +36,46 @@ test('no order date: a single tag, tags that disagree, or an old order of the sa
   const rep = rowOf(sh, 'Synthrepeat'); assert.equal(sh.get(rep[1], 2), '', 'same name, another ticket, filled over 14 days ago: not this order');
 });
 
-test('a non-local area code stays in the Scans log, off her sheet (already so; locked here)', () => {
+test('a group tag with a close ticket and the same name takes the order date (Homer-style consecutive tickets)', () => {
+  const t = load({ now: at('2026-10-12') }), sh = t.ss.tabs['Homer Glen'];
+  t.scan(tag({ ticket_number: '7777961', date: '10/6' }));
+  t.scan(tag({ ticket_number: '7777962', tag_index: 2, date: null, width_in: 24, billable_inches: 54 }));
+  const rows = rowOf(sh, 'Synthorder'); assert.equal(sh.get(rows[1], 2), serial('2026-10-06'));
+});
+
+test('review of #72: never another customer\'s date, by a similar name or by a shared (misread) ticket', () => {
+  const t = load({ now: at('2026-10-12') }), sh = t.ss.tabs['Homer Glen'];
+  t.scan(tag({ last_name: 'Synthsmith', customer_name: 'Synthsmith', ticket_number: '7777101', phone: '6305550111', tag_count: 1, date: '10/1' }));
+  t.scan(tag({ last_name: 'Synthsmyth', customer_name: 'Synthsmyth', ticket_number: '7777555', phone: '6305550999', date: null, width_in: 25, billable_inches: 55 }));
+  assert.equal(sh.get(rowOf(sh, 'Synthsmyth')[0], 2), '', 'a similar name with another ticket and phone');
+  t.scan(tag({ last_name: 'Synthalpha', customer_name: 'Synthalpha', ticket_number: '7777201', phone: '6305550222', tag_count: 2, date: '10/2' }));
+  t.scan(tag({ last_name: 'Synthbeta', customer_name: 'Synthbeta', ticket_number: '7777201', phone: '6305550333', tag_count: 2, tag_index: 2, date: null, width_in: 26, billable_inches: 56 }));
+  assert.equal(sh.get(rowOf(sh, 'Synthbeta')[0], 2), '', 'the same ticket under another name');
+  t.scan(tag({ last_name: 'Synthdelta', customer_name: 'Synthdelta', ticket_number: '7777401', phone: null, tag_count: 2, date: '10/4' }));
+  t.scan(tag({ last_name: 'Synthomega', customer_name: 'Synthomega', ticket_number: '7777401', phone: null, tag_count: 2, tag_index: 2, date: null, width_in: 28, billable_inches: 58 }));
+  assert.equal(sh.get(rowOf(sh, 'Synthomega')[0], 2), '', 'the same ticket under another name, no phones to tell them apart');
+  t.scan(tag({ last_name: 'Synthgamma', customer_name: 'Synthgamma', ticket_number: '7777301', phone: '6305551234', tag_count: 2, date: '10/3' }));
+  t.scan(tag({ last_name: 'Synthgamma', customer_name: 'Synthgamma', ticket_number: '7777301', phone: '6305559876', tag_count: 2, tag_index: 2, date: null, width_in: 27, billable_inches: 57 }));
+  assert.equal(sh.get(rowOf(sh, 'Synthgamma')[1], 2), '', 'the same name and ticket with a different phone');
+});
+
+test('Date objects from the sheet (as real Sheets returns them) are read, and a date after the scan is never taken', () => {
+  const t = load({ now: at('2026-10-12') }), sh = t.ss.tabs['Homer Glen'], c = t.ctx.storeLayout_(sh).screens;
+  t.scan(tag());
+  const r = rowOf(sh, 'Synthorder')[0];
+  sh.set(r, c.DATE_IN, new t.ctx.Date(Date.UTC(2026, 9, 8, 5)));  // midnight Chicago, as a sandbox Date
+  sh.set(r, c.DATE_OUT, new t.ctx.Date(Date.UTC(2026, 9, 12, 5)));
+  const x = t.ctx.normalizeJobInput_({ ...require('./offline.test.cjs').BASE, ...tag({ tag_index: 2, date: null }) });
+  const today = serial('2026-10-12');
+  assert.equal(JSON.stringify(t.ctx.orderDateIn_(sh, c, x, t.ctx.screenBlockEnd_(sh), today)), JSON.stringify({ serial: serial('2026-10-08'), row: r }));
+  sh.set(r, c.DATE_IN, serial('2026-10-20'));
+  assert.equal(t.ctx.orderDateIn_(sh, c, x, t.ctx.screenBlockEnd_(sh), today), null, 'after the scan: not taken');
+});
+
+test('the new notes: order date on Date in, corrected year in the Scans log, non-local area code in the Scans log', () => {
   const t = load(), ctx = t.ctx;
   assert.equal(ctx.reviewTier_('Area code 830 is not local (misread?)').tier, 'log');
-  assert.equal(ctx.reviewTier_('Tag year 2024 written as 2026 (the month and day are within 60 days of the scan)').tier, 'log');
+  assert.equal(ctx.reviewTier_('Tag year 2024 written as 2026 (the month and day are within 45 days of the scan)').tier, 'log');
   assert.equal(ctx.reviewTier_('Date in taken from row 5 (same order): no date on this tag').field, 'DATE_IN');
   const r = t.scan({ phone: '8305550199' }); const sh = t.ss.tabs['Homer Glen'];
   assert.doesNotMatch([...sh.notes.values()].join('\n'), /Area code/); assert.doesNotMatch(r.message, /Check on the sheet:/);
