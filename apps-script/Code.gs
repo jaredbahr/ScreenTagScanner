@@ -781,17 +781,23 @@ function scannerDiagnostic_(event, scanId) {
   var id = /^[a-f0-9]{8}$/.test(String(scanId)) ? scanId : 'unavailable';
   console.error('Scanner event: ' + event + '; scanId=' + id);
 }
-/** Seconds since the photo arrived, per stage, to the private Executions log (Jared, 2026-11-17: find where a slow scan waits). */
-/** The ticket an earlier scan of this same reading was written as ("Ticket # written as T (read as R"), or ''. */
+/**
+ * The ticket an earlier placed scan of this exact tag was written as ("Ticket # written as T (read as R"), or ''. Same
+ * tests as isExactRescan_ (reading, store, x of N, size, placed): another tag with the same misread never matches.
+ */
 function rescanWrittenTicket_(log, x) {
-  var last = log.getLastRow(), read = String(x.ticket_number), found = '';
-  if (last < 2) return '';
+  var last = log.getLastRow(), read = String(x.ticket_number), store = resolveStore_(x).store, found = '';
+  if (last < 2 || !store) return '';
   log.getRange(2, 1, last - 1, HEADERS.length).getValues().forEach(function (r) {
     var m = /Ticket # written as (\d{7}) \(read as (\d{6,8})\b/.exec(String(r[HEADERS.indexOf('Review Reason')] || ''));
-    if (String(r[COL.TICKET - 1]) === read && String(r[COL.TAG_OF - 1]) === tagOf_(x) && m && m[2] === read) found = m[1];
+    var placed = /^(.*?) (screens|windows) rows? \d+(?:, \d+)*$/.exec(String(r[COL.WRITTEN_TO - 1]));
+    if (m && m[2] === read && placed && placed[1] === store.name && String(r[COL.TICKET - 1]) === read &&
+        String(r[COL.TAG_OF - 1]) === tagOf_(x) && Number(r[COL.WIDTH - 1]) === Number(x.width_in) &&
+        Number(r[COL.HEIGHT - 1]) === Number(x.height_in)) found = m[1];
   });
   return found;
 }
+/** Seconds since the photo arrived, per stage, to the private Executions log (Jared, 2026-11-17: find where a slow scan waits). */
 function scanTiming_(scanId, stage, t0) {
   var id = /^[a-f0-9]{8}$/.test(String(scanId)) ? scanId : 'unavailable';
   console.log('Scanner timing: scanId=' + id + '; ' + stage + '=' + ((Date.now() - t0) / 1000).toFixed(1) + 's');

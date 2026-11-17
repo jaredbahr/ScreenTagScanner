@@ -1421,8 +1421,10 @@ function writeToStoreTab_(ss, x, reasons) {
   if (x._plans_ticket && x._plans_ticket !== String(x.ticket_number)) {
     flags.push('Parts or additional labor earnings were planned for ticket ' + x._plans_ticket + ', not ' + x.ticket_number + '; enter them by hand');
     // Receipts naming another ticket would be rejected later and block that tab's labor credits (review of #70).
-    x = Object.assign({}, x, { _parts_plan: Object.assign({}, x._parts_plan, { items: [] }),
-      _extra_labor_plan: Object.assign({}, x._extra_labor_plan, { items: [] }) });
+    // Also no "already recorded" references or recognized labor lines for the other ticket: the amounts stay in the
+    // Extras note for her to enter (review of #70).
+    x = Object.assign({}, x, { _parts_plan: Object.assign({}, x._parts_plan, { items: [], references: [] }),
+      _extra_labor_plan: Object.assign({}, x._extra_labor_plan, { items: [], recognized: [] }) });
   }
   if (ticketInStoreTab_(sh, x.ticket_number, layout) && !(x.tag_count > 1)) {
     flags.push('Ticket already on the ' + store.name + ' tab: another tag in the group, or a duplicate?');

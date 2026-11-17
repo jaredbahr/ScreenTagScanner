@@ -63,6 +63,11 @@ test('review of #70: a rescan of a rewritten parts or labor tag is a plain resca
     const again = save(x);
     assert.equal(again.rescan, true); assert.equal(again.needsReview, false, JSON.stringify(again).slice(0, 300));
   }
+  // Another tag with the same misread (another size) is not this one: its rescan never borrows the first tag's ticket.
+  const { t, save } = series(), log = t.ss.tabs.Scans;
+  save(one('7774948', 30, { parts: [part('580401', 2)] }));
+  const b = one('7774948', 31, { width_in: 40, parts: [part('580401', 2)] }); save(b);
+  assert.equal(t.ctx.rescanWrittenTicket_(log, t.ctx.normalizeJobInput_(b)), '');
 });
 
 test('review of #70: receipts planned for another ticket are flagged and never written', () => {
